@@ -8,17 +8,37 @@ const fetchRuns = () => fetch('/api/runs').then((r) => r.json());
 
 let lastRender = '';
 
+/** What a replay run produced, in one readable line. */
+function replaySummary(detail) {
+  if (detail?.outputs) {
+    return Object.entries(detail.outputs)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(' · ');
+  }
+  if (detail?.business_outcome) {
+    return `${detail.business_outcome.code} — ${detail.business_outcome.message}`;
+  }
+  if (detail?.failed_step) {
+    return `failed at step ${detail.failed_step.step}: ${detail.failed_step.message}`;
+  }
+  return '';
+}
+
 function render(root, runs) {
   const rows = runs
     .map((run) => {
-      const artifact = run.detail?.artifact ? `${run.detail.artifact.id} v${run.detail.artifact.version}` : '';
-      const outcome = run.kind === 'replay' ? (run.detail?.capability ? `${run.detail.capability} v${run.detail.version}` : '') : '';
+      const artifact = run.detail?.artifact
+        ? `${run.detail.artifact.id} v${run.detail.artifact.version}`
+        : run.detail?.capability
+          ? `${run.detail.capability} v${run.detail.version}`
+          : '';
+      const what = run.goal ?? `<span class="muted">${replaySummary(run.detail)}</span>`;
       return `
         <tr>
           <td class="mono">${run.id}</td>
           <td>${run.kind}</td>
           <td><span class="badge ${run.status}">${run.status}</span>${run.live ? ` <span class="muted">${run.owner}</span>` : ''}</td>
-          <td>${run.goal ?? `<span class="muted">${outcome}</span>`}</td>
+          <td>${what}</td>
           <td class="mono">${artifact}</td>
         </tr>`;
     })
@@ -50,4 +70,5 @@ export function mount(root) {
   refresh();
   setInterval(refresh, 2000);
   window.addEventListener('run-started', refresh);
+  window.addEventListener('replay-finished', refresh);
 }

@@ -52,7 +52,15 @@ router.post('/:id/replay', async (req, res, next) => {
     logger.saveResult({ run_id: runId, capability: capability.id, version: capability.version, ...result });
     updateRun(runId, {
       status: result.outcome,
-      detail: { capability: capability.id, version: capability.version, outcome: result.outcome },
+      detail: {
+        capability: capability.id,
+        version: capability.version,
+        outcome: result.outcome,
+        // The run row carries what the caller got, so the Runs view is self-sufficient.
+        outputs: result.outputs && Object.keys(result.outputs).length ? result.outputs : null,
+        business_outcome: result.business_outcome ?? null,
+        failed_step: result.failure ? { step: result.failure.step, message: result.failure.message } : null,
+      },
     });
 
     res.json({ run_id: runId, capability: capability.id, version: capability.version, ...result });

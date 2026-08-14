@@ -57,7 +57,17 @@ try {
   const result = await replayCapability({ capability, params: args.params, headless: args.headless, logger });
 
   logger.saveResult({ run_id: runId, capability: capability.id, version: capability.version, ...result });
-  updateRun(runId, { status: result.outcome, detail: { capability: capability.id, version: capability.version } });
+  updateRun(runId, {
+    status: result.outcome,
+    detail: {
+      capability: capability.id,
+      version: capability.version,
+      outcome: result.outcome,
+      outputs: result.outputs && Object.keys(result.outputs).length ? result.outputs : null,
+      business_outcome: result.business_outcome ?? null,
+      failed_step: result.failure ? { step: result.failure.step, message: result.failure.message } : null,
+    },
+  });
 
   console.log(`\nOutcome:  ${result.outcome}`);
   if (result.outputs) console.log(`Outputs:  ${JSON.stringify(result.outputs)}`);

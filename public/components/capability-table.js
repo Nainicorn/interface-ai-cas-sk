@@ -57,15 +57,6 @@ function detailsHtml(capability) {
   `;
 }
 
-function outputsHtml(out) {
-  const body = out.outputs && Object.keys(out.outputs).length ? out.outputs : out.business_outcome ?? out.failure ?? {};
-  const lines = Object.entries(body)
-    .map(([k, v]) => `${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`)
-    .join('\n');
-  return `<span class="badge ${out.outcome}">${out.outcome}</span>
-          <span class="muted mono">run ${out.run_id}</span>
-          ${lines ? `<pre>${lines}</pre>` : ''}`;
-}
 
 function render(root, artifacts) {
   root.querySelector('tbody').innerHTML =
@@ -130,7 +121,11 @@ export function mount(root) {
     result.innerHTML = `<span class="muted">Replaying…</span>`;
     try {
       const out = await replay(id, parseParams(root.querySelector(`[data-params="${id}"]`).value));
-      result.innerHTML = outputsHtml(out);
+      // A replay IS a run — its outcome lives in the Runs tab, so this row just
+      // points there for a moment and then clears itself.
+      result.innerHTML = `<span class="badge ${out.outcome}">${out.outcome}</span> <span class="muted">→ details in the Runs tab</span>`;
+      window.dispatchEvent(new CustomEvent('replay-finished'));
+      setTimeout(() => { result.innerHTML = ''; }, 6000);
     } catch (err) {
       result.innerHTML = `<span class="error">${err.message}</span>`;
     } finally {
