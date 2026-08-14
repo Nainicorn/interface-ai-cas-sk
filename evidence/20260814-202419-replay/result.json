@@ -1,0 +1,66 @@
+{
+  "run_id": "20260814-202419-replay",
+  "capability": {
+    "id": "lookup-member-accounts",
+    "version": 1,
+    "name": "Lookup Member Accounts"
+  },
+  "version": 1,
+  "params_supplied": [
+    "member_id"
+  ],
+  "started_at": "2026-08-14T20:24:19.552Z",
+  "outcome": "SUCCESS",
+  "outputs": {
+    "accounts_table_text": "Account Number\tType\tOpened\tBalance\nCHK-10001-01\tChecking\t2014-03-11\t$2450.75\nSAV-10001-01\tSavings\t2016-07-02\t$18320.40"
+  },
+  "steps": [
+    {
+      "index": 0,
+      "intent": "Enter username on login page",
+      "action": "type",
+      "outcome": "SUCCESS",
+      "duration_ms": 45
+    },
+    {
+      "index": 1,
+      "intent": "Enter password on login page",
+      "action": "type",
+      "outcome": "SUCCESS",
+      "duration_ms": 32
+    },
+    {
+      "index": 2,
+      "intent": "Submit login form",
+      "action": "click",
+      "outcome": "SUCCESS",
+      "duration_ms": 41
+    },
+    {
+      "index": 3,
+      "intent": "Enter the member ID to search for",
+      "action": "type",
+      "outcome": "SUCCESS",
+      "duration_ms": 5
+    },
+    {
+      "index": 4,
+      "intent": "Submit the member search",
+      "action": "click",
+      "outcome": "SUCCESS",
+      "duration_ms": 5030
+    },
+    {
+      "index": 5,
+      "intent": "Read the accounts table to determine how many accounts the member holds",
+      "action": "read",
+      "extracted_to": "accounts_table_text",
+      "outcome": "SUCCESS",
+      "duration_ms": 7
+    }
+  ],
+  "recoveries": [],
+  "business_outcome": null,
+  "failure": null,
+  "duration_ms": 5457
+}

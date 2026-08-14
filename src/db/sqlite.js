@@ -112,6 +112,23 @@ export function getIntervention(id) {
     : null;
 }
 
+/**
+ * Boot-time hygiene. Live sessions do not survive a process restart, so any run still
+ * marked running/paused — and any pending intervention — is orphaned: nothing can ever
+ * resume it. Reconciling at startup keeps the console truthful instead of showing a
+ * "paused" run nobody can touch.
+ */
+export function reconcileAtBoot() {
+  const db = getDb();
+  const orphanedInterventions = db
+    .prepare(`UPDATE interventions SET status = 'resolved', resolved_at = ?, resolution = ? WHERE status = 'pending'`)
+    .run(now(), JSON.stringify({ note: 'orphaned: control plane restarted while paused' })).changes;
+  const orphanedRuns = db
+    .prepare(`UPDATE runs SET status = 'failed', updated_at = ? WHERE status IN ('running', 'paused')`)
+    .run(now()).changes;
+  return { orphanedRuns, orphanedInterventions };
+}
+
 export function listInterventions({ status } = {}) {
   const rows = status
     ? getDb().prepare(`SELECT * FROM interventions WHERE status = ? ORDER BY created_at DESC`).all(status)

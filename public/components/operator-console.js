@@ -1,7 +1,7 @@
 /**
- * Operator console: the human side of the handoff. Shows the pending intervention
- * with its context, lets the operator drive the SAME live page through the same
- * action primitives the agent uses, then hand control back.
+ * Operator panel: appears ONLY when a run is paused and needs a human, and closes
+ * itself once control is handed back. The human drives the run's own live page
+ * through the same action primitives the agent uses.
  * API: GET /api/escalations?status=pending, POST /api/escalations/:id/{action,resume}.
  */
 
@@ -19,8 +19,8 @@ async function post(url, body) {
 }
 
 /** Build the {action, args} body from the form's fields. */
-function buildAction(root) {
-  const value = (name) => root.querySelector(`[name=${name}]`).value.trim();
+function buildAction(panel) {
+  const value = (name) => panel.querySelector(`[name=${name}]`).value.trim();
   const action = value('action');
 
   if (action === 'navigate') return { action, args: { url: value('url') } };
@@ -44,64 +44,61 @@ function buildAction(root) {
 
 function render(root, pending) {
   const panel = root.querySelector('[data-panel]');
-  if (!pending) {
-    panel.innerHTML = `<p class="muted">No pending interventions. Escalations appear here with context.</p>`;
-    return;
-  }
   // Re-render only when a different intervention arrives, so form input isn't clobbered.
-  if (panel.dataset.intervention === String(pending.id)) {
-    root.querySelector('img').src = `/api/runs/${pending.run_id}/screenshot?t=${Date.now()}`;
-    return;
-  }
+  // (The live viewer above this panel already shows the paused page.)
+  if (panel.dataset.intervention === String(pending.id)) return;
   panel.dataset.intervention = String(pending.id);
 
   panel.innerHTML = `
-    <p><span class="badge paused">paused</span> <b>${pending.context.goal ?? ''}</b></p>
-    <p>Run <code>${pending.run_id}</code> stopped: <b>${pending.reason}</b><br>
-       <span class="muted">at ${pending.context.url ?? '?'}</span></p>
+    <p style="margin:0 0 4px"><b>${pending.context.goal ?? 'Run'}</b> needs you:</p>
+    <p style="margin:0 0 10px">${pending.reason}<br>
+       <span class="muted mono">${pending.context.url ?? ''}</span></p>
 
     <div class="row">
       <div><label>Action</label>
         <select name="action">
           <option>click</option><option>type</option><option>navigate</option><option>read</option>
         </select></div>
-      <div><label>Locator kind</label>
+      <div><label>Find element by</label>
         <select name="kind">
           <option>role</option><option>label</option><option>placeholder</option><option>text</option><option>css</option>
         </select></div>
     </div>
     <div class="row">
-      <div><label>Locator value / accessible name</label><input name="locator" placeholder="Search" /></div>
-      <div><label>Role (for kind=role)</label><input name="role" placeholder="button" /></div>
+      <div><label>Element name / value</label><input name="locator" placeholder="Search" /></div>
+      <div><label>Role (when finding by role)</label><input name="role" placeholder="button" /></div>
     </div>
     <div class="row">
       <div><label>Text to type (type only)</label><input name="text" /></div>
-      <div><label>URL (navigate only)</label><input name="url" placeholder="/search" /></div>
+      <div><label>Route (navigate only)</label><input name="url" placeholder="/search" /></div>
     </div>
-    <button data-act>Perform manual step</button>
-    <label>Note to the agent on resume</label>
-    <input name="note" placeholder="Signed back in; session had expired" />
-    <button data-resume class="secondary">Resume agent</button>
-    <p data-feedback class="muted"></p>
+    <button data-act class="small">Perform manual step</button>
+    <label>Note for the agent</label>
+    <div class="row">
+      <input name="note" placeholder="Signed back in; session had expired" />
+      <button data-resume class="small secondary" style="flex:0 0 auto">Hand control back</button>
+    </div>
+    <p data-feedback class="muted" style="margin:8px 0 0"></p>
   `;
 
   const feedback = panel.querySelector('[data-feedback]');
   panel.querySelector('[data-act]').addEventListener('click', async () => {
     try {
+      feedback.className = 'muted';
       const outcome = await post(`/api/escalations/${pending.id}/action`, buildAction(panel));
       feedback.textContent = `Done — now at ${outcome.url}`;
     } catch (err) {
-      feedback.textContent = `Error: ${err.message}`;
+      feedback.textContent = err.message;
       feedback.className = 'error';
     }
   });
   panel.querySelector('[data-resume]').addEventListener('click', async () => {
     try {
       await post(`/api/escalations/${pending.id}/resume`, { note: panel.querySelector('[name=note]').value });
-      feedback.textContent = 'Control handed back to the agent.';
       delete panel.dataset.intervention;
+      root.hidden = true; // the panel's job is done; the live viewer shows the rest
     } catch (err) {
-      feedback.textContent = `Error: ${err.message}`;
+      feedback.textContent = err.message;
       feedback.className = 'error';
     }
   });
@@ -109,19 +106,23 @@ function render(root, pending) {
 
 export function mount(root) {
   root.innerHTML = `
-    <h2>Operator console</h2>
-    <div data-panel></div>
-    <img class="shot" alt="live page at pause" style="display:none" />
+    <h2>Human needed <span class="hint">the run is paused; you are driving its live browser (above)</span></h2>
+    <div class="context">
+      <div data-panel></div>
+    </div>
   `;
 
   const refresh = async () => {
     try {
       const pending = (await fetchPending())[0] ?? null;
-      const img = root.querySelector('img');
-      img.style.display = pending ? '' : 'none';
+      if (!pending) {
+        root.hidden = true;
+        return;
+      }
+      root.hidden = false;
       render(root, pending);
     } catch {
-      /* transient poll failure — next tick retries */
+      /* transient poll failure */
     }
   };
   refresh();

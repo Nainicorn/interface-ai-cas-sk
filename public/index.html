@@ -8,31 +8,34 @@
 </head>
 <body>
   <header>
-    <h1>Computer-Use Automation — Control Plane</h1>
-    <p class="sub">discover once → typed capability → deterministic replay → human handoff when stuck</p>
+    <div>
+      <h1>Computer-Use Automation</h1>
+      <p class="sub">discover once &rarr; typed capability &rarr; deterministic replay &rarr; human handoff when stuck</p>
+    </div>
   </header>
 
   <main>
+    <!-- Three regions: goal form top-left; live viewer + operator panel top-right
+         (viewer fills with Chromium while a run is live; the operator panel appears
+         under it only when a human is needed); runs/capabilities tabs across the bottom. -->
     <section id="goal-form" class="card"></section>
-    <section id="operator-console" class="card"></section>
-    <section id="run-status" class="card wide"></section>
-    <section id="artifact-viewer" class="card"></section>
-    <section id="replay-panel" class="card"></section>
+    <div class="right-col">
+      <section id="live-viewer" class="card"></section>
+      <section id="operator-console" class="card operator" hidden></section>
+    </div>
+    <section id="workspace" class="card wide"></section>
   </main>
 
   <script type="module">
-    // One mount per component; each owns its own polling and API calls.
     import { mount as goalForm } from '/components/goal-form.js';
-    import { mount as runStatus } from '/components/run-status.js';
+    import { mount as liveViewer } from '/components/live-viewer.js';
     import { mount as operatorConsole } from '/components/operator-console.js';
-    import { mount as artifactViewer } from '/components/artifact-viewer.js';
-    import { mount as replayPanel } from '/components/replay-panel.js';
+    import { mount as tabs } from '/components/tabs.js';
 
     goalForm(document.getElementById('goal-form'));
+    liveViewer(document.getElementById('live-viewer'));
     operatorConsole(document.getElementById('operator-console'));
-    runStatus(document.getElementById('run-status'));
-    artifactViewer(document.getElementById('artifact-viewer'));
-    replayPanel(document.getElementById('replay-panel'));
+    tabs(document.getElementById('workspace'));
   </script>
 </body>
 </html>

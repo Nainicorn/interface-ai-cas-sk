@@ -42,6 +42,13 @@ app.use((err, _req, res, _next) => {
   res.status(status).json({ error: err.message, detail: err.detail ?? null });
 });
 
+import { reconcileAtBoot } from '../db/sqlite.js';
+
+const { orphanedRuns, orphanedInterventions } = reconcileAtBoot();
+if (orphanedRuns || orphanedInterventions) {
+  console.log(`Reconciled ${orphanedRuns} orphaned run(s), ${orphanedInterventions} intervention(s) from a previous process.`);
+}
+
 const port = Number(process.env.PORT ?? 3000);
 app.listen(port, () => {
   console.log(`Control plane listening on :${port} — open the operator console in a browser.`);

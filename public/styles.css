@@ -1,83 +1,174 @@
-/* Operator console styling. It's a control panel, not a product. */
+/* Operator console styling. Calm, tidy, one accent. */
+
+:root {
+  --bg: #eef0f4;
+  --card: #ffffff;
+  --line: #e3e6ec;
+  --ink: #1c2230;
+  --ink-2: #5c6575;
+  --ink-3: #9aa2b1;
+  --accent: #2456e6;
+  --accent-soft: #eaf0ff;
+  --radius: 10px;
+}
 
 * { box-sizing: border-box; }
+html, body { margin: 0; }
 body {
-  margin: 0;
-  font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #f4f5f7;
-  color: #1d2330;
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--ink);
 }
-header { padding: 18px 24px 6px; }
-header h1 { margin: 0; font-size: 19px; }
-header .sub { margin: 4px 0 0; color: #66707f; }
+code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+
+header { max-width: 1180px; margin: 0 auto; padding: 26px 24px 4px; }
+header h1 { margin: 0; font-size: 20px; letter-spacing: -0.01em; }
+header .sub { margin: 4px 0 0; color: var(--ink-2); font-size: 13px; }
 
 main {
+  max-width: 1180px;
+  margin: 0 auto;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(280px, 5fr) 7fr; /* top-right deliberately wider */
   gap: 16px;
-  padding: 16px 24px 40px;
+  padding: 16px 24px 48px;
   align-items: start;
 }
+.right-col { display: flex; flex-direction: column; gap: 16px; }
+/* Grid/flex items may shrink below their content's intrinsic width — the wide tables
+   scroll inside their own pane instead of blowing the whole column out. */
+main > *, .right-col > * { min-width: 0; }
 .card {
-  background: #fff;
-  border: 1px solid #e2e5ea;
-  border-radius: 8px;
-  padding: 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: 0 1px 2px rgba(20, 28, 45, 0.04);
 }
 .card.wide { grid-column: 1 / -1; }
-.card h2 { margin: 0 0 10px; font-size: 15px; }
+.card h2 { margin: 0 0 12px; font-size: 14px; letter-spacing: 0.01em; }
+.card h2 .hint { color: var(--ink-3); font-weight: 400; font-size: 12px; margin-left: 6px; }
 
-label { display: block; margin: 8px 0 2px; color: #444d5c; font-size: 12.5px; }
-input, select, textarea, button {
+/* Viewer empty state: quiet until Chromium is actually running. */
+#live-viewer.idle .meta, #live-viewer.idle img { display: none; }
+#live-viewer .empty { display: none; color: var(--ink-3); margin: 2px 0; }
+#live-viewer.idle .empty { display: block; }
+
+/* The HITL panel gets a distinct edge so it reads as "needs you". */
+.card.operator { border-left: 4px solid #7a3fd1; }
+
+/* ── forms ── */
+label { display: block; margin: 10px 0 4px; color: var(--ink-2); font-size: 12px; }
+input, select, textarea {
   font: inherit;
-  padding: 6px 8px;
-  border: 1px solid #cfd4dc;
-  border-radius: 5px;
+  padding: 7px 9px;
+  border: 1px solid #ccd2dc;
+  border-radius: 7px;
   width: 100%;
+  background: #fff;
 }
+input:focus, select:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
 button {
-  width: auto;
-  margin-top: 10px;
-  background: #1f4fd8;
-  border-color: #1f4fd8;
+  font: inherit;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 7px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
   color: #fff;
   cursor: pointer;
+  margin-top: 12px;
 }
-button.secondary { background: #fff; color: #1f4fd8; }
-button:disabled { opacity: 0.5; cursor: default; }
+button.secondary { background: #fff; color: var(--accent); }
+button.small { padding: 4px 10px; font-size: 12.5px; margin: 0; }
+button:disabled { opacity: 0.45; cursor: default; }
 
-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
-th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eceff3; vertical-align: top; }
-th { color: #66707f; font-weight: 600; font-size: 12px; }
-tr.selectable { cursor: pointer; }
-tr.selectable:hover { background: #f7f9fc; }
+/* ── tabs ── */
+.tabbar { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.tabbar button {
+  margin: 0;
+  border: none;
+  background: none;
+  color: var(--ink-2);
+  font-weight: 600;
+  padding: 8px 14px 10px;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+}
+.tabbar button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── tables ── */
+/* Tables scroll inside their pane on narrow screens; the page never scrolls sideways. */
+[data-pane] { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 640px; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid #f0f2f6; vertical-align: middle; }
+th { color: var(--ink-3); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; }
+tbody tr:last-child td { border-bottom: none; }
+tr.expand td { background: #fafbfd; padding: 12px 16px; }
 
 .badge {
   display: inline-block;
-  padding: 1px 8px;
-  border-radius: 10px;
-  font-size: 11.5px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
   font-weight: 600;
-  background: #e8eaef;
+  background: #eceef3;
+  color: var(--ink-2);
+  white-space: nowrap;
 }
-.badge.SUCCESS, .badge.recorded { background: #d9f2e2; color: #10683a; }
+.badge.SUCCESS, .badge.recorded { background: #d9f2e2; color: #0d6435; }
 .badge.BUSINESS_OUTCOME { background: #dbe7fd; color: #1c4fc4; }
 .badge.RECOVERABLE { background: #fdf0d3; color: #93610a; }
-.badge.HARD_FAILURE, .badge.failed { background: #fbdcdc; color: #a51f1f; }
+.badge.HARD_FAILURE, .badge.failed, .badge.ended_without_artifact { background: #fbdcdc; color: #a51f1f; }
 .badge.paused, .badge.escalated { background: #eadff8; color: #6b2fb3; }
 .badge.running { background: #dff3f8; color: #0b6f86; }
+.badge.draft { background: #eceef3; color: var(--ink-2); }
+.badge.approved { background: #d9f2e2; color: #0d6435; }
+.badge.safe { background: #eef4ea; color: #48693c; }
+.badge.risky { background: #fdeadb; color: #9a5410; }
 
-pre {
+/* ── live viewer ── */
+#live-viewer .meta { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+img.shot {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
   background: #f7f8fa;
-  border: 1px solid #e5e8ee;
-  border-radius: 6px;
-  padding: 10px;
-  overflow: auto;
-  max-height: 380px;
-  font-size: 12px;
 }
-img.shot { max-width: 100%; border: 1px solid #dfe3e9; border-radius: 6px; margin-top: 8px; }
-.muted { color: #8a93a1; }
-.error { color: #a51f1f; }
+
+/* ── operator panel ── (lives under the viewer, so it stacks vertically) */
+.operator .context { display: flex; flex-direction: column; gap: 8px; }
+.operator .context img.shot { display: none; } /* the viewer above already shows the page */
 .row { display: flex; gap: 10px; }
 .row > * { flex: 1; }
+
+ol.steps { margin: 6px 0; padding-left: 22px; color: var(--ink-2); }
+ol.steps li { margin: 3px 0; }
+ol.steps .mono { color: var(--ink-3); }
+
+.muted { color: var(--ink-3); }
+.error { color: #a51f1f; }
+.result-line { margin-top: 8px; }
+.result-line pre {
+  background: #fafbfd;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 8px 10px;
+  margin: 6px 0 0;
+  font-size: 12px;
+  overflow: auto;
+}
+
+/* ── responsive ── */
+@media (max-width: 980px) {
+  main { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  header { padding: 18px 14px 2px; }
+  main { padding: 12px 14px 32px; gap: 12px; }
+  .card { padding: 14px; }
+  .row { flex-direction: column; gap: 6px; }
+  th, td { padding: 8px 8px; }
+  table { min-width: 560px; }
+}
