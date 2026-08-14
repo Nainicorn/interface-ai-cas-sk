@@ -1,0 +1,21 @@
+{
+  "status": "recorded",
+  "runId": "20260814-190632-discovery",
+  "evidenceDir": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/20260814-190632-discovery",
+  "turns": 10,
+  "usage": {
+    "input_tokens": 20,
+    "output_tokens": 2845,
+    "cache_read_input_tokens": 146334,
+    "cache_creation_input_tokens": 29006
+  },
+  "artifact": {
+    "id": "lookup-member-savings-account",
+    "version": 2,
+    "path": "/Users/nainicorn/Documents/interface-ai-cas-sk/artifacts/lookup-member-savings-account/v2.json"
+  },
+  "goal": "Look up member 10001 and read their savings account number and balance",
+  "app_id": "mock-bank",
+  "model": "claude-sonnet-5",
+  "finished_at": "2026-08-14T19:07:14.137Z"
+}

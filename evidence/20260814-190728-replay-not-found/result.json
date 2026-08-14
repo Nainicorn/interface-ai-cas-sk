@@ -1,0 +1,72 @@
+{
+  "run_id": "20260814-190728-replay-not-found",
+  "capability": {
+    "id": "lookup-member-savings-account",
+    "version": 2,
+    "name": "Lookup Member Savings Account"
+  },
+  "version": 2,
+  "params_supplied": [
+    "member_id"
+  ],
+  "started_at": "2026-08-14T19:07:28.751Z",
+  "outcome": "BUSINESS_OUTCOME",
+  "business_outcome": {
+    "code": "MEMBER_NOT_FOUND",
+    "message": "No member exists with the given member ID.",
+    "step": 5,
+    "intent": "Submit the member search"
+  },
+  "outputs": {},
+  "steps": [
+    {
+      "index": 0,
+      "intent": "Navigate to login page",
+      "action": "navigate",
+      "outcome": "SUCCESS",
+      "duration_ms": 14
+    },
+    {
+      "index": 1,
+      "intent": "Enter username",
+      "action": "type",
+      "outcome": "SUCCESS",
+      "duration_ms": 14
+    },
+    {
+      "index": 2,
+      "intent": "Enter password",
+      "action": "type",
+      "outcome": "SUCCESS",
+      "duration_ms": 23
+    },
+    {
+      "index": 3,
+      "intent": "Submit sign in form",
+      "action": "click",
+      "outcome": "SUCCESS",
+      "duration_ms": 29
+    },
+    {
+      "index": 4,
+      "intent": "Enter member id to search",
+      "action": "type",
+      "outcome": "SUCCESS",
+      "duration_ms": 10
+    },
+    {
+      "index": 5,
+      "intent": "Submit the member search",
+      "action": "click",
+      "outcome": "BUSINESS_OUTCOME",
+      "business_outcome": {
+        "code": "MEMBER_NOT_FOUND",
+        "message": "No member exists with the given member ID."
+      },
+      "duration_ms": 39
+    }
+  ],
+  "recoveries": [],
+  "failure": null,
+  "duration_ms": 238
+}

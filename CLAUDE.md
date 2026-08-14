@@ -188,11 +188,14 @@ Detail and done-when criteria for each phase: **[PLAN.md §11](PLAN.md).**
 - [x] 0.3 Mock bank app — sibling repo, all 5 states reachable deterministically
 - [x] 0.4 Artifact schema — Zod, roundtrip-tested
 - [x] 0.5 Perception + actions + guardrail — ranked locators, `checkAllowed()` in every primitive
-- [ ] 0.6 **Real discovery run** *(heavy — non-negotiable; evidence saved immediately)* ← **next**
+- [x] 0.6 **Real discovery run** — `claude-sonnet-5` recorded `lookup-member-savings-account`
+      v2 against the live mock bank; replay-verified (10001 → SUCCESS, 99999 →
+      BUSINESS_OUTCOME); evidence committed, incl. the v1 HARD_FAILURE and an escalated run
 - [x] 0.7 Replay executor — 4-way outcome contract, verified against the live target
 - [x] 0.75 Guardrails, expanded — allowlist / risk / redaction, config-driven
 - [ ] 0.8 Escalation & handoff
-- [ ] 0.85 Evidence & logging
+- [~] 0.85 Evidence & logging — `RunLogger` built in 0.6, wired into discovery + replay;
+      escalation wiring remains
 - [ ] 0.9 Operator console + demo UI
 - [ ] 0.95 Stretch: capability interface + approval gating
 - [ ] 1.0 REPORT.md + final evidence pass

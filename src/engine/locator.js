@@ -18,6 +18,46 @@
 import { LocatorResolutionError } from './errors.js';
 
 /**
+ * Compact structural signature for one matched element: its ancestor chain with
+ * significant attributes, plus a snippet of its text.
+ *
+ * Exists because ambiguity is only fixable with information the a11y tree does not
+ * carry. Legacy UIs nest layout tables whose rows all "contain" the same text; the
+ * attribute that distinguishes the real target (a border, a name, a class) lives in
+ * the DOM. Sampling it into the attempt record is what lets the discovery model scope
+ * its next candidate — and what makes a replay HARD_FAILURE debuggable from the
+ * evidence folder alone.
+ */
+async function sampleMatches(locator, matchCount, limit = 3) {
+  const samples = [];
+  for (let i = 0; i < Math.min(matchCount, limit); i += 1) {
+    const signature = await locator
+      .nth(i)
+      .evaluate((el) => {
+        const describe = (node) => {
+          let s = node.tagName.toLowerCase();
+          for (const attr of ['id', 'class', 'name', 'border', 'role', 'action', 'type']) {
+            const value = node.getAttribute?.(attr);
+            if (value) s += `[${attr}="${value}"]`;
+          }
+          return s;
+        };
+        const chain = [];
+        let node = el;
+        while (node && node.tagName && chain.length < 7) {
+          chain.unshift(describe(node));
+          node = node.parentElement;
+        }
+        const text = (el.innerText ?? '').trim().replace(/\s+/g, ' ').slice(0, 60);
+        return `${chain.join(' > ')}${text ? ` — "${text}"` : ''}`;
+      })
+      .catch(() => '<signature unavailable>');
+    samples.push(signature);
+  }
+  return samples;
+}
+
+/**
  * Turn one candidate into a Playwright Locator.
  * `value` is interpreted per kind — see schema/capability.js LocatorCandidateSchema.
  */
@@ -80,11 +120,13 @@ export async function resolveLocator(page, strategy, { timeoutMs = 3000 } = {}) 
       continue;
     }
     if (matchCount > 1) {
-      // Ambiguity is a failure, never a coin flip. See the header note.
+      // Ambiguity is a failure, never a coin flip. See the header note. The samples
+      // show WHERE each match sits so the caller can scope a better candidate.
       attempts.push({
         candidate,
         matchCount,
         reason: `Ambiguous: matched ${matchCount} elements; refusing to guess`,
+        matches: await sampleMatches(locator, matchCount),
       });
       continue;
     }
