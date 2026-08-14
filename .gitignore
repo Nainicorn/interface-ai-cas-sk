@@ -1,0 +1,10 @@
+node_modules/
+.env
+.DS_Store
+*.log
+
+# Runtime state. Artifacts and evidence ARE committed (they're deliverables);
+# the local database and scratch screenshots are not.
+data/*.db
+data/*.db-journal
+tmp/

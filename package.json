@@ -1,0 +1,26 @@
+{
+  "name": "interface-ai-cas",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Computer-use automation system: an LLM discovers a flow once, the recording becomes a typed capability, and deterministic replay invokes it without the model.",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/api/server.js",
+    "dev": "node --env-file-if-exists=.env --watch src/api/server.js",
+    "discover": "node --env-file-if-exists=.env src/cli/discover.js",
+    "replay": "node --env-file-if-exists=.env src/cli/replay.js",
+    "invoke": "node --env-file-if-exists=.env src/cli/invoke.js",
+    "target": "node ../mock-bank/server.js",
+    "test": "node --env-file-if-exists=.env --test"
+  },
+  "engines": {
+    "node": ">=20.12"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.0",
+    "better-sqlite3": "^12.4.1",
+    "express": "^5.1.0",
+    "playwright": "^1.56.0",
+    "zod": "^4.1.12"
+  }
+}
