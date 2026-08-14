@@ -25,13 +25,23 @@ import { captureState, evaluateCondition } from '../engine/perception.js';
 import { PolicyViolation, getTarget } from '../policy/allowlist.js';
 import { classifyRisk } from '../policy/risk.js';
 import { RunLogger, newRunId } from '../evidence/logger.js';
+import { createRun, updateRun } from '../db/sqlite.js';
 import { writeCapability } from './artifact-writer.js';
+import {
+  guardedAgentAction,
+  pauseForIntervention,
+  registerSession,
+  unregisterSession,
+} from './escalation.js';
 import { EmissionSchema, TOOLS } from './tools.js';
 
 export const DISCOVERY_MODEL = 'claude-sonnet-5';
 
 /** Tool names that map 1:1 onto action primitives. */
 const ACTION_TOOLS = new Set(['navigate', 'click', 'read', 'wait_for', 'type']);
+
+/** Extra model turns granted after a human unblocks a paused run. */
+const RESUME_EXTRA_TURNS = 12;
 
 function buildSystemPrompt(target, params) {
   const credentials = Object.values(target.credentials ?? {});
@@ -60,6 +70,7 @@ After each action you receive the page URL, title, accessibility tree, visible t
 ## Recording quality
 - Every recorded step needs an expected_outcome that positively proves the step worked. Never infer success from "the action didn't error".
 - Declare business_outcomes wherever the app has a legitimate non-happy path (e.g. searching for a record that doesn't exist). "No such record" is an answer the caller needs, not a failure — declare how it looks on screen so replay can classify it without guessing.
+- Think past the one path you saw. For each step ask what a legitimate alternative result would look like — record missing, a sub-record the goal targets absent (e.g. the member holds no account of that type), validation rejected, permission denied — and declare those business_outcomes even if this run never hit them. Any legitimate state you leave undeclared will surface as a HARD_FAILURE at replay.
 - Locators are ranked candidate lists, most robust first: role+name, label, placeholder, visible text, tightly-scoped css last. A candidate matching more than one element is rejected at replay, so every candidate must be unique on its page. Legacy UIs nest layout tables: a bare row selector like tr:has-text(...) usually matches several nested rows — scope to a distinguishing ancestor, and give each locator a second candidate as fallback. When a candidate is rejected as ambiguous, the error lists each match's ancestor path with its attributes — pick a distinguishing ancestor attribute from it to scope your next candidate.
 - Record only what you have verified. Before emitting, exercise each output's read using the SAME candidate list and extract_pattern you will record — a candidate list you never executed is a guess, and it is the top cause of replay failure.
 - Never build a recorded locator from the concrete value it extracts (e.g. locating by this run's account number). That embeds one run's data and cannot replay for other inputs. Locate by structure or stable labels instead.
@@ -136,6 +147,10 @@ function resolveTypedValue(input, params) {
  * @param {number} [args.maxTurns] model-call budget before forced escalation
  * @param {boolean} [args.headless]
  * @param {string} [args.runId]
+ * @param {'finish'|'pause'} [args.onEscalation] what an escalation does. 'finish' ends
+ *   the run with an intervention record (CLI mode — the process is about to exit).
+ *   'pause' parks the loop with the browser open and awaits an operator resume
+ *   (server mode — the handoff the brief asks for).
  * @returns {Promise<{status: string, runId: string, evidenceDir: string, turns: number,
  *   usage: object, artifact?: {id: string, version: number, path: string},
  *   escalation?: object}>}
@@ -147,11 +162,13 @@ export async function runDiscovery({
   maxTurns = 24,
   headless = false,
   runId = newRunId('discovery'),
+  onEscalation = 'finish',
 }) {
   const target = getTarget(appId);
   const logger = new RunLogger(runId);
   const client = new Anthropic();
 
+  createRun({ id: runId, kind: 'discovery', appId, goal });
   logger.logEvent('run_start', {
     kind: 'discovery',
     goal,
@@ -165,6 +182,7 @@ export async function runDiscovery({
   const context = await browser.newContext({ viewport: target.viewport ?? { width: 1024, height: 768 } });
   const page = await context.newPage();
   const ctx = { page, target, logger, actor: 'llm' };
+  const session = registerSession({ runId, goal, appId, params, browser, context, page, target, logger });
 
   const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 };
   let turns = 0;
@@ -187,7 +205,24 @@ export async function runDiscovery({
 
     const system = buildSystemPrompt(target, params);
 
-    while (turns < maxTurns) {
+    while (true) {
+      if (turns >= maxTurns) {
+        const reason = `Step budget exhausted after ${maxTurns} turns`;
+        if (onEscalation !== 'pause') {
+          outcome = { status: 'escalated', escalation: { reason } };
+          break;
+        }
+        const note = await parkForOperator(session, { reason, source: 'step_budget' });
+        maxTurns += RESUME_EXTRA_TURNS;
+        const obs = await observe(page, logger, 'resumed', null);
+        messages.push({
+          role: 'user',
+          content: [
+            { type: 'text', text: resumeMessage(note) },
+            ...obs.blocks,
+          ],
+        });
+      }
       turns += 1;
       const response = await client.messages.create({
         model: DISCOVERY_MODEL,
@@ -223,19 +258,25 @@ export async function runDiscovery({
       }
 
       const call = response.content.find((b) => b.type === 'tool_use');
-      const { resultBlocks, isError, terminal } = await dispatch(call, ctx, params, { goal, runId, logger });
 
-      messages.push({
-        role: 'user',
-        content: [
-          {
-            type: 'tool_result',
-            tool_use_id: call.id,
-            content: resultBlocks,
-            ...(isError ? { is_error: true } : {}),
-          },
-        ],
-      });
+      // Escalation is handled in the loop, not in dispatch, because in 'pause' mode it
+      // must suspend THIS loop mid-conversation and pick it back up on resume.
+      if (call.name === 'escalate') {
+        logger.logEvent('escalation', { reason: call.input.reason, attempted: call.input.attempted ?? null });
+        if (onEscalation !== 'pause') {
+          messages.push(toolResult(call.id, [{ type: 'text', text: 'Escalation recorded. A human operator will take over.' }]));
+          outcome = { status: 'escalated', escalation: { reason: call.input.reason, attempted: call.input.attempted ?? null } };
+          break;
+        }
+        const note = await parkForOperator(session, { reason: call.input.reason, source: 'model' });
+        maxTurns += RESUME_EXTRA_TURNS;
+        const obs = await observe(page, logger, 'resumed', null);
+        messages.push(toolResult(call.id, [{ type: 'text', text: resumeMessage(note) }, ...obs.blocks]));
+        continue;
+      }
+
+      const { resultBlocks, isError, terminal } = await dispatch(call, session, ctx, params, { goal, runId, logger });
+      messages.push(toolResult(call.id, resultBlocks, isError));
 
       if (terminal) {
         outcome = terminal;
@@ -243,14 +284,10 @@ export async function runDiscovery({
       }
     }
 
-    if (turns >= maxTurns && !outcome.status.match(/recorded|escalated/)) {
-      outcome = { status: 'escalated', escalation: { reason: `Step budget exhausted after ${maxTurns} turns` } };
-    }
-
     if (outcome.status === 'escalated') {
-      // 0.8 wires this into a live session registry so the browser genuinely stays
-      // open for the operator. In this phase the intervention is recorded and the
-      // session ends with the process.
+      // Only reachable in 'finish' mode (CLI): the process is about to exit, so the
+      // handoff cannot happen live — record the intervention context to evidence
+      // instead. 'pause' mode escalations never exit the loop this way.
       const state = await captureState(page);
       const screenshot = logger.saveScreenshot(state.screenshotBase64, 'escalation');
       logger.saveJson('intervention.json', {
@@ -264,6 +301,7 @@ export async function runDiscovery({
       });
     }
   } finally {
+    unregisterSession(runId);
     await browser.close().catch(() => {});
   }
 
@@ -271,14 +309,40 @@ export async function runDiscovery({
   if (outcome.artifact) result.artifact = outcome.artifact;
   if (outcome.escalation) result.escalation = outcome.escalation;
   logger.saveResult({ ...result, goal, app_id: appId, model: DISCOVERY_MODEL, finished_at: new Date().toISOString() });
+  updateRun(runId, {
+    status: outcome.status,
+    detail: { artifact: outcome.artifact ?? null, turns, usage, evidence_dir: logger.dir },
+  });
   return result;
+}
+
+/** Shorthand for the tool_result user message every dispatched call gets back. */
+function toolResult(toolUseId, content, isError = false) {
+  return {
+    role: 'user',
+    content: [{ type: 'tool_result', tool_use_id: toolUseId, content, ...(isError ? { is_error: true } : {}) }],
+  };
+}
+
+function resumeMessage(note) {
+  return `A human operator intervened${note ? `: ${note}` : ''}. Control is back with you — continue from the current page state.`;
+}
+
+/**
+ * Park the loop for a human. Returns the operator's note once resumed. The browser
+ * and the whole conversation stay live across the wait; that is the entire point.
+ */
+async function parkForOperator(session, { reason, source }) {
+  const { resumed } = await pauseForIntervention(session, { reason, source });
+  const { note } = await resumed;
+  return note;
 }
 
 /**
  * Execute one tool call.
  * @returns {{resultBlocks: object[], isError?: boolean, terminal?: object}}
  */
-async function dispatch(call, ctx, params, { goal, runId, logger }) {
+async function dispatch(call, session, ctx, params, { goal, runId, logger }) {
   const { name, input } = call;
 
   if (ACTION_TOOLS.has(name)) {
@@ -298,15 +362,18 @@ async function dispatch(call, ctx, params, { goal, runId, logger }) {
     }
 
     try {
-      let actionResult;
-      if (name === 'type') {
-        const { value, fieldName } = resolveTypedValue(input, params);
-        actionResult = await performAction(ctx, 'type', { locator: input.locator, value, fieldName });
-      } else if (name === 'read') {
-        actionResult = await performAction(ctx, 'read', { locator: input.locator, pattern: input.pattern });
-      } else {
-        actionResult = await performAction(ctx, name, input);
-      }
+      // Under the session lock, with an ownership check: while a human holds the
+      // session, the agent physically cannot act on the page.
+      const actionResult = await guardedAgentAction(session, () => {
+        if (name === 'type') {
+          const { value, fieldName } = resolveTypedValue(input, params);
+          return performAction(ctx, 'type', { locator: input.locator, value, fieldName });
+        }
+        if (name === 'read') {
+          return performAction(ctx, 'read', { locator: input.locator, pattern: input.pattern });
+        }
+        return performAction(ctx, name, input);
+      });
 
       const note = `Action result: ${JSON.stringify(actionResult).slice(0, 500)}`;
       const { blocks } = await observe(ctx.page, logger, name, note);
@@ -365,14 +432,6 @@ async function dispatch(call, ctx, params, { goal, runId, logger }) {
         status: 'recorded',
         artifact: { id: written.capability.id, version: written.capability.version, path: written.path },
       },
-    };
-  }
-
-  if (name === 'escalate') {
-    logger.logEvent('escalation', { reason: input.reason, attempted: input.attempted ?? null });
-    return {
-      resultBlocks: [{ type: 'text', text: 'Escalation recorded. A human operator will take over.' }],
-      terminal: { status: 'escalated', escalation: { reason: input.reason, attempted: input.attempted ?? null } },
     };
   }
 

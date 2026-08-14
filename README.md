@@ -4,13 +4,11 @@ An LLM drives a legacy web application once to work out how a task is done. That
 recorded as a **typed, versioned capability**. From then on, an AI agent invokes the
 capability through deterministic replay — no model in the decision loop, at a fraction of
 the cost, with a result contract that distinguishes *"no such member"* from *"something
-broke"*.
+broke"*. When either path gets stuck, a human takes over the **same live browser session**
+and hands control back.
 
 > The model discovers. The artifact becomes a reusable capability. Deterministic replay is
 > how a production agent invokes it.
-
-**Status: in progress.** Replay, the artifact schema, and the guardrails are built and
-tested. The discovery agent is next — see [Build status](#build-status).
 
 ---
 
@@ -29,17 +27,21 @@ an intentionally dated, server-rendered "core banking admin" with table layouts,
 ids, and no test IDs anywhere. It is a fixture, not part of this system.
 
 ```bash
-cd ../mock-bank && npm install && npm start    # http://localhost:3001
+cd ../mock-bank && npm install && npm start    # port 3001
 ```
 
 Or, from this repo, `npm run target` does the same thing.
+
+**Running without live services:** replay and the operator console need no LLM key —
+`ANTHROPIC_API_KEY` is used only by `npm run discover`. Schema, policy, and boundary tests
+run with nothing else up; replay and escalation tests expect the mock bank on port 3001.
 
 ### Pointing it at a different application
 
 Nothing in `src/` hardcodes a hostname, a route, or a credential — a test enforces that.
 Add a block to [`config/targets.json`](config/targets.json) with your `base_url`,
 `entry_route`, allowlist, and the **names** of the env vars holding your credentials, then
-pass `--app-id <your key>`. Secrets are referenced by env var name and never enter this
+pass `--app-id <your key>`. Secrets are referenced by env var name and never enter that
 file, an artifact, a transcript, or the database.
 
 ---
@@ -47,23 +49,39 @@ file, an artifact, a transcript, or the database.
 ## Demo path
 
 ```bash
-# 1. Start the target (separate terminal)
+# 0. Start the target (separate terminal)
 npm run target
 
-# 2. Discover: one real LLM-driven run against the live surface  [not yet built]
+# 1. Discover: one real LLM-driven run against the live surface (~1 min, headed Chromium)
 npm run discover -- --app-id mock-bank \
-  --goal "Look up member 10001 and read their savings balance"
+  --goal "Look up member 10001 and read their savings account number and balance" \
+  --param member_id=10001
 
-# 3. Replay the recorded artifact — no LLM, deterministic          [not yet built]
-npm run replay -- --id lookup-savings-balance --params '{"member_id":"10001"}'
+# 2. Replay the recorded artifact — no LLM, deterministic, ~5s
+npm run replay -- --id lookup-member-savings-account --param member_id=10001
 
-# 4. The same capability against a member who does not exist.
-#    Returns BUSINESS_OUTCOME, not an error.
-npm run replay -- --id lookup-savings-balance --params '{"member_id":"99999"}'
+# 3. The same capability against a member who does not exist → BUSINESS_OUTCOME, not an error
+npm run replay -- --id lookup-member-savings-account --param member_id=99999
+
+# 4. A member who exists but holds no savings account → a different BUSINESS_OUTCOME
+npm run replay -- --id lookup-member-savings-account --param member_id=10002
 ```
 
-Until the CLI lands, the replay path is exercised end to end by `npm test` against a
-hand-authored capability in `tests/fixtures/`.
+### Escalation & handoff (the operator console)
+
+```bash
+npm start                 # control plane + operator console on port 3000
+```
+
+Open the console in a browser. Start a run from the goal form with a small max-turns
+budget (or wait for a genuine escalation): the run **pauses with the browser session held
+open**, an intervention appears in the operator panel with the reason and a screenshot,
+and the operator drives the *same live page* through the same action primitives the agent
+uses — then hits **Resume**, and the agent continues from whatever state the human left.
+Every human step lands in the same evidence trail, tagged `actor: "human"`.
+
+The same handoff is scriptable over HTTP (`/api/escalations`), which is how the committed
+evidence run `evidence/*-discovery` with `paused`/`resumed` events was produced.
 
 ---
 
@@ -91,34 +109,40 @@ is sometimes the answer rather than a fault.
 **Ranked locator candidates, never one selector.** The target has no test IDs, so any single
 selector is a guess. Each step carries an ordered candidate list; the first that resolves to
 exactly **one** visible element wins. A candidate matching several elements is *rejected*,
-not silently `.first()`-ed — on this app `tr:has-text("Savings") td:nth-child(4)` matches
-three elements because the layout nests tables, and picking one at random is how automation
-quietly does the wrong thing to the wrong record.
+not silently `.first()`-ed — and the rejection reports each match's ancestor path, which is
+how the discovery model (blind to the DOM) finds the attribute that scopes its next attempt.
 
 **One shared action layer.** The LLM path, the replay path, and the human operator all call
 the same five primitives in `src/engine/actions.js`. The model never "just clicks" — it
-chooses which primitive to invoke, exactly as replay does. `checkAllowed()` runs as the first
-line of each, so policy is not something a caller can forget.
+chooses which primitive to invoke, exactly as replay does. The policy gate runs as the first
+line of each, so no caller can forget it.
+
+**The model never sees a secret.** Credentials are referenced by env var *name*; the harness
+resolves values after the model has chosen where to type. Caller data is typed via named
+parameters (`value_from`), which is also what keeps recordings parameterized.
+
+**Ownership + a mutex, not vibes.** A paused run keeps its Playwright session open. An
+explicit `owner` flag says who *should* act; a per-run async mutex says who *is* acting —
+because Node's single thread does not stop two async handlers interleaving on one page.
 
 **The accessibility tree is the primary perception channel**, not the DOM and not the
-screenshot. It exists on legacy web apps and native desktop apps alike, and it survives the
-markup churn that breaks CSS selectors. Swapping Playwright for an OS accessibility API
-later changes one file.
+screenshot. It exists on legacy web apps and native desktop apps alike. Swapping Playwright
+for an OS accessibility API later changes one file.
 
 **Artifacts are files, not rows.** "Reviewable" is a requirement; a JSON file is diffable in
-a code review, a SQLite row is not. Operational state (runs, interventions) does use SQLite.
+a code review. Operational state (runs, interventions) uses SQLite.
 
 ---
 
 ## Tests
 
 ```bash
-npm test          # 49 tests; replay tests skip cleanly if the target isn't running
+npm test          # 57 tests; needs the mock bank on port 3001 for replay + escalation suites
 ```
 
-Four of them are architectural invariants that fail the suite if a structural claim in this
-README ever stops being true — replay importing an LLM SDK, `src/` importing the target app,
-a hardcoded hostname, or a second caller of the policy gate.
+Four are architectural invariants that fail the suite if a structural claim in this README
+ever stops being true — replay importing an LLM SDK, `src/` importing the target app, a
+hardcoded hostname, or a second caller of the policy gate.
 
 ---
 
@@ -128,27 +152,20 @@ a hardcoded hostname, or a second caller of the policy gate.
 src/schema/     Zod capability schema, artifact store, parameter validation
 src/engine/     perception, ranked locator resolution, action primitives, replay, recovery
 src/policy/     allowlist, risk classification, redaction
-src/agent/      discovery loop and escalation          [in progress]
-src/api/        control plane + operator endpoints      [in progress]
-src/cli/        discover / replay / invoke              [in progress]
+src/agent/      discovery loop, tools, artifact writer, escalation & session ownership
+src/api/        control plane: runs, artifacts, escalations
+src/evidence/   RunLogger — one transcript format for llm / replay / human actors
+src/db/         SQLite: runs + interventions
+src/cli/        discover, replay
+public/         operator console (vanilla JS, no build step)
 config/         targets.json — every automatable app, no secrets
-artifacts/      recorded capabilities, versioned JSON
+artifacts/      recorded capabilities, versioned JSON (genuine model output only)
 evidence/       per-run transcripts, screenshots, results
 ```
 
-Full design rationale in [PLAN.md](PLAN.md); working conventions in [CLAUDE.md](CLAUDE.md).
+`artifacts/lookup-member-savings-account/` v1→v4 is the honest history of the recording:
+v1's weak locator was caught by replay as a `HARD_FAILURE`, v2 fixed locator scoping after
+the engine learned to report ambiguity samples, v4 declares business outcomes the model
+*foresaw* rather than encountered. The evidence folders tell the same story.
 
-## Build status
-
-| Phase | State |
-|---|---|
-| Mock bank target (sibling repo) | ✅ all five runtime states reachable deterministically |
-| Artifact schema + store | ✅ roundtrip-tested |
-| Perception, locators, action primitives | ✅ |
-| Guardrails — allowlist, risk, redaction | ✅ config-driven |
-| Deterministic replay + outcome contract | ✅ verified against the live target |
-| **Discovery agent (real LLM run)** | ⏳ next |
-| Escalation & handoff | ⏳ |
-| Evidence logging | ⏳ |
-| Operator console | ⏳ |
-| REPORT.md | ⏳ |
+Working agreement in [CLAUDE.md](CLAUDE.md); remaining work in [PLAN.md](PLAN.md).
