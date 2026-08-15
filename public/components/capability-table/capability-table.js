@@ -83,13 +83,16 @@ function render(root, artifacts) {
         (a) => `
       <tr data-id="${a.id}">
         <td><a href="#" data-expand="${a.id}"><b>${a.name}</b></a><br><span class="mono muted">${a.id} v${a.version}</span></td>
-        <td>
-          <span class="badge ${a.status}">${a.status}</span> <span class="badge ${a.risk_level}">${a.risk_level}</span>
-          <br><span class="muted mono">${confidenceText(a)}</span>
-          ${a.status === 'draft' ? `<br><button class="small" data-approve="${a.id}" title="Admit to the agent-facing catalog">Approve</button>` : ''}
+        <td class="state-cell">
+          <div class="badges">
+            <span class="badge ${a.status}">${a.status}</span>
+            <span class="badge ${a.risk_level}">${a.risk_level}</span>
+          </div>
+          <div class="muted mono replays">${confidenceText(a)}</div>
+          ${a.status === 'draft' ? `<button class="small secondary" data-approve="${a.id}" title="Admit to the agent-facing catalog">Approve</button>` : ''}
         </td>
         <td class="muted mono">${contractText(a)}</td>
-        <td style="min-width:260px">
+        <td class="replay-cell">
           <div class="row">
             <input class="mono" data-params="${a.id}" placeholder="${paramsPlaceholder(a)}" />
             <button class="small" data-replay="${a.id}" style="flex:0 0 auto">Replay</button>
@@ -151,15 +154,19 @@ export async function mount(root) {
     button.disabled = true;
     result.innerHTML = `<span class="muted">Replaying…</span>`;
     try {
-      const out = await replay(id, parseParams(root.querySelector(`[data-params="${id}"]`).value));
-      // A replay IS a run — its outcome lives in the Runs tab, so this row just
-      // points there for a moment and then clears itself.
-      result.innerHTML = `<span class="badge ${out.outcome}">${out.outcome}</span> <span class="muted">→ details in the Runs tab</span>`;
+      await replay(id, parseParams(root.querySelector(`[data-params="${id}"]`).value));
+      // A replay IS a run: its result lives in the Test runs tab; here only the
+      // replays count in State moves. Refresh now so the count ticks immediately.
       window.dispatchEvent(new CustomEvent('replay-finished'));
-      setTimeout(() => { result.innerHTML = ''; }, 6000);
+      lastKey = '';
+      await refresh();
+      const note = root.querySelector(`[data-result="${id}"]`);
+      if (note) {
+        note.innerHTML = `<span class="muted">Done — result is in Test runs</span>`;
+        setTimeout(() => { if (note.isConnected) note.innerHTML = ''; }, 4000);
+      }
     } catch (err) {
       result.innerHTML = `<span class="error">${err.message}</span>`;
-    } finally {
       button.disabled = false;
     }
   });
