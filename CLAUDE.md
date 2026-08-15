@@ -44,11 +44,22 @@ console in `public/`. API baseline: `output_config: { effort: "medium" }`,
 
 ## Status
 
-**Built and verified (57 tests):** mock bank, artifact schema/store, perception + ranked
+**Built and verified (63 tests):** mock bank, artifact schema/store, perception + ranked
 locators + primitives, guardrails (allowlist/risk/redaction), deterministic replay with the
 four-way contract, the real discovery runs (artifact v1–v4 + evidence), evidence logging,
 escalation & handoff (pause → human on same session → resume, live-demoed), operator
-console, CLIs (`discover`, `replay`).
+console, CLIs (`discover`, `replay`, `invoke`), and both stretch goals: the agent-facing
+capability catalog (approved-only, invoke-by-name) and confidence & approval gating
+(replay writes reliability back into the artifact; humans promote draft → approved).
+Second target: `../mock-bank-spa` (modern SPA fixture, port 3002).
 
-**Remaining:** see [PLAN.md](PLAN.md) — stretch-goal decision, then REPORT.md + final
-evidence pass + submission.
+**Also built (75 tests):** the evaluator flow — targets start empty and are registered at
+runtime (sidebar + Add-app modal, `POST /api/targets`; env-name credentials derived, persona
+values in gitignored `data/creds/`), multi-login personas end-to-end (`persona` on every run
+path + `--persona` CLI flags), per-run reports over HTTP (`/api/runs/:id/report`,
+screenshots by name with traversal guards) and the standalone `report.html`, plus the
+redaction suffix-match fix (env-var field names like `MOCK_BANK_PASSWORD` now redact).
+
+**Remaining:** see [PLAN.md](PLAN.md) — REPORT.md, re-record the evidence folders that
+predate the redaction fix, final evidence pass, submission. The evaluator gets only this
+repo: bring-your-own target, no bundled fixture.
