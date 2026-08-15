@@ -11,6 +11,7 @@ export async function mount(root) {
 
   const list = root.querySelector('[data-apps]');
   const empty = root.querySelector('[data-empty]');
+  const STORAGE_KEY = 'cas-selected-app';
   let targets = [];
   let selectedId = null;
   let lastKey = '';
@@ -19,6 +20,7 @@ export async function mount(root) {
     const target = targets.find((t) => t.app_id === appId);
     if (!target) return;
     selectedId = appId;
+    localStorage.setItem(STORAGE_KEY, appId); // survive a refresh
     for (const item of list.querySelectorAll('[data-app]')) {
       item.classList.toggle('selected', item.dataset.app === appId);
     }
@@ -53,7 +55,10 @@ export async function mount(root) {
         render();
       }
       if (selectId) select(selectId);
-      else if (!selectedId && targets.length) select(targets[0].app_id);
+      else if (!selectedId && targets.length) {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        select(targets.some((t) => t.app_id === stored) ? stored : targets[0].app_id);
+      }
     } catch {
       /* transient poll failure */
     }
