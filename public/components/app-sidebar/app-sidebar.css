@@ -31,3 +31,45 @@
 #app-sidebar .apps .host { color: var(--ink-3); font-size: 11px; }
 
 #app-sidebar .side-empty { padding: 0 8px; font-size: 12.5px; }
+
+#app-sidebar .apps li { position: relative; }
+#app-sidebar .menu-btn {
+  position: absolute;
+  top: 7px;
+  right: 6px;
+  margin: 0;
+  padding: 0 7px;
+  background: transparent;
+  border: none;
+  color: var(--ink-3);
+  font-size: 15px;
+  line-height: 1.4;
+  display: none;
+}
+#app-sidebar .apps li:hover .menu-btn { display: block; }
+#app-sidebar .menu-btn:hover { color: var(--ink); background: transparent; }
+
+#app-sidebar .app-menu {
+  position: fixed;
+  z-index: 30;
+  width: 130px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(63, 54, 38, 0.14);
+  padding: 4px;
+}
+#app-sidebar .app-menu button {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 7px 10px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  font-weight: 500;
+  border-radius: 7px;
+}
+#app-sidebar .app-menu button:hover { background: var(--bg); }
+#app-sidebar .app-menu [data-delete] { color: #a53c20; }

@@ -1,6 +1,6 @@
-<!-- target-modal.html — the Add-app dialog; target-modal.js opens it, collects the form, posts it -->
+<!-- target-modal.html — the Add/Edit-app dialog; target-modal.js opens it, collects the form, posts it -->
 <dialog data-dialog>
-  <h2>Add an app</h2>
+  <h2 data-title>Add an app</h2>
   <p class="muted intro">
     Point the agent at any web app you're allowed to automate — a sandbox or demo,
     never real customer data. Logins stay on this machine in a gitignored file;
@@ -24,14 +24,27 @@
     </div>
   </div>
 
-  <label>Default goal <span class="hint">optional — prefills each run</span></label>
-  <input name="goal" placeholder="Look up a member and read their savings balance" />
-
   <label>Risky paths <span class="hint">optional — require confirmation, e.g. /transfer</span></label>
   <input name="risky" placeholder="" />
 
-  <div class="logins">
-    <div class="logins-head">
+  <div class="rows-section">
+    <div class="rows-head">
+      <h3>Saved goals <span class="hint">named tests you can pick per run</span></h3>
+      <button class="small secondary" data-add-goal type="button">+ Add goal</button>
+    </div>
+    <div data-goals></div>
+  </div>
+
+  <template data-goal-row>
+    <div class="goal-row row">
+      <div class="g-name"><input name="g-name" placeholder="name, e.g. balance check" /></div>
+      <div><input name="g-text" placeholder="goal — e.g. Look up member 10001 and read their savings balance" /></div>
+      <button class="small secondary remove" data-remove-row type="button" title="Remove this goal">×</button>
+    </div>
+  </template>
+
+  <div class="rows-section">
+    <div class="rows-head">
       <h3>Logins</h3>
       <button class="small secondary" data-add-persona type="button">+ Add login</button>
     </div>

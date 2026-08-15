@@ -13,11 +13,11 @@ export async function getJson(url) {
   return res.json();
 }
 
-export async function postJson(url, body) {
+export async function sendJson(method, url, body) {
   const res = await fetch(url, {
-    method: 'POST',
+    method,
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -27,6 +27,10 @@ export async function postJson(url, body) {
   }
   return data;
 }
+
+export const postJson = (url, body) => sendJson('POST', url, body);
+export const putJson = (url, body) => sendJson('PUT', url, body);
+export const deleteJson = (url) => sendJson('DELETE', url);
 
 /** "member_id=10001 branch=riverside" → { member_id: '10001', branch: 'riverside' } */
 export function parseParams(text) {

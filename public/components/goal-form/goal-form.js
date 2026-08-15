@@ -13,11 +13,14 @@ export async function mount(root) {
   const form = root.querySelector('[data-form]');
   const appName = root.querySelector('[data-app-name]');
   const goalInput = root.querySelector('[name=goal]');
+  const goalsWrap = root.querySelector('[data-goals-wrap]');
+  const goalsSelect = root.querySelector('[name=saved_goal]');
   const personaWrap = root.querySelector('[data-persona-wrap]');
   const personaSelect = root.querySelector('[name=persona]');
   const status = root.querySelector('[data-status]');
 
   let target = null;
+  let savedGoals = [];
   let prefilled = '';
 
   window.addEventListener('app-selected', (event) => {
@@ -26,9 +29,14 @@ export async function mount(root) {
     form.hidden = false;
     appName.textContent = target.display_name;
 
-    // Prefill the goal from the app's default, but never clobber the user's typing.
+    // Saved goals are named tests — picking one fills the goal box, still editable.
+    savedGoals = target.goals ?? [];
+    goalsWrap.hidden = savedGoals.length === 0;
+    goalsSelect.innerHTML = savedGoals.map((g, i) => `<option value="${i}">${esc(g.name)}</option>`).join('');
+
+    // Prefill from the first saved goal, but never clobber the user's typing.
     if (!goalInput.value || goalInput.value === prefilled) {
-      goalInput.value = target.goal ?? '';
+      goalInput.value = savedGoals[0]?.text ?? '';
       prefilled = goalInput.value;
     }
 
@@ -37,6 +45,19 @@ export async function mount(root) {
     personaSelect.innerHTML = personas
       .map((p) => `<option value="${esc(p.name)}">${esc(p.name)}${p.note ? ` — ${esc(p.note)}` : ''}</option>`)
       .join('');
+  });
+
+  goalsSelect.addEventListener('change', () => {
+    const picked = savedGoals[Number(goalsSelect.value)];
+    if (!picked) return;
+    goalInput.value = picked.text;
+    prefilled = picked.text;
+  });
+
+  window.addEventListener('apps-empty', () => {
+    target = null;
+    noApp.hidden = false;
+    form.hidden = true;
   });
 
   root.querySelector('button').addEventListener('click', async () => {
