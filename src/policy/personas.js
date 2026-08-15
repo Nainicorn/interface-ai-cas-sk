@@ -10,7 +10,7 @@
  * api/targets.js (listPersonas for the UI, savePersonas at registration).
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
@@ -49,11 +49,11 @@ export function loadPersonasFile(appId, { credsDir = CREDS_DIR } = {}) {
   return PersonasFileSchema.parse(JSON.parse(readFileSync(file, 'utf8')));
 }
 
-/** Persona names + notes for the UI. Never values. */
+/** Persona names, usernames, and notes for the UI. Never passwords. */
 export function listPersonas(appId, opts = {}) {
   const file = loadPersonasFile(appId, opts);
   if (!file) return [];
-  return Object.entries(file.personas).map(([name, p]) => ({ name, note: p.note ?? null }));
+  return Object.entries(file.personas).map(([name, p]) => ({ name, username: p.username, note: p.note ?? null }));
 }
 
 /**
@@ -64,7 +64,7 @@ export function listPersonas(appId, opts = {}) {
  */
 export function resolvePersona(target, personaName, opts = {}) {
   const file = loadPersonasFile(target.app_id, opts);
-  if (!file) {
+  if (!file || Object.keys(file.personas).length === 0) {
     if (!personaName) return null;
     const err = new Error(`No personas configured for "${target.app_id}".`);
     err.status = 400;
@@ -108,4 +108,9 @@ export function savePersonas(appId, personas, { credsDir = CREDS_DIR } = {}) {
   mkdirSync(path.dirname(file), { recursive: true });
   writeFileSync(file, `${JSON.stringify({ personas }, null, 2)}\n`, { mode: 0o600 });
   return Object.keys(personas);
+}
+
+/** Remove a target's personas file (app deleted, or all logins removed). */
+export function removePersonasFile(appId, { credsDir = CREDS_DIR } = {}) {
+  rmSync(credsPath(appId, credsDir), { force: true });
 }

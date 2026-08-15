@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, it } from 'node:test';
 import { applyPersona, listPersonas, resolvePersona, savePersonas } from '../src/policy/personas.js';
-import { deriveAppId, deriveEnvNames, registerTarget } from '../src/policy/register-target.js';
+import { deleteTarget, deriveAppId, deriveEnvNames, registerTarget, updateTarget } from '../src/policy/register-target.js';
 
 const scratch = () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'cas-targets-'));
@@ -143,5 +143,46 @@ describe('personas', () => {
     const target = { app_id: 'legacy-app', credentials: { username_env: 'X_USERNAME', password_env: 'X_PASSWORD' } };
     assert.equal(resolvePersona(target, undefined, { credsDir }), null);
     assert.equal(applyPersona(target, undefined, { credsDir }), null);
+  });
+});
+
+describe('update & delete', () => {
+  it('update keeps a stored password when the submitted one is empty', () => {
+    const { configPath, credsDir } = scratch();
+    registerTarget(PAYLOAD, { configPath, credsDir });
+    const { personas } = updateTarget(
+      'acme-banking-sandbox',
+      { ...PAYLOAD, personas: { teller: { username: 'teller07', password: '' } } },
+      { configPath, credsDir },
+    );
+    assert.deepEqual(personas, ['teller']);
+    const target = { app_id: 'acme-banking-sandbox', credentials: deriveEnvNames('acme-banking-sandbox') };
+    assert.equal(resolvePersona(target, 'teller', { credsDir }).password, 'hunter2-teller');
+  });
+
+  it('update refuses a NEW login with no password', () => {
+    const { configPath, credsDir } = scratch();
+    registerTarget(PAYLOAD, { configPath, credsDir });
+    assert.throws(
+      () =>
+        updateTarget(
+          'acme-banking-sandbox',
+          { ...PAYLOAD, personas: { fresh: { username: 'x', password: '' } } },
+          { configPath, credsDir },
+        ),
+      (err) => err.status === 400,
+    );
+  });
+
+  it('saved goals land on the target; delete removes target and creds', () => {
+    const { configPath, credsDir } = scratch();
+    registerTarget({ ...PAYLOAD, goals: { 'balance check': 'Read the savings balance' } }, { configPath, credsDir });
+    const written = JSON.parse(readFileSync(configPath, 'utf8'))['acme-banking-sandbox'];
+    assert.equal(written.goals['balance check'], 'Read the savings balance');
+
+    deleteTarget('acme-banking-sandbox', { configPath, credsDir });
+    assert.equal(JSON.parse(readFileSync(configPath, 'utf8'))['acme-banking-sandbox'], undefined);
+    assert.deepEqual(listPersonas('acme-banking-sandbox', { credsDir }), []);
+    assert.throws(() => deleteTarget('acme-banking-sandbox', { configPath, credsDir }), (err) => err.status === 404);
   });
 });
