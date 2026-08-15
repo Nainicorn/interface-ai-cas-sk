@@ -17,7 +17,7 @@
 
 #app-sidebar .apps { list-style: none; margin: 0; padding: 0; }
 #app-sidebar .apps li {
-  padding: 9px 10px;
+  padding: 9px 30px 9px 10px; /* right gutter reserved for the ⋯ menu button */
   border-radius: 10px;
   cursor: pointer;
   display: flex;
@@ -27,7 +27,7 @@
 #app-sidebar .apps li:hover { background: rgba(31, 30, 29, 0.05); }
 #app-sidebar .apps li.selected { background: var(--accent-soft); }
 #app-sidebar .apps li.selected .name { color: var(--accent-strong); }
-#app-sidebar .apps .name { font-weight: 600; }
+#app-sidebar .apps .name { font-weight: 600; overflow-wrap: anywhere; }
 #app-sidebar .apps .host { color: var(--ink-3); font-size: 11px; }
 
 #app-sidebar .side-empty { padding: 0 8px; font-size: 12.5px; }
