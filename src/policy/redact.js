@@ -16,12 +16,20 @@ const ALWAYS_REDACT = ['password', 'passwd', 'secret', 'token', 'api_key', 'apik
 
 const norm = (name) => String(name).toLowerCase().replace(/[_-]/g, '');
 
-/** Whether a field name is sensitive for this policy. */
+/**
+ * Whether a field name is sensitive for this policy.
+ * Suffix match, not equality: the replay path logs env-var names like
+ * MOCK_BANK_PASSWORD, which must hit the "password" rule. Over-matching
+ * redacts too much — the safe direction.
+ */
 export function isSensitive(fieldName, policy = {}) {
   if (!fieldName) return false;
   const target = norm(fieldName);
   const configured = policy.redact_fields ?? [];
-  return [...ALWAYS_REDACT, ...configured].some((candidate) => norm(candidate) === target);
+  return [...ALWAYS_REDACT, ...configured].some((candidate) => {
+    const c = norm(candidate);
+    return target === c || target.endsWith(c);
+  });
 }
 
 /**
