@@ -36,35 +36,34 @@ nothing else up.
 
 ## 1. Register your application
 
-In the console sidebar, hit **+ Add app**: friendly name, URL, and optionally a default
-goal, allowed paths, and one or more logins. That's the whole form. The same thing over
-HTTP:
+In the console sidebar, hit **+ Add app**: friendly name, URL, and optionally saved
+goals (named tests), allowed paths, and one or more logins. That's the whole form. Each
+app row's **⋯ menu** edits or deletes it later. The same thing over HTTP:
 
 ```bash
 curl -X POST localhost:3000/api/targets -H 'content-type: application/json' -d '{
-  "display_name": "Acme Banking Sandbox",
-  "base_url": "https://sandbox.example.com",
+  "display_name": "The Internet",
+  "base_url": "https://the-internet.herokuapp.com",
   "entry_route": "/login",
-  "goal": "Look up a member by ID and read their savings balance",
-  "allowlist": { "route_prefixes": ["/login", "/search", "/member"] },
-  "risky_route_patterns": ["/transfer"],
-  "personas": {
-    "admin":  { "username": "admin01",  "password": "example-only" },
-    "teller": { "username": "teller07", "password": "example-only" }
-  }
+  "goals": { "login test": "Log in and read the message shown in the secure area" },
+  "personas": { "tom": { "username": "tomsmith", "password": "SuperSecretPassword!" } }
 }'
 ```
 
-What lands where — and what never does:
+(`PUT /api/targets/<app_id>` edits, `DELETE /api/targets/<app_id>` removes.)
+
+Where everything lives — registration is dynamic, but nothing lives in code:
 
 - [`config/targets.json`](config/targets.json) gets the target's *shape*: name, URL,
-  allowlist, risky routes, and the **names** of the env vars that will hold credentials
-  (derived from the app id — the registration payload cannot carry a `credentials` key).
-  A boundary test fails the suite if a secret value ever appears in that file, and the
-  writer re-asserts that same shape before every write.
+  allowlist, risky routes, saved goals, and the **names** of the env vars that will hold
+  credentials (derived from the app id — the payload cannot carry a `credentials` key).
+  This file is the reviewable safety surface: a boundary test fails the suite if a secret
+  value ever appears in it, and the writer re-asserts that same shape before every write.
 - `data/creds/<app_id>.json` gets the personas (the logins) — **gitignored**, written
   `0600`. Values are injected into the env names at browser launch and redacted from
   every transcript, artifact, and log.
+- Runs and interventions live in a local SQLite database under `data/` (gitignored);
+  recordings land in `artifacts/`, per-run evidence in `evidence/`.
 - The agent can never leave your app's origin — that's structural. Allowed paths default
   to `/` (the whole app) for a friction-free start; narrow them whenever you want, and
   mark risky paths to require confirmation. Action types default to the five primitives
@@ -77,14 +76,8 @@ a crash.
 
 ## 2. Record a test run
 
-From the console: **New test run** → pick the target, goal (prefilled from
-`default_goal`), persona, and named params → watch it happen in the live viewer. Or:
-
-```bash
-npm run discover -- --app-id acme-banking-sandbox \
-  --goal "Look up member 12345 and read their savings balance" \
-  --persona teller --param member_id=12345
-```
+From the console: pick a saved goal and a login in the prompt box, add params if the
+task needs them, hit **Run** — and watch it happen in the live viewer.
 
 One real LLM-driven run (`claude-sonnet-5`, headed Chromium, ~1 min). The recording is the
 typed artifact at `artifacts/<capability-id>/v1.json` — ordered steps, ranked locator
@@ -93,9 +86,8 @@ no code is generated from it.
 
 ## 3. Replay it — deterministically
 
-```bash
-npm run replay -- --id <capability-id> --param member_id=12345 --persona teller
-```
+Capabilities tab → **Replay** (params + login are per-replay choices). The result lands
+in Test runs; the capability's replays count ticks up in place.
 
 No model in the loop — stable locators, explicit waits, checkpoint verification, ~5s.
 Every replay resolves to one of the four outcomes below, stores a full report, and writes
@@ -109,6 +101,39 @@ tab: outcome banner, configuration (app, goal, login, params, capability), the
 step-by-step trail, the screenshot gallery, and token usage for discovery runs. The page
 is a read-only projection of `evidence/<run-id>/` — the transcript, screenshots, and
 result written as the run happened — and keeps updating while a run is live.
+
+## Prefer the terminal? The same flow, CLI end to end
+
+The CLI drives the same engine through the same gates — runs made here appear in the
+console too. Worked example against a public practice site:
+
+```bash
+npm start                                  # control plane (registration + catalog are HTTP)
+
+# 1. Register (same payload the modal sends — see section 1 for the curl)
+
+# 2. Record: one real LLM run, headed Chromium. The CLI takes any free-text goal.
+npm run discover -- --app-id the-internet \
+  --goal "Log in and read the message shown in the secure area" \
+  --persona tom
+#    → prints status, run id, evidence folder, token usage, and the capability id
+
+# 3. Inspect the recording and the evidence
+cat artifacts/<capability-id>/v1.json
+ls evidence/<run-id>/                      # transcript.jsonl, screenshots, result.json
+
+# 4. Replay — no LLM. Exit 0 = SUCCESS or BUSINESS_OUTCOME, 1 = HARD_FAILURE.
+npm run replay -- --id <capability-id> --persona tom --headed
+
+# 5. The agent's-eye view: approve, then invoke by name over HTTP
+npm run invoke                             # catalog — empty until something is approved
+curl -X PATCH localhost:3000/api/artifacts/<capability-id>/status \
+  -H 'content-type: application/json' -d '{"status":"approved"}'
+npm run invoke -- --id <capability-id>     # typed args in, four-way result out
+
+# 6. The report for any run, CLI-made or not:
+#    open localhost:3000/report.html?run=<run-id> — or read evidence/<run-id>/result.json
+```
 
 ### Proof of work
 
