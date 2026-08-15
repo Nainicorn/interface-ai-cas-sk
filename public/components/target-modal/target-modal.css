@@ -15,7 +15,8 @@
 #target-modal .logins { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 10px; }
 #target-modal .logins-head { display: flex; align-items: center; justify-content: space-between; }
 #target-modal .logins-head h3 { margin: 0; font-size: 13px; }
-#target-modal .persona-row { margin-top: 8px; }
+#target-modal .persona-row { margin-top: 8px; align-items: center; }
+#target-modal .persona-row .remove { flex: 0 0 auto; padding: 4px 10px; line-height: 1.2; }
 
 #target-modal .actions { display: flex; justify-content: flex-end; gap: 10px; }
 #target-modal .actions button { margin-top: 16px; }

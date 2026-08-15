@@ -102,26 +102,33 @@ function render(root, artifacts) {
       </tr>
       <tr class="expand" data-details="${a.id}" hidden><td colspan="4"></td></tr>`,
       )
-      .join('') || `<tr><td colspan="4" class="muted">No capabilities recorded yet — run a discovery first.</td></tr>`;
+      .join('') || `<tr><td colspan="4" class="muted">No capabilities for this app yet — record one with a run above.</td></tr>`;
 }
 
 export async function mount(root) {
   root.innerHTML = await (await fetch('/components/capability-table/capability-table.html')).text();
 
   let lastKey = '';
+  let selectedApp = null;
   const refresh = async () => {
     try {
       const artifacts = await fetchArtifacts();
-      const key = JSON.stringify(artifacts.map((a) => [a.id, a.version, a.status, a.confidence?.runs ?? 0]));
+      // The catalog is scoped to the app selected in the sidebar.
+      const scoped = selectedApp ? artifacts.filter((a) => a.app_id === selectedApp) : artifacts;
+      const key = JSON.stringify([selectedApp, scoped.map((a) => [a.id, a.version, a.status, a.confidence?.runs ?? 0])]);
       if (key === lastKey) return; // don't clobber inputs/results while the user works
       lastKey = key;
-      render(root, artifacts);
+      render(root, scoped);
     } catch {
       /* transient poll failure */
     }
   };
   refresh();
   setInterval(refresh, 5000);
+  window.addEventListener('app-selected', (event) => {
+    selectedApp = event.detail.target.app_id;
+    refresh();
+  });
 
   root.addEventListener('click', async (event) => {
     const expand = event.target.closest('[data-expand]');

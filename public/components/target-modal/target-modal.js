@@ -78,6 +78,10 @@ export async function mount(root) {
   root.querySelector('[data-save]').addEventListener('click', save);
   root.querySelector('[data-cancel]').addEventListener('click', () => dialog.close());
   root.querySelector('[data-add-persona]').addEventListener('click', addPersonaRow);
+  personas.addEventListener('click', (event) => {
+    const remove = event.target.closest('[data-remove-row]');
+    if (remove) remove.closest('.persona-row').remove();
+  });
   window.addEventListener('open-target-modal', () => {
     if (!dialog.open) dialog.showModal();
   });

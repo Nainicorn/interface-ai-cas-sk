@@ -42,20 +42,23 @@ function render(root, runs) {
     .join('');
 
   root.querySelector('tbody').innerHTML =
-    rows || `<tr><td colspan="6" class="muted">No runs yet — start one above.</td></tr>`;
+    rows || `<tr><td colspan="6" class="muted">No runs for this app yet — start one above.</td></tr>`;
 }
 
 export async function mount(root) {
   root.innerHTML = await (await fetch('/components/run-list/run-list.html')).text();
 
   let lastKey = '';
+  let selectedApp = null;
   const refresh = async () => {
     try {
       const runs = await getJson('/api/runs');
-      const key = JSON.stringify(runs.map((r) => [r.id, r.status, r.owner, r.live]));
+      // The list is scoped to the app selected in the sidebar.
+      const scoped = selectedApp ? runs.filter((r) => r.app_id === selectedApp) : runs;
+      const key = JSON.stringify([selectedApp, scoped.map((r) => [r.id, r.status, r.owner, r.live])]);
       if (key === lastKey) return;
       lastKey = key;
-      render(root, runs);
+      render(root, scoped);
     } catch {
       /* transient poll failure */
     }
@@ -64,4 +67,8 @@ export async function mount(root) {
   setInterval(refresh, 2000);
   window.addEventListener('run-started', refresh);
   window.addEventListener('replay-finished', refresh);
+  window.addEventListener('app-selected', (event) => {
+    selectedApp = event.detail.target.app_id;
+    refresh();
+  });
 }
