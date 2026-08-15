@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "id": "lookup-member-savings-account",
-  "name": "Lookup Member Savings Account Number and Balance",
-  "version": 4,
-  "status": "approved",
-  "description": "Logs into Corevance Core Banking Admin, searches for a member by ID, and extracts their savings account number and balance from the Member Detail page.",
+  "id": "lookup-member-account-count",
+  "name": "Look up member accounts and count",
+  "version": 1,
+  "status": "draft",
+  "description": "Signs in to Corevance Core Banking Admin, looks up a member by ID, and returns the member's list of accounts (one row per account) from which the number of accounts held can be determined.",
   "target": {
     "app_id": "mock-bank",
     "entry_route": "/login",
@@ -16,7 +16,7 @@
       "member_id": {
         "type": "string",
         "description": "Numeric member identifier to look up",
-        "pattern": "^[0-9]+$"
+        "pattern": "^\\d+$"
       }
     },
     "required": [
@@ -27,18 +27,13 @@
   "output_schema": {
     "type": "object",
     "properties": {
-      "savings_account_number": {
+      "accounts_listing": {
         "type": "string",
-        "description": "The member's savings account number (e.g. SAV-10001-01)"
-      },
-      "savings_balance": {
-        "type": "string",
-        "description": "The current balance of the member's savings account, formatted with currency symbol"
+        "description": "Tab/newline separated text: header row (Account Number, Type, Opened, Balance) followed by one data row per account the member holds. The number of accounts equals the number of data rows (total lines minus the header line)."
       }
     },
     "required": [
-      "savings_account_number",
-      "savings_balance"
+      "accounts_listing"
     ],
     "additionalProperties": false
   },
@@ -46,7 +41,7 @@
   "steps": [
     {
       "index": 0,
-      "intent": "Go to login page",
+      "intent": "Go to the login page",
       "action": "navigate",
       "url": "/login",
       "expected_outcome": {
@@ -59,7 +54,7 @@
     },
     {
       "index": 1,
-      "intent": "Enter username",
+      "intent": "Enter operator username",
       "action": "type",
       "locator": {
         "description": "Username field",
@@ -81,7 +76,7 @@
       "value_from_env": "MOCK_BANK_USERNAME",
       "expected_outcome": {
         "type": "element_exists",
-        "value": "input[value]",
+        "value": "input",
         "timeout_ms": 5000
       },
       "business_outcomes": [],
@@ -89,7 +84,7 @@
     },
     {
       "index": 2,
-      "intent": "Enter password",
+      "intent": "Enter operator password",
       "action": "type",
       "locator": {
         "description": "Password field",
@@ -111,7 +106,7 @@
       "value_from_env": "MOCK_BANK_PASSWORD",
       "expected_outcome": {
         "type": "element_exists",
-        "value": "input[type='password']",
+        "value": "input",
         "timeout_ms": 5000
       },
       "business_outcomes": [],
@@ -119,7 +114,7 @@
     },
     {
       "index": 3,
-      "intent": "Submit login form",
+      "intent": "Submit sign-in form",
       "action": "click",
       "locator": {
         "description": "Sign In button",
@@ -129,13 +124,13 @@
             "value": "Sign In",
             "role": "button",
             "exact": true,
-            "confidence": 0.95
+            "confidence": 0.9
           }
         ]
       },
       "expected_outcome": {
-        "type": "url_contains",
-        "value": "/search",
+        "type": "text_visible",
+        "value": "Member Search",
         "timeout_ms": 5000
       },
       "business_outcomes": [],
@@ -143,10 +138,10 @@
     },
     {
       "index": 4,
-      "intent": "Enter member ID to search",
+      "intent": "Enter the member ID to search for",
       "action": "type",
       "locator": {
-        "description": "Member ID search field",
+        "description": "Member ID field",
         "candidates": [
           {
             "kind": "placeholder",
@@ -165,7 +160,7 @@
       "value_from": "member_id",
       "expected_outcome": {
         "type": "element_exists",
-        "value": "input[value]",
+        "value": "input",
         "timeout_ms": 5000
       },
       "business_outcomes": [],
@@ -173,7 +168,7 @@
     },
     {
       "index": 5,
-      "intent": "Submit member search",
+      "intent": "Submit the member search",
       "action": "click",
       "locator": {
         "description": "Search button",
@@ -183,7 +178,7 @@
             "value": "Search",
             "role": "button",
             "exact": true,
-            "confidence": 0.95
+            "confidence": 0.9
           }
         ]
       },
@@ -197,82 +192,58 @@
           "code": "MEMBER_NOT_FOUND",
           "detect": {
             "type": "text_visible",
-            "value": "No member found",
+            "value": "Member not found",
             "timeout_ms": 5000
           },
-          "message": "No member exists with the given member ID."
+          "message": "No member record exists for the given member ID."
         }
       ],
       "risk": "safe"
     },
     {
       "index": 6,
-      "intent": "Read the savings account number from the accounts table",
+      "intent": "Read the member's accounts table to determine how many accounts they hold",
       "action": "read",
       "locator": {
-        "description": "Savings account number cell",
+        "description": "Accounts table (innermost table, no nested tables)",
         "candidates": [
           {
             "kind": "css",
-            "value": "table[border=\"1\"] tr:has-text('Savings') td:first-child",
+            "value": "table:has-text('Account Number'):not(:has(table))",
             "exact": false,
-            "confidence": 0.7
+            "confidence": 0.6
           }
         ]
       },
       "expected_outcome": {
-        "type": "element_exists",
-        "value": "table[border=\"1\"] tr:has-text('Savings') td:first-child",
+        "type": "text_visible",
+        "value": "Account Number",
         "timeout_ms": 5000
       },
       "business_outcomes": [
         {
-          "code": "NO_SAVINGS_ACCOUNT",
+          "code": "NO_ACCOUNTS",
           "detect": {
             "type": "text_absent",
-            "value": "Savings",
-            "timeout_ms": 5000
+            "value": "Account Number",
+            "timeout_ms": 3000
           },
-          "message": "The member does not hold a savings account."
+          "message": "The member record exists but has no accounts listed."
         }
       ],
-      "extract_as": "savings_account_number",
-      "risk": "safe"
-    },
-    {
-      "index": 7,
-      "intent": "Read the savings account balance from the accounts table",
-      "action": "read",
-      "locator": {
-        "description": "Savings balance cell",
-        "candidates": [
-          {
-            "kind": "css",
-            "value": "table[border=\"1\"] tr:has-text('Savings') td:last-child",
-            "exact": false,
-            "confidence": 0.7
-          }
-        ]
-      },
-      "expected_outcome": {
-        "type": "element_exists",
-        "value": "table[border=\"1\"] tr:has-text('Savings') td:last-child",
-        "timeout_ms": 5000
-      },
-      "business_outcomes": [],
-      "extract_as": "savings_balance",
+      "extract_as": "accounts_listing",
       "risk": "safe"
     }
   ],
   "success_checkpoint": {
     "type": "text_visible",
-    "value": "SAV-",
+    "value": "Accounts",
     "timeout_ms": 5000
   },
   "created_from": {
-    "run_id": "20260814-193734-discovery",
+    "run_id": "20260814-205335-discovery",
     "model": "claude-sonnet-5",
-    "recorded_at": "2026-08-14T19:39:01.572Z"
+    "recorded_at": "2026-08-14T20:57:18.642Z"
   },
   "redaction_policy": {
     "redact_fields": [
@@ -287,9 +258,9 @@
     ]
   },
   "confidence": {
-    "runs": 3,
-    "successes": 3,
-    "last_outcome": "SUCCESS",
-    "updated_at": "2026-08-15T20:24:44.653Z"
+    "runs": 0,
+    "successes": 0,
+    "last_outcome": null,
+    "updated_at": null
   }
 }

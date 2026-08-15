@@ -1,0 +1,73 @@
+{
+  "run_id": "20260814-205735-replay",
+  "capability": {
+    "id": "lookup-member-account-count",
+    "version": 1,
+    "name": "Look up member accounts and count"
+  },
+  "version": 1,
+  "params_supplied": [
+    "member_id"
+  ],
+  "started_at": "2026-08-14T20:57:35.443Z",
+  "outcome": "SUCCESS",
+  "outputs": {
+    "accounts_listing": "Account Number\tType\tOpened\tBalance\nCHK-10001-01\tChecking\t2014-03-11\t$2450.75\nSAV-10001-01\tSavings\t2016-07-02\t$18320.40"
+  },
+  "steps": [
+    {
+      "index": 0,
+      "intent": "Go to the login page",
+      "action": "navigate",
+      "outcome": "SUCCESS",
+      "duration_ms": 15
+    },
+    {
+      "index": 1,
+      "intent": "Enter operator username",
+      "action": "type",
+      "outcome": "SUCCESS",
+      "duration_ms": 13
+    },
+    {
+      "index": 2,
+      "intent": "Enter operator password",
+      "action": "type",
+      "outcome": "SUCCESS",
+      "duration_ms": 22
+    },
+    {
+      "index": 3,
+      "intent": "Submit sign-in form",
+      "action": "click",
+      "outcome": "SUCCESS",
+      "duration_ms": 33
+    },
+    {
+      "index": 4,
+      "intent": "Enter the member ID to search for",
+      "action": "type",
+      "outcome": "SUCCESS",
+      "duration_ms": 4
+    },
+    {
+      "index": 5,
+      "intent": "Submit the member search",
+      "action": "click",
+      "outcome": "SUCCESS",
+      "duration_ms": 5038
+    },
+    {
+      "index": 6,
+      "intent": "Read the member's accounts table to determine how many accounts they hold",
+      "action": "read",
+      "extracted_to": "accounts_listing",
+      "outcome": "SUCCESS",
+      "duration_ms": 9
+    }
+  ],
+  "recoveries": [],
+  "business_outcome": null,
+  "failure": null,
+  "duration_ms": 5269
+}
