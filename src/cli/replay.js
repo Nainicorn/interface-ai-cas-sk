@@ -4,7 +4,7 @@
  *   npm run replay -- --id lookup-member-savings-account --param member_id=10001
  *
  * Flags: --id (required), --param k=v (repeatable), --version N (latest if omitted),
- *        --headed (watch it), --run-id <id>
+ *        --persona <name>, --headed (watch it), --run-id <id>
  *
  * Exit codes: 0 for SUCCESS and BUSINESS_OUTCOME (both are answers), 1 for HARD_FAILURE.
  */
@@ -13,6 +13,8 @@ import { replayCapability } from '../engine/replay.js';
 import { loadCapability } from '../schema/store.js';
 import { createRun, updateRun } from '../db/sqlite.js';
 import { RunLogger, newRunId } from '../evidence/logger.js';
+import { getTarget } from '../policy/allowlist.js';
+import { applyPersona } from '../policy/personas.js';
 
 function parseArgs(argv) {
   const args = { params: {}, headless: true };
@@ -30,6 +32,9 @@ function parseArgs(argv) {
       }
       case '--version':
         args.version = Number(argv[++i]);
+        break;
+      case '--persona':
+        args.persona = argv[++i];
         break;
       case '--headed':
         args.headless = false;
@@ -49,6 +54,10 @@ try {
   const args = parseArgs(process.argv.slice(2));
   const capability = await loadCapability(args.id, args.version);
   console.log(`Replaying ${capability.id} v${capability.version} (no LLM)…`);
+
+  // Persona values land in the declared env names before the browser launches.
+  const appliedPersona = applyPersona(getTarget(capability.target.app_id), args.persona);
+  if (appliedPersona) console.log(`Persona:  ${appliedPersona}`);
 
   const runId = args.runId ?? newRunId('replay');
   createRun({ id: runId, kind: 'replay', appId: capability.target.app_id, status: 'running' });

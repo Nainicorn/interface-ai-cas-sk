@@ -1,17 +1,16 @@
 /**
- * Artifacts over HTTP: browse recorded capabilities and replay one with typed params.
+ * Artifacts over HTTP — the operator's surface: browse recorded capabilities, replay
+ * one with typed params, and perform the one human act the system never grants itself:
+ * promoting a draft to approved (which is what admits it to the agent-facing catalog
+ * and unlocks unattended replay for risky capabilities).
  *
- * Replay here is the same no-LLM executor the CLI uses; the route just adds a run row
- * and an evidence folder so console-triggered replays are as auditable as any other.
- *
- * Hands off to: schema/store.js, engine/replay.js.
+ * Hands off to: schema/store.js, api/run-replay.js, policy/risk.js (the gates that read `status`).
  */
 
 import { Router } from 'express';
-import { replayCapability } from '../engine/replay.js';
-import { listCapabilities, loadCapability } from '../schema/store.js';
-import { createRun, updateRun } from '../db/sqlite.js';
-import { RunLogger, newRunId } from '../evidence/logger.js';
+import { CAPABILITY_STATUSES } from '../schema/enums.js';
+import { listCapabilities, loadCapability, updateCapability } from '../schema/store.js';
+import { runReplay } from './run-replay.js';
 
 const router = Router();
 
@@ -34,36 +33,44 @@ router.get('/:id', async (req, res, next) => {
 });
 
 /**
- * Deterministic replay. Body: { params: {...}, version?: n }
+ * Deterministic replay. Body: { params: {...}, version?: n, persona?: name }
  * Responds with the full four-way outcome — BUSINESS_OUTCOME is a 200, because it is
  * an answer, not an error.
  */
 router.post('/:id/replay', async (req, res, next) => {
   try {
-    const { params = {}, version } = req.body ?? {};
+    const { params = {}, version, persona } = req.body ?? {};
     const capability = await loadCapability(req.params.id, version);
+    res.json(await runReplay(capability, params, { persona }));
+  } catch (err) {
+    next(err);
+  }
+});
 
-    const runId = newRunId('replay');
-    createRun({ id: runId, kind: 'replay', appId: capability.target.app_id, status: 'running' });
-    const logger = new RunLogger(runId);
+/**
+ * The approval gate's human half. Body: { status: 'approved'|'draft', version?: n }
+ *
+ * Recording always produces a draft; THIS is the only way anything becomes approved.
+ * Demotion back to draft is allowed on purpose — a capability whose confidence decays
+ * should be pullable from the agent catalog without deleting its history.
+ */
+router.patch('/:id/status', async (req, res, next) => {
+  try {
+    const { status, version } = req.body ?? {};
+    if (!CAPABILITY_STATUSES.includes(status)) {
+      return res.status(400).json({ error: `status must be one of: ${CAPABILITY_STATUSES.join(', ')}` });
+    }
 
-    const result = await replayCapability({ capability, params, headless: true, logger });
+    let capability;
+    try {
+      capability = await loadCapability(req.params.id, version ? Number(version) : undefined);
+    } catch (err) {
+      err.status = 404;
+      throw err;
+    }
 
-    logger.saveResult({ run_id: runId, capability: capability.id, version: capability.version, ...result });
-    updateRun(runId, {
-      status: result.outcome,
-      detail: {
-        capability: capability.id,
-        version: capability.version,
-        outcome: result.outcome,
-        // The run row carries what the caller got, so the Runs view is self-sufficient.
-        outputs: result.outputs && Object.keys(result.outputs).length ? result.outputs : null,
-        business_outcome: result.business_outcome ?? null,
-        failed_step: result.failure ? { step: result.failure.step, message: result.failure.message } : null,
-      },
-    });
-
-    res.json({ run_id: runId, capability: capability.id, version: capability.version, ...result });
+    const { capability: updated } = await updateCapability(capability.id, capability.version, { status });
+    res.json({ id: updated.id, version: updated.version, status: updated.status });
   } catch (err) {
     next(err);
   }

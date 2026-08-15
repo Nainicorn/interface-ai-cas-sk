@@ -136,3 +136,23 @@ export async function updateCapability(id, version, patch) {
   const merged = { ...current, ...patch };
   return saveCapability(merged, { overwrite: true });
 }
+
+/**
+ * Fold one replay outcome into the capability's rolling confidence signal.
+ *
+ * "Success" here means the RECORDING executed as designed — SUCCESS, BUSINESS_OUTCOME,
+ * and RECOVERABLE all count, because in each the locators resolved and the outcome was
+ * classified by a declared rule. Only HARD_FAILURE counts against the recording. The
+ * ratio is what the approval gate (and a reviewer) reads as replay reliability.
+ */
+export async function recordReplayOutcome(id, version, outcome) {
+  const current = await loadCapability(id, version);
+  return updateCapability(id, version, {
+    confidence: {
+      runs: current.confidence.runs + 1,
+      successes: current.confidence.successes + (outcome === 'HARD_FAILURE' ? 0 : 1),
+      last_outcome: outcome,
+      updated_at: new Date().toISOString(),
+    },
+  });
+}

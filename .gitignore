@@ -8,3 +8,10 @@ node_modules/
 data/*.db
 data/*.db-journal
 tmp/
+data/*.db-wal
+data/*.db-shm
+
+# Persona credentials registered at runtime — real logins, never committed.
+# (ignore the files, not the directory, so the .example stays re-includable)
+data/creds/*
+!data/creds/*.example.json

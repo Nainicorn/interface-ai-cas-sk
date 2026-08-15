@@ -46,6 +46,28 @@ export function classifyRisk({ target, action, url }) {
 }
 
 /**
+ * Whether a capability may be advertised to — and invoked by — an external AI agent.
+ *
+ * Deliberately stricter than checkUnattendedAllowed: a safe draft may replay from the
+ * operator console, where a human is watching, but the agent-facing catalog is
+ * unattended by definition. What an autonomous agent can discover and call is an
+ * explicit human grant, so only `approved` capabilities exist on that surface at all.
+ *
+ * @returns {{ allowed: boolean, reason: string }}
+ */
+export function checkAgentInvocable(capability) {
+  if (capability.status !== 'approved') {
+    return {
+      allowed: false,
+      reason:
+        `Capability "${capability.id}" is "${capability.status}". Only approved capabilities ` +
+        `are agent-invocable — a human promotes it via PATCH /api/artifacts/${capability.id}/status.`,
+    };
+  }
+  return { allowed: true, reason: 'Capability is approved for agent invocation' };
+}
+
+/**
  * Whether a capability may replay without a human present.
  *
  * A risky capability stays unattended-ineligible until someone approves it. This is the

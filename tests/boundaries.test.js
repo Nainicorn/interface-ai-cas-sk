@@ -84,10 +84,11 @@ describe('invariant: targets are configuration, not code', () => {
     assert.deepEqual(offenders, [], `Hardcoded target URLs found: ${offenders.join(', ')}`);
   });
 
-  it('the shipped config declares at least one usable target', async () => {
+  it('every configured target keeps the safe shape (registration starts empty)', async () => {
+    // Targets are registered at runtime (console form / POST /api/targets), so zero
+    // targets is a legitimate shipped state. Whatever IS present must keep the shape.
     const raw = JSON.parse(await readFile(path.resolve(here, '../config/targets.json'), 'utf8'));
     const targets = Object.keys(raw).filter((key) => !key.startsWith('_'));
-    assert.ok(targets.length >= 1);
 
     for (const key of targets) {
       const target = raw[key];

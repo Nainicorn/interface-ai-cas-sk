@@ -9,10 +9,12 @@
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PolicyViolation, loadTargets } from '../policy/allowlist.js';
+import { PolicyViolation } from '../policy/allowlist.js';
 import artifactsRouter from './artifacts.js';
+import capabilitiesRouter from './capabilities.js';
 import escalationRouter from './escalation.js';
 import runsRouter from './runs.js';
+import targetsRouter from './targets.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -20,20 +22,10 @@ const app = express();
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.resolve(here, '../../public')));
 
-/** Targets the console can offer — config minus anything sensitive-adjacent. */
-app.get('/api/targets', (_req, res) => {
-  const targets = Object.values(loadTargets()).map((t) => ({
-    app_id: t.app_id,
-    display_name: t.display_name ?? t.app_id,
-    entry_route: t.entry_route,
-    allowlist: t.allowlist,
-    risky_route_patterns: t.risky_route_patterns ?? [],
-  }));
-  res.json(targets);
-});
-
+app.use('/api/targets', targetsRouter);
 app.use('/api/runs', runsRouter);
 app.use('/api/artifacts', artifactsRouter);
+app.use('/api/capabilities', capabilitiesRouter);
 app.use('/api/escalations', escalationRouter);
 
 /** Uniform error shape. A PolicyViolation is a refusal (403), not a server fault. */

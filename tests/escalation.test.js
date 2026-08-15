@@ -27,7 +27,16 @@ const {
   unregisterSession,
 } = await import('../src/agent/escalation.js');
 const { createRun, getIntervention } = await import('../src/db/sqlite.js');
-const { getTarget } = await import('../src/policy/allowlist.js');
+const { getTarget, loadTargets } = await import('../src/policy/allowlist.js');
+
+// Targets start empty and are registered at runtime, so the browser-backed suite needs
+// mock-bank BOTH registered and reachable — skip cleanly otherwise.
+const bankTarget = loadTargets()['mock-bank'] ?? null;
+const bankUp = bankTarget
+  ? await fetch(new URL('/health', bankTarget.base_url), { signal: AbortSignal.timeout(2000) })
+      .then((response) => response.ok)
+      .catch(() => false)
+  : false;
 const { RunLogger } = await import('../src/evidence/logger.js');
 const { chromium } = await import('playwright');
 
@@ -61,7 +70,10 @@ describe('RunLock: the per-run async mutex', () => {
   });
 });
 
-describe('control transfer on a live session', () => {
+describe(
+  'control transfer on a live session',
+  { skip: bankUp ? false : 'mock-bank is not registered (console → Add app) and running on :3001' },
+  () => {
   const runId = 'test-escalation-run';
   let browser;
   let session;

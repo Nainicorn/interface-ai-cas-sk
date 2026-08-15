@@ -23,6 +23,7 @@ import { performAction } from '../engine/actions.js';
 import { LocatorResolutionError } from '../engine/errors.js';
 import { captureState, evaluateCondition } from '../engine/perception.js';
 import { PolicyViolation, getTarget } from '../policy/allowlist.js';
+import { applyPersona } from '../policy/personas.js';
 import { classifyRisk } from '../policy/risk.js';
 import { RunLogger, newRunId } from '../evidence/logger.js';
 import { createRun, updateRun } from '../db/sqlite.js';
@@ -162,9 +163,13 @@ export async function runDiscovery({
   maxTurns = 24,
   headless = false,
   runId = newRunId('discovery'),
+  persona,
   onEscalation = 'finish',
 }) {
   const target = getTarget(appId);
+  // Inject the chosen login's values into the target's declared env names before the
+  // browser exists; the prompt and artifact keep env-name indirection unchanged.
+  const appliedPersona = applyPersona(target, persona);
   const logger = new RunLogger(runId);
   const client = new Anthropic();
 
@@ -174,6 +179,7 @@ export async function runDiscovery({
     goal,
     app_id: appId,
     params: Object.keys(params),
+    persona: appliedPersona,
     model: DISCOVERY_MODEL,
     max_turns: maxTurns,
   });
@@ -308,7 +314,7 @@ export async function runDiscovery({
   const result = { status: outcome.status, runId, evidenceDir: logger.dir, turns, usage };
   if (outcome.artifact) result.artifact = outcome.artifact;
   if (outcome.escalation) result.escalation = outcome.escalation;
-  logger.saveResult({ ...result, goal, app_id: appId, model: DISCOVERY_MODEL, finished_at: new Date().toISOString() });
+  logger.saveResult({ ...result, goal, app_id: appId, persona: appliedPersona, model: DISCOVERY_MODEL, finished_at: new Date().toISOString() });
   updateRun(runId, {
     status: outcome.status,
     detail: { artifact: outcome.artifact ?? null, turns, usage, evidence_dir: logger.dir },

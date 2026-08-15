@@ -14,7 +14,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const CONFIG_PATH = path.resolve(here, '../../config/targets.json');
+export const CONFIG_PATH = path.resolve(here, '../../config/targets.json');
 
 /** Raised when an action is refused by policy. Never caught and retried — it's a stop. */
 export class PolicyViolation extends Error {

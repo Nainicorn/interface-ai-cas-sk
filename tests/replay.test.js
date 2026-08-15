@@ -12,6 +12,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { replayCapability } from '../src/engine/replay.js';
+import { loadTargets } from '../src/policy/allowlist.js';
 import { parseCapability } from '../src/schema/capability.js';
 import { buildLookupSavingsBalance } from './fixtures/lookup-savings-balance.js';
 
@@ -41,7 +42,11 @@ else {
   console.log('     Start it with: npm run target\n');
 }
 
-const live = () => (targetUp ? false : 'mock-bank is not running on :3001');
+// Targets start empty and are registered at runtime — the suite needs mock-bank
+// registered (console → Add app) as well as reachable.
+const registered = Boolean(loadTargets()['mock-bank']);
+const live = () =>
+  targetUp && registered ? false : 'mock-bank is not registered and running on :3001';
 
 describe('deterministic replay', () => {
   it('SUCCESS: returns typed outputs for a real member', { skip: live() }, async () => {

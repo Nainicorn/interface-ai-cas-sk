@@ -25,6 +25,7 @@ import { chromium } from 'playwright';
 import { getTarget, resolveUrl } from '../policy/allowlist.js';
 import { PolicyViolation } from '../policy/allowlist.js';
 import { checkUnattendedAllowed } from '../policy/risk.js';
+import { recordReplayOutcome } from '../schema/store.js';
 import { validateParams } from '../schema/validate-params.js';
 import { performAction, click } from './actions.js';
 import { LocatorResolutionError, MalformedStep, MissingCredential } from './errors.js';
@@ -341,6 +342,14 @@ export async function replayCapability({ capability, params = {}, headless = tru
     });
 
     const result = await executeSteps(ctx, capability, params);
+
+    // Fold this outcome into the artifact's rolling confidence signal. Only runs that
+    // actually exercised the recording count — pre-flight refusals and infrastructure
+    // errors say nothing about the recording's reliability. Best-effort by design: a
+    // capability that never came from the store (a test fixture) has nowhere to record
+    // to, and telemetry must never turn a completed replay into a failure.
+    await recordReplayOutcome(capability.id, capability.version, result.outcome).catch(() => {});
+
     return { ...base, ...result, duration_ms: Date.now() - startedAt };
   } catch (err) {
     // Anything escaping executeSteps is infrastructure, not a flow outcome.

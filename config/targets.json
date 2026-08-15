@@ -4,59 +4,56 @@
     "app_id names a VENDOR PRODUCT, not a tenant and not a URL — that indirection is what",
     "lets one recorded capability serve many institutions running the same software.",
     "",
-    "Adding a target is a config change, not a code change. Nothing in src/ hardcodes a",
-    "hostname, a route, or a credential. To point this system at your own stack, copy the",
-    "'mock-bank' block, change base_url / entry_route / allowlist, set the two credential",
-    "env vars, and pass --app-id <your key> to the CLI.",
+    "This file starts EMPTY of targets: apps are registered at runtime from the console",
+    "(Add app) or via POST /api/targets. Nothing in src/ hardcodes a hostname, a route,",
+    "or a credential — point the system at any application you are permitted to automate.",
     "",
-    "Credentials are referenced BY ENV VAR NAME. Secrets never appear in this file, in an",
-    "artifact, in a transcript, or in the database.",
+    "Credentials are referenced BY ENV VAR NAME (derived at registration). Secret values",
+    "live in gitignored data/creds/<app_id>.json, never in this file, an artifact, a",
+    "transcript, or the database.",
     "",
     "Keys beginning with an underscore are ignored by the loader."
   ],
-
-  "mock-bank": {
-    "display_name": "Corevance Core Banking Admin (local fixture)",
-    "base_url": "http://localhost:3001",
-    "entry_route": "/login",
-
-    "credentials": {
-      "username_env": "MOCK_BANK_USERNAME",
-      "password_env": "MOCK_BANK_PASSWORD"
-    },
-
-    "allowlist": {
-      "route_prefixes": ["/login", "/search", "/member"],
-      "action_types": ["navigate", "click", "type", "read", "wait_for"]
-    },
-
-    "risky_route_patterns": ["/open-account"],
-
-    "redact_fields": ["password", "username", "memberId", "member_id", "accountNumber", "initialDeposit"],
-
-    "viewport": { "width": 1024, "height": 768 }
-  },
-
-  "_example_second_tenant_of_same_product": {
+  "_example_registered_target": {
     "_note": [
-      "Illustrative only — ignored by the loader. Shows what pointing at a different",
-      "deployment of the SAME vendor product looks like: a new base_url and credentials,",
-      "the same recorded capability. Per-tenant markup differences would be expressed as",
-      "tenant_overrides inside the artifact, not as a second recording."
+      "Illustrative only — ignored by the loader. This is the block POST /api/targets",
+      "writes when you register an app. A second tenant of the SAME vendor product would",
+      "be a new base_url and credentials with the same recorded capability; per-tenant",
+      "markup differences are expressed as tenant_overrides inside the artifact, not as",
+      "a second recording."
     ],
     "display_name": "Corevance Core Banking Admin (tenant: Riverside CU)",
     "base_url": "https://riverside-cu.corevance.example",
     "entry_route": "/login",
+    "goal": "Look up a member by ID and read their savings balance",
     "credentials": {
       "username_env": "RIVERSIDE_USERNAME",
       "password_env": "RIVERSIDE_PASSWORD"
     },
     "allowlist": {
-      "route_prefixes": ["/login", "/search", "/member"],
-      "action_types": ["navigate", "click", "type", "read", "wait_for"]
+      "route_prefixes": [
+        "/"
+      ],
+      "action_types": [
+        "navigate",
+        "click",
+        "type",
+        "read",
+        "wait_for"
+      ]
     },
-    "risky_route_patterns": ["/open-account"],
-    "redact_fields": ["password", "username", "memberId"],
-    "viewport": { "width": 1024, "height": 768 }
+    "risky_route_patterns": [
+      "/open-account"
+    ],
+    "redact_fields": [
+      "password",
+      "username",
+      "RIVERSIDE_USERNAME",
+      "RIVERSIDE_PASSWORD"
+    ],
+    "viewport": {
+      "width": 1024,
+      "height": 768
+    }
   }
 }

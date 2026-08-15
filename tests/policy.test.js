@@ -13,14 +13,27 @@ import { checkUnattendedAllowed, classifyRisk } from '../src/policy/risk.js';
 import { isSensitive, redact, redactObject, shapeOf } from '../src/policy/redact.js';
 import { buildLookupSavingsBalance } from './fixtures/lookup-savings-balance.js';
 
-const target = getTarget('mock-bank');
+// A representative target, inline: targets.json ships empty (apps are registered at
+// runtime), so the gate is tested against the shape rather than the file.
+const target = {
+  app_id: 'mock-bank',
+  display_name: 'Corevance Core Banking Admin (local fixture)',
+  base_url: 'http://localhost:3001',
+  entry_route: '/login',
+  credentials: { username_env: 'MOCK_BANK_USERNAME', password_env: 'MOCK_BANK_PASSWORD' },
+  allowlist: {
+    route_prefixes: ['/login', '/search', '/member'],
+    action_types: ['navigate', 'click', 'type', 'read', 'wait_for'],
+  },
+  risky_route_patterns: ['/open-account'],
+  redact_fields: ['password', 'username', 'memberId', 'member_id', 'accountNumber', 'initialDeposit'],
+  viewport: { width: 1024, height: 768 },
+};
 
 describe('target configuration', () => {
-  it('ignores underscore-prefixed documentation keys', () => {
+  it('drops underscore-prefixed documentation keys', () => {
     const targets = loadTargets({ reload: true });
-    assert.ok(targets['mock-bank']);
-    assert.equal(targets._README, undefined);
-    assert.equal(targets._example_second_tenant_of_same_product, undefined);
+    assert.ok(Object.keys(targets).every((key) => !key.startsWith('_')));
   });
 
   it('refuses an unconfigured app_id rather than guessing', () => {
@@ -124,6 +137,14 @@ describe('redaction', () => {
   it('matches field names irrespective of case and separators', () => {
     assert.equal(isSensitive('MEMBER_ID', policy), true);
     assert.equal(isSensitive('member-id', policy), true);
+  });
+
+  it('matches env-var field names by suffix — the replay path logs those', () => {
+    // Regression: MOCK_BANK_PASSWORD normalized to "mockbankpassword" and never
+    // EQUALED "password", so replay transcripts logged the typed value in the clear.
+    assert.equal(isSensitive('MOCK_BANK_PASSWORD', {}), true);
+    assert.equal(isSensitive('ACME_CRM_USERNAME', { redact_fields: ['username'] }), true);
+    assert.equal(redact('demo-password', 'MOCK_BANK_PASSWORD', {}).redacted, true);
   });
 
   it('keeps enough shape to debug without keeping the value', () => {
