@@ -110,19 +110,15 @@ step-by-step trail, the screenshot gallery, and token usage for discovery runs. 
 is a read-only projection of `evidence/<run-id>/` — the transcript, screenshots, and
 result written as the run happened — and keeps updating while a run is live.
 
-### The committed evidence (a worked example)
+### Proof of work
 
-Development ran against a local "Corevance" core-banking fixture — deliberately legacy:
-server-rendered, table layouts, no element ids, no test IDs — plus an SPA variant. The
-fixtures are not part of this system and are not shipped, but the runs are:
-
-- `artifacts/lookup-member-savings-account/` v1→v4 is the honest history of one recording:
-  v1's weak locator was caught by replay as a `HARD_FAILURE`, v2 fixed locator scoping
-  after the engine learned to report ambiguity samples, v4 declares business outcomes the
-  model *foresaw* rather than encountered.
-- `evidence/` holds the matching discovery run (transcript, screenshots, result), a replay
-  `SUCCESS`, two distinct `BUSINESS_OUTCOME`s (no such member; member exists but holds no
-  savings account), the v1 `HARD_FAILURE`, and the escalation run below.
+`artifacts/` and `evidence/` ship empty and fill as you use the system — every run writes
+its own folder. The development history is preserved in git: the
+`lookup-member-savings-account` v1→v4 story (a weak locator caught by replay as a
+`HARD_FAILURE`, fixed after the engine learned to report ambiguity samples, business
+outcomes declared from foresight by v4) and the original discovery / replay / escalation
+evidence all live in this repo's earlier commits. The evidence set that ships at
+submission is recorded fresh — see [PLAN.md](PLAN.md).
 
 ### Escalation & handoff (the operator console)
 

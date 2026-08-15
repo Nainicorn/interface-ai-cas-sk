@@ -155,9 +155,10 @@ Declined stretch options, for the Cuts section:
 
 ## 6. Final evidence pass
 
-Re-record every evidence folder whose transcript contains an unredacted credential line
-(post-§1 fix): same goals, same outcomes, now `redacted: true` — the recorder was fixed
-and re-run, never the files (non-negotiable #7). Then confirm `/evidence/` contains, each
+The repo's `artifacts/` and `evidence/` were reset for the fresh-slate console (the old
+runs — some with pre-§1 unredacted credential lines — remain in git history). Before
+submission, record the full evidence set fresh with the fixed recorder — never hand-edit
+(non-negotiable #7). Then confirm `/evidence/` contains, each
 readable standalone: a discovery run (transcript, screenshots, result), a replay SUCCESS,
 a replay BUSINESS_OUTCOME (not-found and no-savings), the escalation run (paused → human
 actions → resumed → recorded), and the v1 HARD_FAILURE replay that motivated the locator
