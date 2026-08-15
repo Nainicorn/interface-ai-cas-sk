@@ -1,6 +1,7 @@
 /**
- * New test run: goal + login (persona) + params against the app selected in the
- * sidebar. Fires `run-started` so the run list and live viewer pick it up.
+ * New test run: pick one of the app's saved goals + a login (persona) + params.
+ * Goals are authored in the Add/Edit-app modal, not here — the box displays the
+ * picked goal read-only. Fires `run-started` so the run list and live viewer follow.
  * API: POST /api/runs.
  */
 
@@ -12,16 +13,29 @@ export async function mount(root) {
   const noApp = root.querySelector('[data-noapp]');
   const form = root.querySelector('[data-form]');
   const appName = root.querySelector('[data-app-name]');
-  const goalInput = root.querySelector('[name=goal]');
+  const goalText = root.querySelector('[data-goal-text]');
   const goalsWrap = root.querySelector('[data-goals-wrap]');
   const goalsSelect = root.querySelector('[name=saved_goal]');
   const personaWrap = root.querySelector('[data-persona-wrap]');
   const personaSelect = root.querySelector('[name=persona]');
+  const runButton = root.querySelector('button');
   const status = root.querySelector('[data-status]');
 
   let target = null;
   let savedGoals = [];
-  let prefilled = '';
+
+  const showGoal = (index) => {
+    const picked = savedGoals[index];
+    if (picked) {
+      goalText.textContent = picked.text;
+      goalText.classList.remove('none');
+      runButton.disabled = false;
+    } else {
+      goalText.textContent = 'No saved goals yet — add one via the app’s ⋯ → Edit menu.';
+      goalText.classList.add('none');
+      runButton.disabled = true;
+    }
+  };
 
   window.addEventListener('app-selected', (event) => {
     target = event.detail.target;
@@ -29,16 +43,10 @@ export async function mount(root) {
     form.hidden = false;
     appName.textContent = target.display_name;
 
-    // Saved goals are named tests — picking one fills the goal box, still editable.
     savedGoals = target.goals ?? [];
-    goalsWrap.hidden = savedGoals.length === 0;
+    goalsWrap.hidden = savedGoals.length < 2; // one goal needs no picker
     goalsSelect.innerHTML = savedGoals.map((g, i) => `<option value="${i}">${esc(g.name)}</option>`).join('');
-
-    // Prefill from the first saved goal, but never clobber the user's typing.
-    if (!goalInput.value || goalInput.value === prefilled) {
-      goalInput.value = savedGoals[0]?.text ?? '';
-      prefilled = goalInput.value;
-    }
+    showGoal(0);
 
     const personas = target.personas ?? [];
     personaWrap.hidden = personas.length === 0;
@@ -47,12 +55,7 @@ export async function mount(root) {
       .join('');
   });
 
-  goalsSelect.addEventListener('change', () => {
-    const picked = savedGoals[Number(goalsSelect.value)];
-    if (!picked) return;
-    goalInput.value = picked.text;
-    prefilled = picked.text;
-  });
+  goalsSelect.addEventListener('change', () => showGoal(Number(goalsSelect.value)));
 
   window.addEventListener('apps-empty', () => {
     target = null;
@@ -60,13 +63,14 @@ export async function mount(root) {
     form.hidden = true;
   });
 
-  root.querySelector('button').addEventListener('click', async () => {
-    if (!target) return;
+  runButton.addEventListener('click', async () => {
+    const picked = savedGoals[Number(goalsSelect.value) || 0];
+    if (!target || !picked) return;
     try {
       status.textContent = 'Starting…';
       const { run_id: runId } = await postJson('/api/runs', {
         app_id: target.app_id,
-        goal: goalInput.value,
+        goal: picked.text,
         params: parseParams(root.querySelector('[name=params]').value),
         ...(personaWrap.hidden ? {} : { persona: personaSelect.value }),
       });

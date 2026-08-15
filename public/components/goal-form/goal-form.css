@@ -16,8 +16,8 @@
   box-shadow: 0 2px 10px rgba(63, 54, 38, 0.06);
 }
 #goal-form .prompt-box:focus-within { border-color: var(--accent); }
-#goal-form .goal { border: none; outline: none; padding: 2px 4px 12px; font-size: 15px; background: transparent; }
-#goal-form .goal:focus { outline: none; }
+#goal-form .goal { padding: 2px 4px 12px; font-size: 15px; }
+#goal-form .goal.none { color: var(--ink-3); font-size: 13.5px; }
 
 #goal-form .prompt-foot {
   display: flex;

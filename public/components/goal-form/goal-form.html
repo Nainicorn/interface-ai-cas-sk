@@ -3,7 +3,7 @@
 <p class="muted" data-noapp>Add an app in the sidebar to get started.</p>
 <div data-form hidden>
   <div class="prompt-box">
-    <input class="goal" name="goal" placeholder="Describe the goal — e.g. Look up member 10001 and read their savings balance" />
+    <div class="goal" data-goal-text></div>
     <div class="prompt-foot">
       <span class="app-chip muted">on <strong data-app-name></strong></span>
       <span data-goals-wrap hidden class="foot-field">
@@ -16,6 +16,6 @@
       <button title="Run the agent">Run</button>
     </div>
   </div>
-  <p class="muted hint-line">Every run is its own test — change the goal, login, or params each time.</p>
+  <p class="muted hint-line">Goals are saved on the app (⋯ → Edit) — pick one, pick a login, run.</p>
   <p class="muted" data-status></p>
 </div>
