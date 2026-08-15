@@ -10,9 +10,9 @@
   --ink: #1f1e1d;
   --ink-2: #6b6a64;
   --ink-3: #a3a199;
-  --accent: #d97757;      /* terracotta */
-  --accent-strong: #c05b3c;
-  --accent-soft: #f8eae3;
+  --accent: #1f7a70;      /* deep teal */
+  --accent-strong: #175f57;
+  --accent-soft: #e2efec;
   --radius: 14px;
   --serif: ui-serif, Georgia, 'Times New Roman', serif;
 }
@@ -115,7 +115,7 @@ tbody tr:last-child td { border-bottom: none; }
 .badge.RECOVERABLE { background: #f8efd4; color: #8d5f10; }
 .badge.HARD_FAILURE, .badge.failed, .badge.ended_without_artifact { background: #f8dfd7; color: #a53c20; }
 .badge.paused, .badge.escalated { background: #ece2f6; color: #6b3ba4; }
-.badge.running { background: #f8eae3; color: var(--accent-strong); }
+.badge.running { background: var(--accent-soft); color: var(--accent-strong); }
 .badge.draft { background: #ecebe2; color: var(--ink-2); }
 .badge.approved { background: #e0efdd; color: #266337; }
 .badge.safe { background: #eef2e6; color: #4d663a; }

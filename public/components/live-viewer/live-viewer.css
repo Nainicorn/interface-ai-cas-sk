@@ -13,3 +13,5 @@
   border-radius: 8px;
   background: #f7f8fa;
 }
+
+#live-viewer h2 { color: var(--accent-strong); }
