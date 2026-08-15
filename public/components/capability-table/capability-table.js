@@ -1,12 +1,24 @@
 /**
  * Capabilities tab: each recorded capability with its contract in plain words, a
- * per-row Replay action, and a click-to-expand summary of what it does — steps as
- * readable intents, never a schema dump.
- * API: GET /api/artifacts, GET /api/artifacts/:id, POST /api/artifacts/:id/replay.
+ * per-row Replay action, replay-reliability (confidence), the Approve control that
+ * admits a draft to the agent-facing catalog, and a click-to-expand summary.
+ * API: GET /api/artifacts, GET /api/artifacts/:id, POST /api/artifacts/:id/replay,
+ *      PATCH /api/artifacts/:id/status.
  */
 
 const fetchArtifacts = () => fetch('/api/artifacts').then((r) => r.json());
 const fetchArtifact = (id) => fetch(`/api/artifacts/${id}`).then((r) => r.json());
+
+async function setStatus(id, status) {
+  const res = await fetch(`/api/artifacts/${id}/status`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error ?? res.statusText);
+  return json;
+}
 
 async function replay(id, params) {
   const res = await fetch(`/api/artifacts/${id}/replay`, {
@@ -40,6 +52,12 @@ function contractText(artifact) {
   return `${inputs} → ${outputs}`;
 }
 
+/** Rolling reliability, written back by every replay. */
+function confidenceText(artifact) {
+  const c = artifact.confidence ?? {};
+  return c.runs ? `${c.successes}/${c.runs} replays ok` : 'no replays yet';
+}
+
 /** Readable summary for the expansion row: description, steps as intents, outcomes. */
 function detailsHtml(capability) {
   const steps = capability.steps
@@ -65,7 +83,11 @@ function render(root, artifacts) {
         (a) => `
       <tr data-id="${a.id}">
         <td><a href="#" data-expand="${a.id}"><b>${a.name}</b></a><br><span class="mono muted">${a.id} v${a.version}</span></td>
-        <td><span class="badge ${a.status}">${a.status}</span> <span class="badge ${a.risk_level}">${a.risk_level}</span></td>
+        <td>
+          <span class="badge ${a.status}">${a.status}</span> <span class="badge ${a.risk_level}">${a.risk_level}</span>
+          <br><span class="muted mono">${confidenceText(a)}</span>
+          ${a.status === 'draft' ? `<br><button class="small" data-approve="${a.id}" title="Admit to the agent-facing catalog">Approve</button>` : ''}
+        </td>
         <td class="muted mono">${contractText(a)}</td>
         <td style="min-width:260px">
           <div class="row">
@@ -80,19 +102,14 @@ function render(root, artifacts) {
       .join('') || `<tr><td colspan="4" class="muted">No capabilities recorded yet — run a discovery first.</td></tr>`;
 }
 
-export function mount(root) {
-  root.innerHTML = `
-    <table>
-      <thead><tr><th>Capability</th><th>State</th><th>Contract (in → out)</th><th>Replay (no LLM)</th></tr></thead>
-      <tbody></tbody>
-    </table>
-  `;
+export async function mount(root) {
+  root.innerHTML = await (await fetch('/components/capability-table/capability-table.html')).text();
 
   let lastKey = '';
   const refresh = async () => {
     try {
       const artifacts = await fetchArtifacts();
-      const key = JSON.stringify(artifacts.map((a) => [a.id, a.version, a.status]));
+      const key = JSON.stringify(artifacts.map((a) => [a.id, a.version, a.status, a.confidence?.runs ?? 0]));
       if (key === lastKey) return; // don't clobber inputs/results while the user works
       lastKey = key;
       render(root, artifacts);
@@ -110,6 +127,20 @@ export function mount(root) {
       const row = root.querySelector(`[data-details="${expand.dataset.expand}"]`);
       if (row.hidden) row.querySelector('td').innerHTML = detailsHtml(await fetchArtifact(expand.dataset.expand));
       row.hidden = !row.hidden;
+      return;
+    }
+
+    const approve = event.target.closest('[data-approve]');
+    if (approve) {
+      approve.disabled = true;
+      try {
+        await setStatus(approve.dataset.approve, 'approved');
+        lastKey = ''; // force a re-render on the next poll
+        refresh();
+      } catch (err) {
+        approve.disabled = false;
+        approve.textContent = err.message;
+      }
       return;
     }
 

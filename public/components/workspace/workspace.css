@@ -1,0 +1,14 @@
+/* workspace.css — the pill tab bar; table styling lives with each pane's component. */
+
+#workspace .tabbar { display: flex; gap: 6px; margin-bottom: 12px; }
+#workspace .tab {
+  margin: 0;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+#workspace .tab:hover { background: var(--bg); color: var(--ink); }
+#workspace .tab.active { background: var(--accent-soft); color: var(--accent-strong); }

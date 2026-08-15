@@ -1,0 +1,34 @@
+/* app-sidebar.css — the flat sidebar: brand, add button, app list. */
+
+#app-sidebar .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 14px; }
+#app-sidebar .brand .spark { color: var(--accent); font-size: 20px; line-height: 1; }
+#app-sidebar .brand strong { display: block; font-size: 15px; letter-spacing: -0.01em; }
+#app-sidebar .brand .sub { display: block; color: var(--ink-3); font-size: 11.5px; }
+
+#app-sidebar .add { width: 100%; margin: 0 0 18px; border-radius: 999px; }
+
+#app-sidebar .side-label {
+  color: var(--ink-3);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 8px 6px;
+}
+
+#app-sidebar .apps { list-style: none; margin: 0; padding: 0; }
+#app-sidebar .apps li {
+  padding: 9px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+#app-sidebar .apps li:hover { background: rgba(31, 30, 29, 0.05); }
+#app-sidebar .apps li.selected { background: var(--accent-soft); }
+#app-sidebar .apps li.selected .name { color: var(--accent-strong); }
+#app-sidebar .apps .name { font-weight: 600; }
+#app-sidebar .apps .host { color: var(--ink-3); font-size: 11px; }
+
+#app-sidebar .side-empty { padding: 0 8px; font-size: 12.5px; }

@@ -1,0 +1,43 @@
+<!-- run-report.html — the standalone per-run report page; run-report.js fills every region -->
+<header>
+  <div>
+    <h1 data-title>Run report</h1>
+    <p class="sub"><span class="mono" data-run-id></span></p>
+  </div>
+</header>
+
+<main class="report">
+  <section class="card banner">
+    <span class="badge big" data-outcome>…</span>
+    <div class="headline" data-headline></div>
+    <div class="muted" data-when></div>
+  </section>
+
+  <section class="card">
+    <h2>Configuration</h2>
+    <dl class="config" data-config></dl>
+  </section>
+
+  <section class="card">
+    <h2>Steps</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>#</th><th>Actor</th><th>Action</th><th>What</th><th>Result</th></tr></thead>
+        <tbody data-steps></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Screenshots</h2>
+    <div class="gallery" data-gallery></div>
+    <p class="muted" data-no-shots hidden>No screenshots for this run.</p>
+  </section>
+
+  <section class="card" data-usage-card hidden>
+    <h2>Model usage <span class="hint">discovery only — replay never calls the model</span></h2>
+    <dl class="config" data-usage></dl>
+  </section>
+
+  <p class="muted center" data-status></p>
+</main>

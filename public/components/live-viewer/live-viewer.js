@@ -7,14 +7,10 @@
 
 const fetchRuns = () => fetch('/api/runs').then((r) => r.json());
 
-export function mount(root) {
+export async function mount(root) {
   root.classList.add('idle');
-  root.innerHTML = `
-    <h2>Live session</h2>
-    <p class="empty">No live session. Start a discovery run and its browser appears here.</p>
-    <div class="meta"></div>
-    <img class="shot" alt="live view of the run's browser" />
-  `;
+  root.innerHTML = await (await fetch('/components/live-viewer/live-viewer.html')).text();
+
   const meta = root.querySelector('.meta');
   const img = root.querySelector('img');
   img.addEventListener('error', () => { img.style.visibility = 'hidden'; });

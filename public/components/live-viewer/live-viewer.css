@@ -1,0 +1,15 @@
+/* live-viewer.css — scoped to #live-viewer. Empty state stays quiet until
+   Chromium is actually running. */
+
+#live-viewer.idle .meta, #live-viewer.idle img { display: none; }
+#live-viewer .empty { display: none; color: var(--ink-3); margin: 2px 0; }
+#live-viewer.idle .empty { display: block; }
+#live-viewer .meta { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+
+#live-viewer .shot {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7f8fa;
+}

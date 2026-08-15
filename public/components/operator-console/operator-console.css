@@ -1,0 +1,9 @@
+/* operator-console.css — the HITL panel. A distinct edge so it reads as "needs you";
+   stacks vertically under the live viewer. */
+
+.card.operator { border-left: 4px solid #7a3fd1; }
+.operator .context { display: flex; flex-direction: column; gap: 8px; }
+.operator .ask { margin: 0 0 4px; }
+.operator .why { margin: 0 0 10px; }
+.operator [data-resume] { flex: 0 0 auto; }
+.operator [data-feedback] { margin: 8px 0 0; }

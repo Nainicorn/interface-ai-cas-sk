@@ -49,37 +49,10 @@ function render(root, pending) {
   if (panel.dataset.intervention === String(pending.id)) return;
   panel.dataset.intervention = String(pending.id);
 
-  panel.innerHTML = `
-    <p style="margin:0 0 4px"><b>${pending.context.goal ?? 'Run'}</b> needs you:</p>
-    <p style="margin:0 0 10px">${pending.reason}<br>
-       <span class="muted mono">${pending.context.url ?? ''}</span></p>
-
-    <div class="row">
-      <div><label>Action</label>
-        <select name="action">
-          <option>click</option><option>type</option><option>navigate</option><option>read</option>
-        </select></div>
-      <div><label>Find element by</label>
-        <select name="kind">
-          <option>role</option><option>label</option><option>placeholder</option><option>text</option><option>css</option>
-        </select></div>
-    </div>
-    <div class="row">
-      <div><label>Element name / value</label><input name="locator" placeholder="Search" /></div>
-      <div><label>Role (when finding by role)</label><input name="role" placeholder="button" /></div>
-    </div>
-    <div class="row">
-      <div><label>Text to type (type only)</label><input name="text" /></div>
-      <div><label>Route (navigate only)</label><input name="url" placeholder="/search" /></div>
-    </div>
-    <button data-act class="small">Perform manual step</button>
-    <label>Note for the agent</label>
-    <div class="row">
-      <input name="note" placeholder="Signed back in; session had expired" />
-      <button data-resume class="small secondary" style="flex:0 0 auto">Hand control back</button>
-    </div>
-    <p data-feedback class="muted" style="margin:8px 0 0"></p>
-  `;
+  panel.replaceChildren(root.querySelector('[data-panel-template]').content.cloneNode(true));
+  panel.querySelector('[data-goal]').textContent = pending.context.goal ?? 'Run';
+  panel.querySelector('[data-reason]').textContent = pending.reason;
+  panel.querySelector('[data-url]').textContent = pending.context.url ?? '';
 
   const feedback = panel.querySelector('[data-feedback]');
   panel.querySelector('[data-act]').addEventListener('click', async () => {
@@ -104,13 +77,8 @@ function render(root, pending) {
   });
 }
 
-export function mount(root) {
-  root.innerHTML = `
-    <h2>Human needed <span class="hint">the run is paused; you are driving its live browser (above)</span></h2>
-    <div class="context">
-      <div data-panel></div>
-    </div>
-  `;
+export async function mount(root) {
+  root.innerHTML = await (await fetch('/components/operator-console/operator-console.html')).text();
 
   const refresh = async () => {
     try {

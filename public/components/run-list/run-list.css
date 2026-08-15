@@ -1,0 +1,5 @@
+/* run-list.css — the runs table; table/badge primitives come from /styles.css */
+
+#run-list .scroll { overflow-x: auto; }
+#run-list .report-link { font-weight: 600; text-decoration: none; color: var(--accent); white-space: nowrap; }
+#run-list .report-link:hover { text-decoration: underline; }

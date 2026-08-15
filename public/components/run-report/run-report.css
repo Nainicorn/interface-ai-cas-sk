@@ -1,0 +1,43 @@
+/* run-report.css — the standalone report page; card/badge/table primitives from /styles.css */
+
+.report {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px 24px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.report > * { min-width: 0; }
+
+.report .banner { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.report .badge.big { font-size: 13px; padding: 5px 14px; }
+.report .headline { font-weight: 600; font-size: 15px; flex: 1; min-width: 200px; }
+
+.report dl.config { display: grid; grid-template-columns: 160px 1fr; gap: 6px 14px; margin: 0; }
+.report dl.config dt { color: var(--ink-3); font-size: 12px; }
+.report dl.config dd { margin: 0; overflow-wrap: anywhere; }
+
+.report .scroll { overflow-x: auto; }
+
+.report .gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.report .gallery .shot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-decoration: none;
+  color: var(--ink-3);
+  font-size: 11px;
+}
+.report .gallery img {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+}
+
+.report .center { text-align: center; }

@@ -3,39 +3,47 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CAS Control Plane</title>
+  <title>CAS Console</title>
   <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/components/app-sidebar/app-sidebar.css" />
+  <link rel="stylesheet" href="/components/target-modal/target-modal.css" />
+  <link rel="stylesheet" href="/components/goal-form/goal-form.css" />
+  <link rel="stylesheet" href="/components/live-viewer/live-viewer.css" />
+  <link rel="stylesheet" href="/components/operator-console/operator-console.css" />
+  <link rel="stylesheet" href="/components/workspace/workspace.css" />
+  <link rel="stylesheet" href="/components/run-list/run-list.css" />
+  <link rel="stylesheet" href="/components/capability-table/capability-table.css" />
 </head>
 <body>
-  <header>
-    <div>
-      <h1>CAS Control Panel</h1>
-      <p class="sub">discover &rarr; capability &rarr; deterministic replay &rarr; human handoff (opt.)</p>
+  <div class="app">
+    <!-- Sidebar: your apps, like a conversation list. Main column: run things, watch
+         them live, and flip between the run history and the recorded capabilities. -->
+    <aside id="app-sidebar"></aside>
+    <div class="main">
+      <div class="column">
+        <section id="goal-form"></section>
+        <section id="live-viewer" class="card"></section>
+        <section id="operator-console" class="card operator" hidden></section>
+        <section id="workspace" class="card"></section>
+      </div>
     </div>
-  </header>
-
-  <main>
-    <!-- Three regions: goal form top-left; live viewer + operator panel top-right
-         (viewer fills with Chromium while a run is live; the operator panel appears
-         under it only when a human is needed); runs/capabilities tabs across the bottom. -->
-    <section id="goal-form" class="card"></section>
-    <div class="right-col">
-      <section id="live-viewer" class="card"></section>
-      <section id="operator-console" class="card operator" hidden></section>
-    </div>
-    <section id="workspace" class="card wide"></section>
-  </main>
+  </div>
+  <div id="target-modal"></div>
 
   <script type="module">
-    import { mount as goalForm } from '/components/goal-form.js';
-    import { mount as liveViewer } from '/components/live-viewer.js';
-    import { mount as operatorConsole } from '/components/operator-console.js';
-    import { mount as tabs } from '/components/tabs.js';
+    import { mount as appSidebar } from '/components/app-sidebar/app-sidebar.js';
+    import { mount as targetModal } from '/components/target-modal/target-modal.js';
+    import { mount as goalForm } from '/components/goal-form/goal-form.js';
+    import { mount as liveViewer } from '/components/live-viewer/live-viewer.js';
+    import { mount as operatorConsole } from '/components/operator-console/operator-console.js';
+    import { mount as workspace } from '/components/workspace/workspace.js';
 
+    appSidebar(document.getElementById('app-sidebar'));
+    targetModal(document.getElementById('target-modal'));
     goalForm(document.getElementById('goal-form'));
     liveViewer(document.getElementById('live-viewer'));
     operatorConsole(document.getElementById('operator-console'));
-    tabs(document.getElementById('workspace'));
+    workspace(document.getElementById('workspace'));
   </script>
 </body>
 </html>
