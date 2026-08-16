@@ -34,20 +34,15 @@ function when(run) {
 }
 
 /**
- * Who started a replay, when it wasn't the console.
+ * What kind of run this was, in one word: discovery, replay, or agent.
  *
- * An agent invoking an approved capability and an operator clicking Replay leave
- * identical evidence otherwise, so without this the most interesting run in the
- * table — one an autonomous caller made on its own — is indistinguishable from a
- * button press. Operator runs stay unlabelled: that is the default, and badging
- * every row would bury the one that matters.
+ * An agent invoking an approved capability leaves evidence identical to an operator
+ * clicking Replay, so without this the most interesting row in the table is
+ * indistinguishable from a button press. It reads as its own kind rather than a
+ * replay wearing a badge, because that is how a reader thinks about it — and a
+ * console replay and a CLI one are the same act, so both stay "replay".
  */
-function callerBadge(run) {
-  const caller = run.detail?.caller;
-  if (caller === 'agent') return ' <span class="badge agent" title="Invoked by an outside AI agent through the catalog">agent</span>';
-  if (caller === 'cli') return ' <span class="badge cli" title="Started from the terminal">cli</span>';
-  return '';
-}
+const kindLabel = (run) => (run.detail?.caller === 'agent' ? 'agent' : run.kind);
 
 function render(root, runs) {
   const rows = runs
@@ -57,7 +52,7 @@ function render(root, runs) {
         <tr>
           <td class="date">${at.date}</td>
           <td class="time mono">${at.time}</td>
-          <td class="kind-cell">${esc(run.kind)}${callerBadge(run)}</td>
+          <td class="kind-cell">${esc(kindLabel(run))}</td>
           <td><span class="badge ${esc(run.status)}">${esc(run.status)}</span>${run.live ? ` <span class="muted">${esc(ownerLabel(run.owner))}</span>` : ''}</td>
           <td class="report-cell">
             <a class="icon report-link" target="_blank" rel="noopener" title="Open the full report"
