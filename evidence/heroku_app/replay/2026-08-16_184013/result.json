@@ -1,0 +1,20 @@
+{
+  "id": "heroku_app/replay/2026-08-16_184013",
+  "kind": "replay",
+  "app_id": "heroku_app",
+  "goal": null,
+  "status": "SUCCESS",
+  "detail": {
+    "caller": "cli",
+    "capability": "heroku-app-login",
+    "version": 1,
+    "outcome": "SUCCESS",
+    "outputs": {
+      "confirmation_message": "You logged into a secure area!"
+    },
+    "business_outcome": null,
+    "failed_step": null
+  },
+  "started_at": "2026-08-16T18:40:13.873Z",
+  "updated_at": "2026-08-16T18:40:24.350Z"
+}

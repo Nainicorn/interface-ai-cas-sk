@@ -1,0 +1,219 @@
+{
+  "schema_version": 1,
+  "id": "heroku-login-secure-area",
+  "name": "Login and read secure area confirmation",
+  "version": 1,
+  "status": "draft",
+  "description": "Logs into the Heroku \"The Internet\" demo app secure area using provided credentials and extracts the flash confirmation message, handling invalid credential cases.",
+  "target": {
+    "app_id": "heroku_app",
+    "entry_route": "/login",
+    "tenant_overrides": []
+  },
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "username": {
+        "type": "string",
+        "description": "Login username"
+      }
+    },
+    "required": [
+      "username"
+    ],
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "confirmation_message": {
+        "type": "string",
+        "description": "The green flash message text shown after successful login to the secure area"
+      }
+    },
+    "required": [
+      "confirmation_message"
+    ],
+    "additionalProperties": false
+  },
+  "risk_level": "safe",
+  "steps": [
+    {
+      "index": 0,
+      "intent": "Navigate to the login page",
+      "action": "navigate",
+      "url": "/login",
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Login Page",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 1,
+      "intent": "Enter the username",
+      "action": "type",
+      "locator": {
+        "description": "Username field",
+        "candidates": [
+          {
+            "kind": "label",
+            "value": "Username",
+            "exact": true,
+            "confidence": 0.9
+          },
+          {
+            "kind": "css",
+            "value": "#username",
+            "exact": false,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "value_from": "username",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "#username",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 2,
+      "intent": "Enter the password credential",
+      "action": "type",
+      "locator": {
+        "description": "Password field",
+        "candidates": [
+          {
+            "kind": "label",
+            "value": "Password",
+            "exact": true,
+            "confidence": 0.9
+          },
+          {
+            "kind": "css",
+            "value": "#password",
+            "exact": false,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "value_from_env": "HEROKU_APP_PASSWORD",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "#password",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 3,
+      "intent": "Submit the login form",
+      "action": "click",
+      "locator": {
+        "description": "Login button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Login",
+            "role": "button",
+            "exact": false,
+            "confidence": 0.9
+          },
+          {
+            "kind": "css",
+            "value": "button[type=submit]",
+            "exact": false,
+            "confidence": 0.6
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "url_contains",
+        "value": "/secure",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [
+        {
+          "code": "INVALID_CREDENTIALS",
+          "detect": {
+            "type": "text_visible",
+            "value": "Your username is invalid!",
+            "timeout_ms": 5000
+          },
+          "message": "Login failed because the username or password was rejected."
+        },
+        {
+          "code": "INVALID_PASSWORD",
+          "detect": {
+            "type": "text_visible",
+            "value": "Your password is invalid!",
+            "timeout_ms": 5000
+          },
+          "message": "Login failed because the password was incorrect."
+        }
+      ],
+      "risk": "safe"
+    },
+    {
+      "index": 4,
+      "intent": "Read the secure area confirmation flash message",
+      "action": "read",
+      "locator": {
+        "description": "Flash message confirming secure area login",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "#flash",
+            "exact": false,
+            "confidence": 0.9
+          },
+          {
+            "kind": "text",
+            "value": "You logged into a secure area!",
+            "exact": false,
+            "confidence": 0.7
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "You logged into a secure area!",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "confirmation_message",
+      "extract_pattern": "(You logged into a secure area!)",
+      "risk": "safe"
+    }
+  ],
+  "success_checkpoint": {
+    "type": "text_visible",
+    "value": "You logged into a secure area!",
+    "timeout_ms": 5000
+  },
+  "created_from": {
+    "run_id": "heroku_app/discovery/2026-08-16_184054",
+    "model": "claude-sonnet-5",
+    "recorded_at": "2026-08-16T18:41:30.420Z"
+  },
+  "redaction_policy": {
+    "redact_fields": [
+      "HEROKU_APP_USERNAME",
+      "username",
+      "HEROKU_APP_PASSWORD",
+      "password"
+    ]
+  },
+  "confidence": {
+    "runs": 0,
+    "successes": 0,
+    "last_outcome": null,
+    "updated_at": null
+  }
+}

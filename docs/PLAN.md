@@ -1,18 +1,6 @@
 # PLAN.md — Remaining Work
 
-1. **Re-record the evidence set.** Record fresh with the current code so /evidence/ shows
-   the safety layer active (`redacted: true` lines) and the approval gate in the loop.
-   Needs, each readable standalone: a discovery run, a replay SUCCESS, a replay
-   BUSINESS_OUTCOME, and an escalation run (paused → human → resumed). Never hand-edit
-   evidence.
-
-   The committed `login-and-open-study-space` recording is currently broken and must be
-   re-recorded: its step-1 checkpoint is `element_exists "input[value]"`, a selector that
-   means "an input with a value attribute" and matches nothing, so every replay is a
-   HARD_FAILURE. The engine caught it and now reports the reason — but the recording
-   itself is the demo, so it has to be a good one.
-
-2. **Write REPORT.md last, after everything above is built and tested.** One to three
+1. **Write REPORT.md last, after everything above is built and tested.** One to three
    pages under these exact seven headings: Architecture, Artifact schema, Determinism &
    error handling, Heterogeneity & multi-tenant, Escalation & handoff, Safety, Cuts.
 
@@ -39,15 +27,3 @@
 
 ---
 
-## Done
-
-- Safety layer restored — allowlist gate, redaction, risk (`338f3fd`)
-- Stretch goals 1 and 3 — agent catalog + an approval gate that bites (`e512331`)
-- Console: one row grammar, chips, per-action columns, removal model (`2956b97`, `f914e3c`, `e89dedc`)
-- An agent actually calling the catalog, in `examples/` (`112d101`)
-- Caller badge on runs, and a failure reason that is never blank (`50f478c`)
-- HITL: the human's channel back is language, not selectors (`a98efdb`)
-- Escaped untrusted text; components share the fetch/error helpers (`c854e86`)
-- Allowlist editable from the console app form (`c9dd6c1`)
-- README rewritten to describe the system that exists (`d238290`)
-- DESIGN.md: Mermaid diagrams whose boxes name the files that do the work

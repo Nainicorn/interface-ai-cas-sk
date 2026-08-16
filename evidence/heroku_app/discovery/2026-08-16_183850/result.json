@@ -1,0 +1,27 @@
+{
+  "id": "heroku_app/discovery/2026-08-16_183850",
+  "kind": "discovery",
+  "app_id": "heroku_app",
+  "goal": "Log in using the username supplied as a run parameter named 'username' together with the app's stored password, then read the green confirmation message shown in the secure area. Record 'username' as a typed input parameter so a caller can pass a different one. The login form rejects an unknown username with a red flash message reading 'Your username is invalid!' — declare that as a business outcome so a caller gets a typed answer rather than a failure.",
+  "status": "recorded",
+  "detail": {
+    "artifact": {
+      "id": "heroku-app-login",
+      "version": 1,
+      "path": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/heroku_app/discovery/2026-08-16_183850/goal.json"
+    },
+    "turns": 5,
+    "usage": {
+      "input_tokens": 10,
+      "output_tokens": 2024,
+      "cache_read_input_tokens": 40995,
+      "cache_creation_input_tokens": 14185
+    },
+    "model": "claude-sonnet-5",
+    "evidence_dir": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/heroku_app/discovery/2026-08-16_183850",
+    "escalation": null,
+    "finished_at": "2026-08-16T18:39:15.181Z"
+  },
+  "started_at": "2026-08-16T18:38:50.896Z",
+  "updated_at": "2026-08-16T18:39:15.181Z"
+}

@@ -1,0 +1,209 @@
+{
+  "schema_version": 1,
+  "id": "heroku-app-login",
+  "name": "Heroku App Login",
+  "version": 1,
+  "status": "approved",
+  "description": "Logs into the Heroku 'The Internet' app secure area using a caller-supplied username and the app's stored password, returning the green confirmation message. Declares the INVALID_USERNAME business outcome when the username is not recognized.",
+  "target": {
+    "app_id": "heroku_app",
+    "entry_route": "/login",
+    "tenant_overrides": []
+  },
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "username": {
+        "type": "string",
+        "description": "Username to log in with"
+      }
+    },
+    "required": [
+      "username"
+    ],
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "confirmation_message": {
+        "type": "string",
+        "description": "The green flash confirmation message shown after successful login to the secure area"
+      }
+    },
+    "required": [
+      "confirmation_message"
+    ],
+    "additionalProperties": false
+  },
+  "risk_level": "safe",
+  "steps": [
+    {
+      "index": 0,
+      "intent": "Navigate to the login page",
+      "action": "navigate",
+      "url": "/login",
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Login Page",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 1,
+      "intent": "Enter the username",
+      "action": "type",
+      "locator": {
+        "description": "Username field",
+        "candidates": [
+          {
+            "kind": "label",
+            "value": "Username",
+            "exact": true,
+            "confidence": 0.9
+          },
+          {
+            "kind": "role",
+            "value": "Username",
+            "role": "textbox",
+            "exact": true,
+            "confidence": 0.8
+          }
+        ]
+      },
+      "value_from": "username",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[type='text']",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 2,
+      "intent": "Enter the stored password",
+      "action": "type",
+      "locator": {
+        "description": "Password field",
+        "candidates": [
+          {
+            "kind": "label",
+            "value": "Password",
+            "exact": true,
+            "confidence": 0.9
+          },
+          {
+            "kind": "role",
+            "value": "Password",
+            "role": "textbox",
+            "exact": true,
+            "confidence": 0.8
+          }
+        ]
+      },
+      "value_from_env": "HEROKU_APP_PASSWORD",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[type='password']",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 3,
+      "intent": "Submit the login form",
+      "action": "click",
+      "locator": {
+        "description": "Login button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Login",
+            "role": "button",
+            "exact": false,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "You logged into a secure area!",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [
+        {
+          "code": "INVALID_USERNAME",
+          "detect": {
+            "type": "text_visible",
+            "value": "Your username is invalid!",
+            "timeout_ms": 5000
+          },
+          "message": "The supplied username is not recognized by the app."
+        },
+        {
+          "code": "INVALID_PASSWORD",
+          "detect": {
+            "type": "text_visible",
+            "value": "Your password is invalid!",
+            "timeout_ms": 5000
+          },
+          "message": "The stored password did not match the supplied username (unexpected in normal operation)."
+        }
+      ],
+      "risk": "safe"
+    },
+    {
+      "index": 4,
+      "intent": "Read the green confirmation flash message from the secure area",
+      "action": "read",
+      "locator": {
+        "description": "Flash success message",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "#flash",
+            "exact": false,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "You logged into a secure area!",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "confirmation_message",
+      "extract_pattern": "([^\\n×]+)",
+      "risk": "safe"
+    }
+  ],
+  "success_checkpoint": {
+    "type": "text_visible",
+    "value": "You logged into a secure area!",
+    "timeout_ms": 5000
+  },
+  "created_from": {
+    "run_id": "heroku_app/discovery/2026-08-16_183850",
+    "model": "claude-sonnet-5",
+    "recorded_at": "2026-08-16T18:39:15.163Z"
+  },
+  "redaction_policy": {
+    "redact_fields": [
+      "HEROKU_APP_USERNAME",
+      "username",
+      "HEROKU_APP_PASSWORD",
+      "password"
+    ]
+  },
+  "confidence": {
+    "runs": 2,
+    "successes": 2,
+    "last_outcome": "BUSINESS_OUTCOME",
+    "updated_at": "2026-08-16T18:40:37.426Z"
+  }
+}
