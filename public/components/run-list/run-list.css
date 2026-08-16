@@ -2,7 +2,8 @@
 
 #run-list .scroll { overflow-x: auto; }
 #run-list table { min-width: 440px; }
-#run-list .when { white-space: nowrap; font-weight: 500; }
+#run-list .date { white-space: nowrap; font-weight: 500; }
+#run-list .time { white-space: nowrap; color: var(--ink-2); }
 #run-list th.right, #run-list td.actions { text-align: right; }
 
 /* Icon actions: always visible, so a row's controls never have to be discovered by
@@ -12,8 +13,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   margin: 0 0 0 4px;
   padding: 0;
   border: 1px solid transparent;
@@ -22,8 +23,8 @@
   cursor: pointer;
 }
 #run-list .icon svg {
-  width: 16px;
-  height: 16px;
+  width: 19px;
+  height: 19px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.4;

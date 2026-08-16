@@ -17,7 +17,7 @@
 
 #app-sidebar .apps { list-style: none; margin: 0; padding: 0; }
 #app-sidebar .apps li {
-  padding: 9px 44px 9px 10px; /* right gutter reserved for the Edit icon */
+  padding: 9px 48px 9px 10px; /* right gutter reserved for the Edit icon */
   border-radius: 10px;
   cursor: pointer;
   display: flex;
@@ -37,13 +37,13 @@
    never find. It stays quiet until the row is hovered, but it is always there. */
 #app-sidebar .edit-btn {
   position: absolute;
-  top: 8px;
+  top: 7px;
   right: 6px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   margin: 0;
   padding: 0;
   background: transparent;
@@ -53,8 +53,8 @@
   cursor: pointer;
 }
 #app-sidebar .edit-btn svg {
-  width: 15px;
-  height: 15px;
+  width: 18px;
+  height: 18px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.4;

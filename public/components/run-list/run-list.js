@@ -19,21 +19,28 @@ const ICON = {
   trash: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11M6.5 4V2.75A.75.75 0 0 1 7.25 2h1.5a.75.75 0 0 1 .75.75V4"/><path d="M4 4.5v8A1.5 1.5 0 0 0 5.5 14h5a1.5 1.5 0 0 0 1.5-1.5v-8"/><path d="M6.75 7v4M9.25 7v4"/></svg>',
 };
 
-/** The run's timestamp, read from its id — the rest of the path is just where it lives. */
+/**
+ * Split the run's timestamp out of its id — the rest of the path is just where it
+ * lives. Date and time get their own cells so both columns align down the table.
+ */
 function when(run) {
-  const stamp = String(run.id).split('/').pop() ?? '';           // 2026-08-16_041115
+  const stamp = String(run.id).split('/').pop() ?? ''; // 2026-08-16_041115
   const [date, time] = stamp.split('_');
-  if (!date || !time) return esc(stamp);
-  const hhmm = `${time.slice(0, 2)}:${time.slice(2, 4)}`;
-  const day = new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  return `${esc(day)} <span class="muted">${esc(hhmm)}</span>`;
+  if (!date || !time) return { date: esc(stamp), time: '' };
+  return {
+    date: esc(new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })),
+    time: esc(`${time.slice(0, 2)}:${time.slice(2, 4)}`),
+  };
 }
 
 function render(root, runs) {
   const rows = runs
-    .map((run) => `
+    .map((run) => {
+      const at = when(run);
+      return `
         <tr>
-          <td class="when">${when(run)}</td>
+          <td class="date">${at.date}</td>
+          <td class="time mono">${at.time}</td>
           <td>${esc(run.kind)}</td>
           <td><span class="badge ${esc(run.status)}">${esc(run.status)}</span>${run.live ? ` <span class="muted">${esc(ownerLabel(run.owner))}</span>` : ''}</td>
           <td class="actions">
@@ -45,11 +52,12 @@ function render(root, runs) {
                 : `<button class="icon del" data-delete="${esc(run.id)}" type="button" title="Delete this run and its evidence">${ICON.trash}<span class="sr">Delete</span></button>`
             }
           </td>
-        </tr>`)
+        </tr>`;
+    })
     .join('');
 
   root.querySelector('tbody').innerHTML =
-    rows || `<tr><td colspan="4" class="muted">No runs for this app yet — start one above.</td></tr>`;
+    rows || `<tr><td colspan="5" class="muted">No runs for this app yet — start one above.</td></tr>`;
 }
 
 /** Who is holding the live session, in the live viewer's words. */
