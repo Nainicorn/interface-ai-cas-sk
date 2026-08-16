@@ -1,15 +1,11 @@
 <!-- workspace.html — tab bar + three panes; workspace.js mounts run-list,
-     capability-table, and agent-catalog into them, and swaps the lede with the tab -->
+     capability-table, and agent-catalog into them. Each pane explains itself in its own
+     empty state, so there is no standing description above a table with rows in it. -->
 <nav class="tabbar">
   <button class="tab active" data-tab="runs" type="button">Runs</button>
   <button class="tab" data-tab="caps" type="button">Capabilities</button>
   <button class="tab" data-tab="catalog" type="button">Agent catalog</button>
 </nav>
-
-<p class="pane-lede muted" data-lede="runs">Every attempt this app has made, live or finished, with a full report behind each one.</p>
-<p class="pane-lede muted" data-lede="caps" hidden>The flows an AI has already worked out and recorded, replayable exactly as recorded with no AI involved.</p>
-<p class="pane-lede muted" data-lede="catalog" hidden>What an outside AI agent sees when it asks this system what it can do, showing only the capabilities a human has approved.</p>
-
 <div id="run-list" data-pane="runs"></div>
 <div id="capabilities" data-pane="caps" hidden></div>
 <div id="agent-catalog" data-pane="catalog" hidden></div>

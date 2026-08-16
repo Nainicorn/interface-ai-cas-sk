@@ -4,6 +4,9 @@
  * surfaces on purpose: the operator's shows drafts and can approve them, the agent's
  * shows only what a human has already approved.
  *
+ * Each pane says what it is in its own empty state rather than in a standing line here,
+ * so the explanation appears exactly when a reader has nothing else to go on.
+ *
  * Mounts run-list, capability-table, and agent-catalog into its panes; the panes keep
  * their ids so each component's own CSS keeps applying.
  * API: none of its own — the panes poll their endpoints.
@@ -25,8 +28,5 @@ export async function mount(root) {
     if (!tab) return;
     for (const button of root.querySelectorAll('[data-tab]')) button.classList.toggle('active', button === tab);
     for (const pane of root.querySelectorAll('[data-pane]')) pane.hidden = pane.dataset.pane !== tab.dataset.tab;
-    // One sentence per tab, swapped with it: three tabs of tables need saying what
-    // each one IS, and saying it once at the top beats a tooltip nobody opens.
-    for (const lede of root.querySelectorAll('[data-lede]')) lede.hidden = lede.dataset.lede !== tab.dataset.tab;
   });
 }

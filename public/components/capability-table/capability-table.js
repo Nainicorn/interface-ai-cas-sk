@@ -118,7 +118,13 @@ function render(root, artifacts) {
       </tr>
       <tr class="expand" data-details="${a.id}" hidden><td colspan="5"></td></tr>`,
       )
-      .join('') || `<tr><td colspan="5" class="muted">No capabilities for this app yet — record one with a run above.</td></tr>`;
+      .join('') ||
+    // The explainer lives in the empty state and nowhere else: it is what a first-time
+    // reader needs, and it would be noise above a table that already shows the answer.
+    `<tr><td colspan="5" class="muted empty">
+       The flows an AI has already worked out and recorded, replayable exactly as recorded
+       with no AI involved. Record one with a run above.
+     </td></tr>`;
 }
 
 export async function mount(root) {

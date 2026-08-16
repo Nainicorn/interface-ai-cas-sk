@@ -63,9 +63,12 @@ function render(root, entries) {
       </tr>`,
       )
       .join('') ||
+    // The explainer lives in the empty state and nowhere else: it is what a first-time
+    // reader needs, and it would be noise above a table that already shows the answer.
     `<tr><td colspan="4" class="muted empty">
-       Nothing here yet. Recordings start as drafts and stay invisible to agents until a
-       human approves one, in the Capabilities tab.
+       What an outside AI agent sees when it asks this system what it can do, showing only
+       the capabilities a human has approved. Nothing is approved yet, so an agent would
+       see an empty list: approve one in the Capabilities tab and it appears here.
      </td></tr>`;
 }
 

@@ -8,13 +8,6 @@
 #agent-catalog td { padding: 12px 10px; vertical-align: middle; }
 #agent-catalog th { white-space: nowrap; }
 
-#agent-catalog .empty {
-  padding: 18px 10px;
-  max-width: 66ch;
-  line-height: 1.55;
-  white-space: normal;
-}
-
 /* --- name ------------------------------------------------------------------- */
 /* Truncation lives on the element, not the cell: a td only honours max-width under
    table-layout:fixed, which would make these columns collide. */

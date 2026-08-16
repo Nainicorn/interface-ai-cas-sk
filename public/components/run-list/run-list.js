@@ -57,7 +57,13 @@ function render(root, runs) {
     .join('');
 
   root.querySelector('tbody').innerHTML =
-    rows || `<tr><td colspan="5" class="muted">No runs for this app yet — start one above.</td></tr>`;
+    // The explainer lives in the empty state and nowhere else: it is what a first-time
+    // reader needs, and it would be noise above a table that already shows the answer.
+    rows ||
+    `<tr><td colspan="5" class="muted empty">
+       Every attempt this app has made, live or finished, with a full report behind each one.
+       Start one above.
+     </td></tr>`;
 }
 
 /** Who is holding the live session, in the live viewer's words. */
