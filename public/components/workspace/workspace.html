@@ -1,7 +1,10 @@
-<!-- workspace.html — tab bar + two panes; workspace.js mounts run-list and capability-table into them -->
+<!-- workspace.html — tab bar + three panes; workspace.js mounts run-list,
+     capability-table, and agent-catalog into them -->
 <nav class="tabbar">
   <button class="tab active" data-tab="runs" type="button">Test runs</button>
   <button class="tab" data-tab="caps" type="button">Capabilities</button>
+  <button class="tab" data-tab="catalog" type="button">Agent catalog</button>
 </nav>
 <div id="run-list" data-pane="runs"></div>
 <div id="capabilities" data-pane="caps" hidden></div>
+<div id="agent-catalog" data-pane="catalog" hidden></div>

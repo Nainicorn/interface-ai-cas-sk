@@ -1,0 +1,64 @@
+/* agent-catalog.css — the catalog an agent receives: one card per callable capability,
+   its typed arguments, and the result of invoking it. */
+
+#agent-catalog .pane-lede {
+  margin: 0 0 14px;
+  max-width: 68ch;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+#agent-catalog .empty {
+  padding: 22px 0;
+  max-width: 60ch;
+  line-height: 1.55;
+}
+
+#agent-catalog .entry {
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+}
+#agent-catalog .entry:first-child { border-top: 0; }
+
+#agent-catalog .entry header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+/* The record sits at the far end of the header: it is the one field that changes on
+   its own, so it reads as status rather than as part of the name. */
+#agent-catalog .reliability { margin-left: auto; font-size: 0.82rem; }
+
+#agent-catalog .lede {
+  margin: 6px 0 12px;
+  max-width: 72ch;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+/* --- typed arguments -------------------------------------------------------- */
+/* The declared contract IS the form, so the layout has to survive a capability that
+   takes none, one, or six parameters. */
+#agent-catalog .args {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: flex-end;
+}
+#agent-catalog .arg { display: flex; flex-direction: column; gap: 4px; }
+#agent-catalog .arg-name { font-size: 0.8rem; }
+#agent-catalog .arg input { width: 22ch; margin: 0; }
+#agent-catalog .no-args { margin: 0; font-size: 0.85rem; }
+
+#agent-catalog .invoke-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+}
+#agent-catalog .result-line { font-size: 0.85rem; }
+#agent-catalog .result-line .ok { color: var(--st-good-fg); font-weight: 600; }
+#agent-catalog .result-line .mono { word-break: break-all; }

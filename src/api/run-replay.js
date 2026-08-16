@@ -1,33 +1,44 @@
 /**
- * One replay, fully accounted for: a run row, an evidence folder, and the persisted
- * result. Shared by the operator surface (api/artifacts.js) and the agent-facing
- * surface (api/capabilities.js), so a replay is equally auditable whoever triggered it.
+ * One replay, fully accounted for: the approval gate, a run row, an evidence folder, and
+ * the persisted result. Every caller goes through here — the operator surface
+ * (api/artifacts.js), the agent-facing surface (api/capabilities.js), and the CLI — so a
+ * replay is gated and auditable identically whoever triggered it.
  *
- * Hands off to: engine/replay.js, evidence/runs.js, evidence/logger.js.
+ * Hands off to: policy/risk.js, engine/replay.js, evidence/runs.js, evidence/logger.js.
  */
 
 import { replayCapability } from '../engine/replay.js';
 import { createRun, updateRun } from '../evidence/runs.js';
 import { RunLogger, newRunId } from '../evidence/logger.js';
-import { getTarget } from '../config/app-config.js';
+import { ApprovalRequired, checkUnattendedAllowed } from '../policy/risk.js';
 
 /**
  * @param {object} capability a validated Capability from the store
- * @param {object} params    caller-supplied inputs
+ * @param {object} params caller-supplied inputs
+ * @param {{headless?: boolean, runId?: string}} [options]
  * @returns {Promise<object>} the four-way result, tagged with run_id / capability / version
+ * @throws {ApprovalRequired} when a risky capability has not been approved
  */
-export async function runReplay(capability, params = {}) {
-  const target = getTarget(capability.target.app_id);
-  // Inject the chosen login's values into the target's declared env names before the
-  // browser launches; the engine keeps resolving value_from_env exactly as before.
+export async function runReplay(capability, params = {}, { headless = true, runId } = {}) {
+  // Before anything is written. A refusal must not leave a run row or an evidence
+  // folder behind, because nothing was attempted.
+  const gate = checkUnattendedAllowed(capability);
+  if (!gate.allowed) {
+    throw new ApprovalRequired(gate.reason, {
+      capability: capability.id,
+      version: capability.version,
+      status: capability.status,
+      risk_level: capability.risk_level,
+    });
+  }
 
-  const runId = newRunId(capability.target.app_id, 'replay');
-  createRun({ id: runId, kind: 'replay', appId: capability.target.app_id, status: 'running' });
-  const logger = new RunLogger(runId);
+  const id = runId ?? newRunId(capability.target.app_id, 'replay');
+  createRun({ id, kind: 'replay', appId: capability.target.app_id, status: 'running' });
+  const logger = new RunLogger(id);
 
-  const result = await replayCapability({ capability, params, headless: true, logger });
+  const result = await replayCapability({ capability, params, headless, logger });
 
-  updateRun(runId, {
+  updateRun(id, {
     status: result.outcome,
     detail: {
       capability: capability.id,
@@ -40,5 +51,5 @@ export async function runReplay(capability, params = {}) {
     },
   });
 
-  return { run_id: runId, capability: capability.id, version: capability.version, ...result };
+  return { run_id: id, capability: capability.id, version: capability.version, ...result, evidence_dir: logger.dir };
 }

@@ -1,10 +1,15 @@
 /**
- * Workspace: one card, two tabs — the run history and the recorded capabilities.
- * Mounts run-list and capability-table into its panes; the panes keep their ids so
- * each component's own CSS keeps applying.
+ * Workspace: one card, three tabs — the run history, the recorded capabilities, and the
+ * catalog an agent sees. The last two read the same recordings through different
+ * surfaces on purpose: the operator's shows drafts and can approve them, the agent's
+ * shows only what a human has already approved.
+ *
+ * Mounts run-list, capability-table, and agent-catalog into its panes; the panes keep
+ * their ids so each component's own CSS keeps applying.
  * API: none of its own — the panes poll their endpoints.
  */
 
+import { mount as agentCatalog } from '/components/agent-catalog/agent-catalog.js';
 import { mount as capabilityTable } from '/components/capability-table/capability-table.js';
 import { mount as runList } from '/components/run-list/run-list.js';
 
@@ -13,6 +18,7 @@ export async function mount(root) {
 
   runList(root.querySelector('[data-pane=runs]'));
   capabilityTable(root.querySelector('[data-pane=caps]'));
+  agentCatalog(root.querySelector('[data-pane=catalog]'));
 
   root.querySelector('.tabbar').addEventListener('click', (event) => {
     const tab = event.target.closest('[data-tab]');

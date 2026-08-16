@@ -1,173 +1,155 @@
 # PLAN.md — Remaining Work
 
-Conventions and non-negotiables in [CLAUDE.md](CLAUDE.md).
+Conventions and non-negotiables in [CLAUDE.md](../CLAUDE.md).
 
-**The pivot:** the evaluator receives *only this repo* — no target app ships with it. The
-submission flow is bring-your-own URL: register a target (friendly name, base URL, goal,
-credentials file), record a fresh run, replay it, review every run in the console.
-Decisions locked: no generated Playwright script (the typed artifact **is** the recording;
-code generation stays a declined stretch goal), and credentials are a gitignored
-multi-login personas file — different logins can surface different app-side permissions as
-`BUSINESS_OUTCOME`s. The committed `/evidence/` runs (recorded against the local dev
-fixtures) remain the assignment-required proof of real LLM discovery.
+## Where we stand
 
-## 0. Where we stand vs. the brief
+**The through-line works.** A goal in natural language → a real LLM run against a live
+browser → a typed `goal.json` capability → deterministic no-LLM replay with the four-way
+outcome contract → same-session human handoff → evidence for every run. Any app can be
+registered from the console by URL.
 
-**Met (§3 must-haves):** real LLM discovery loop; typed/versioned/Zod-validated artifact;
-deterministic no-LLM replay with the four-way contract (`/evidence/` proves
-`BUSINESS_OUTCOME ≠ HARD_FAILURE`); allowlist/risk/redaction guardrails enforced by
-boundary tests; per-run evidence; same-session escalation with resume.
-**Exceeded:** a real operator console (the brief allows a mock), live viewer, both
-permitted stretch goals (agent catalog + confidence gating), two dev fixtures, 63 tests.
-**Gaps:** REPORT.md — the highest-weighted unmet deliverable — still unwritten; a redaction
-bug leaks credential values into evidence transcripts (§1 — found during planning, one-line
-fix); no permission-denied `BUSINESS_OUTCOME` in evidence yet (personas make one
-recordable); and the evaluator cannot yet register a target, browse runs, or open a run
-report — phases 2–4.
-**Scope guard:** the brief explicitly does not reward breadth. Every UI item below is a
-thin projection over data that already exists on disk, built on existing components and
-conventions — nothing new is invented on the replay path.
+**What the MVP restructure (`bfbd11e`) removed and what came back.** That commit dropped
+the whole `src/policy/` layer — allowlist, redaction, risk — plus the capability catalog
+and the test suite. The safety layer is restored (§1, done). The catalog is §3 below.
 
-## 1. Redaction hardening — DONE (suffix match shipped, leak closed)
+**Status against the brief's Section 3 (must-haves):**
 
-**A real leak:** committed evidence transcripts contain credential values in the clear —
-e.g. `evidence/20260814-202419-replay/transcript.jsonl`:
-`{"field":"MOCK_BANK_PASSWORD","value":"demo-password","redacted":false}` (10+
-transcripts). Root cause: `isSensitive()` (`src/policy/redact.js:24`) compares normalized
-names for *equality*, so the env-var name `MOCK_BANK_PASSWORD` (`mockbankpassword`) never
-matches the rule `password` — and the replay path passes the env name as the field name,
-so the typed value logs unredacted. Today's leaked values are fake fixture creds already
-public in `.env.example`; once personas hold real logins this becomes a genuine leak.
-
-- Fix: suffix match in `isSensitive()` —
-  `norm(candidate) === target || target.endsWith(norm(candidate))`. Existing
-  `tests/policy.test.js` assertions hold; add cases for `MOCK_BANK_PASSWORD` and
-  `<APP>_USERNAME`.
-- Defense-in-depth (lands with §2): registration unions the derived env names into the
-  target's `redact_fields`.
-- Evidence: per non-negotiable #7, never hand-edit — after the fix, re-record the affected
-  evidence runs (§6) so the committed set shows `redacted: true`; REPORT.md's Safety
-  section discloses the bug as found-and-fixed (more credible than rewriting history).
-
-## 2. Target registration & personas (backend) — DONE
-
-- `POST /api/targets` (new `src/api/targets.js`): validate, write `config/targets.json`,
-  then `loadTargets({ reload: true })` (cache in `src/policy/allowlist.js`). The file gets
-  env-var *names* only (`<APP_ID>_USERNAME` / `<APP_ID>_PASSWORD`, derived from the app
-  id) — boundary test 4 already enforces the shape: `base_url`, non-empty
-  `allowlist.route_prefixes` (caller must supply them — no silent allow-everything),
-  non-empty `action_types` (default: the standard five), env-shaped credentials. The
-  writer runs that same predicate on the composed block and refuses to write otherwise —
-  it structurally cannot produce a config the suite rejects. A `credentials` key in the
-  payload is explicitly rejected (secrets go to the personas file, never targets.json).
-- Persona values land in gitignored `data/creds/<app_id>.json`, mode 0600
-  (`{ "personas": { "<name>": { "username": "…", "password": "…", "note?": "…" } } }`);
-  commit a `.example`. Secrets never enter targets.json, artifacts, transcripts, or the
-  DB — the existing redaction path (post-§1) is unchanged.
-- `persona` run parameter end-to-end: `POST /api/runs`, `POST /api/artifacts/:id/replay`,
-  `POST /api/capabilities/:id/invoke`, and `--persona` on the `discover` / `replay` CLIs.
-  A small resolver (new `src/policy/personas.js`) injects the chosen persona's values
-  into the target's declared env names immediately before browser launch — discovery
-  prompt, artifact (`value_from_env`), replay, and redaction all keep working untouched
-  (`process.env` is read at time-of-use on both paths). No persona given → first declared
-  persona if a creds file exists, else `.env` values exactly as today. An unknown persona
-  name fails synchronously at `POST /api/runs` (400 listing known *names*), never as a
-  background run failure. Known limitation, documented: env injection assumes one run at a
-  time per process — fine for a single-operator console, called out in REPORT.md.
-- **No `register-target` CLI.** The console form plus a README `curl` covers both
-  audiences; a third CLI is exactly the feature breadth the brief punishes.
-- Widen the `GET /api/targets` projection: add `base_url`, `default_goal` (new optional
-  target field), and persona *names*. Never values.
-- Tests: registration validation (including boundary-shape + cache reload), persona
-  resolution, and a leak test — after a persona run, the value appears nowhere in
-  targets.json, the artifact, or the transcript.
-
-## 3. Run reports over HTTP — DONE
-
-Evidence (`evidence/<run-id>/`: `transcript.jsonl`, numbered PNGs, `result.json`) is rich
-but currently unreachable except a latest-screenshot route. Report building lives in a
-pure, HTTP-free module (new `src/evidence/report.js`) so it tests without a server.
-
-- `GET /api/runs/:id/report`: run row + target summary + `result.json` + ordered step list
-  (replay: from `result.json` steps; discovery: projected from `transcript.jsonl` `action`
-  / `model_turn` lines) + screenshot filename list + token usage. The transcript
-  projection drops the size bombs (`ariaTree`, `visibleText`), truncates long strings,
-  and caps event count — the page renders fast even for a long discovery.
-- `GET /api/runs/:id/screenshots/:file`: PNG by name — run id and filename strictly
-  pattern-matched (`^\d{3}-[A-Za-z0-9._-]+\.png$`, matching the logger's naming) plus a
-  resolved-path prefix assert: no traversal. Harden the existing `GET /:id/screenshot`
-  with the same run-id guard while touching the file (it currently joins `req.params.id`
-  raw).
-- Tests: report shape for one committed discovery and one replay folder; traversal guard
-  (`../`, `a/b.png`, encoded dots).
-
-## 4. Console redesign (the evaluator UI) — DONE
-
-Header + left/right panels + a report page. Existing conventions throughout: one directory
-per component (`.html`/`.js`/`.css`), `mount(root)`, polling with a change-key guard,
-delegated clicks, `window` CustomEvents.
-
-- `run-list` (left panel): every run newest-first with status badges (the `.badge` CSS
-  already covers lifecycle *and* outcome vocabularies); click fires `run-selected`.
-  Replaces the inert `run-status` table.
-- `run-detail` (right panel): target friendly name, base URL, goal, params, persona,
-  artifact link; actions: replay (with params) and **open report in a new tab**.
-- `target-form`: register a target (name, URL, entry route, default goal, allowlist
-  prefixes — required, the form says why — risky patterns, repeatable persona rows).
-  Collapsed `<details>` card; on 201 it clears secrets from the DOM and emits a
-  `targets-changed` event. `goal-form` gains a persona select and `default_goal` prefill,
-  refetching targets on `targets-changed`.
-- `public/report.html?run=<id>`: standalone read-only page — outcome banner, run config,
-  steps with timings, screenshot gallery, discovery token usage. Pure projection of
-  `/api/runs/:id/report`.
-- `public/lib/api.js` (fetch + error unwrap) and an HTML-escape helper; apply the escape
-  fix to components as they are touched (goals/errors are interpolated unescaped today).
-- Keep as-is: `live-viewer`, `operator-console`, `capability-table` (catalog + approve).
-  Delete `tabs/` and `run-status/` once superseded — nothing else imports them, and the
-  boundary tests scan `src/` only.
-
-## 5. REPORT.md (~1–3 pages, these EXACT seven headings)
-
-1. **Architecture** — decisions + trade-offs.
-2. **Artifact schema** — the shape and why.
-3. **Determinism & error handling** — four-way contract, ranked locators, checkpoints,
-   recovery table; drift secondarily.
-4. **Heterogeneity & multi-tenant** — a11y-first perception seam; app_id = vendor product;
-   tenant_overrides; drift detection via confidence. Target registration is the working
-   demonstration of "point it at another app". Design-only parts, say so.
-5. **Escalation & handoff** — stuck detection, owner flag + mutex, same-session control
-   transfer, resume.
-6. **Safety** — allowlist / risk / redaction / personas model and its limits, including
-   the §1 transcript-redaction bug as found-and-fixed (with the re-recorded evidence).
-7. **Cuts** — what was left out and why; what's next.
-
-Material to mine: the v1→v4 artifact history (weak locator → HARD_FAILURE → ambiguity
-samples → foreseen business outcomes), the escalation evidence run, the boundary tests.
-
-Declined stretch options, for the Cuts section:
-
-| Option | Why declined |
+| Requirement | State |
 |---|---|
-| Code generation from an artifact | Orthogonal to the through-line; a second executable "click" breaks the one-action-layer thesis. |
-| Assisted LLM fallback on replay failure | On principle: it puts the model back in the replay loop. |
-| Canonicalization / cross-tenant demo | Designed (tenant_overrides in the schema), not built. |
-| Multi-run stability sweep | The confidence field already captures the signal. |
+| 3.1 Goal-driven agent loop | Done |
+| 3.2 Structured artifact | Done — typed, versioned, Zod-validated |
+| 3.3 Deterministic replay + error taxonomy | Done — four-way contract, no LLM on the path |
+| 3.4 Safety & policy guardrails | **Done (§1)** — was missing, now restored |
+| 3.5 Evidence / observability | Done — transcript, screenshots, result.json per run |
+| 3.6 Human-in-the-loop escalation | Works, but the operator surface is wrong (§4) |
+| 3.7 Heterogeneity & scale (design) | Schema seams exist; the argument goes in REPORT.md |
+
+---
+
+## 1. Safety layer — DONE (commit `338f3fd`)
+
+`src/policy/` restored and wired at one seam:
+
+- **allowlist.js** — `checkAllowed()` opens every action primitive in
+  [actions.js](../src/engine/actions.js), so the LLM path, the replay path, and the human
+  operator path all pass the same gate. The app's own origin is not widenable by any
+  prefix; a mid-run redirect off the allowlist stops the next action.
+- **redact.js** — field-aware redaction at the point of logging. Sensitive fields log a
+  shape (`<string:13>`), everything else logs its value, and an explicit `redacted` flag
+  is written either way. Suffix match, so a derived env name (`EDORA_PASSWORD`) hits the
+  `password` rule.
+- **risk.js** — safe/risky classification plus the two approval predicates
+  (`checkUnattendedAllowed`, `checkAgentInvocable`).
+- Permissions are resolved onto the target in
+  [app-config.js](../src/config/app-config.js) and written literally into every new config
+  file, so an app's permissions are readable rather than inferred.
+
+Remaining thread: the console's app form does not yet expose the allowlist fields (the API
+accepts them). Small; fold into §5.
+
+---
+
+## 2. Stretch goal #3 — confidence & approval (finish it)
+
+Already built: capabilities are born `draft`; `PATCH /api/artifacts/:id/status` promotes to
+`approved`; the console has an Approve button; every replay folds its outcome into a
+rolling `confidence: { runs, successes, last_outcome, updated_at }`
+([store.js](../src/schema/store.js)).
+
+Missing: **nothing consults `status` before replaying**, so "approved" is currently a label
+rather than a gate. The enforcement point left with `src/api/capabilities.js`.
+
+- Call `checkUnattendedAllowed()` in the replay entry path. A safe capability replays from
+  the console freely (a human is watching); a **risky** one stays refused until approved.
+- Refusal is a 403 carrying the predicate's reason, not a HARD_FAILURE — the run never
+  started, so it says nothing about the recording's reliability.
+
+## 3. Stretch goal #1 — agent-facing capability interface (finish it)
+
+Already built: `GET /api/artifacts` returns `name`, `description`, `input_schema`,
+`output_schema` — a tool definition in all but name — and `POST /api/artifacts/:id/replay`
+invokes one with typed params.
+
+Missing: the agent-facing surface itself, deleted in `bfbd11e`.
+
+- `src/api/capabilities.js` — `GET /api/capabilities` (the catalog: **approved only**, via
+  `checkAgentInvocable`) and `POST /api/capabilities/:id/invoke` (typed args in, four-way
+  result out). Strictly narrower than the operator's `/api/artifacts` surface: what an
+  autonomous agent can discover and call is an explicit human grant.
+- `src/cli/invoke.js` + an `invoke` npm script — the demo the brief asks for ("show one
+  being invoked").
+- Console: a Catalog view showing what an agent would see, so approving a capability
+  visibly moves it from invisible to callable.
+- README currently documents `npm run invoke`, which does not exist. Fixed by this work.
+
+## 4. HITL is the wrong shape — make the handoff natural language
+
+**The problem.** The goal is written in plain English and the model reasons in plain
+English, but the operator console asks a human to hand-assemble a Playwright-shaped step:
+action type, locator kind, role, text, URL
+([operator-console.html](../public/components/operator-console/operator-console.html)).
+That inverts the premise. If a login needs a code from an email, the operator should not be
+building locators — they should either drive the browser themselves or say *"the code is
+481920, type it into the verification field"* and let the model do what it already knows
+how to do.
+
+**Most of this already works.** `resumeRun(runId, { note })` passes the note straight back
+into the model's context as natural language, and the loop re-observes the live page from
+whatever state it is in ([discovery.js:348](../src/agent/discovery.js#L348)). The run is
+headed Chromium, so a human can already take the window and click.
+
+**The fix is mostly deletion:**
+
+- Make the note the primary control: a plain-English box — "tell the agent what you did, or
+  what it should do next" — then Resume.
+- Point the operator at the live Chromium window for manual work. It is the same session by
+  construction, which is exactly what 3.6 asks for. Say so in the UI.
+- Retire the locator/action/role/kind form. Keep `performManualAction` in
+  [escalation.js](../src/agent/escalation.js) — human actions through the same five
+  primitives, tagged `actor: "human"` in the evidence trail, is a real part of the design —
+  but it stops being what the operator is asked to fill in.
+- REPORT.md §5 argues the control-transfer model: owner flag + per-run mutex, and *why* the
+  human's channel back is language, not selectors.
+
+## 5. Codebase cleanup
+
+- Delete dead code and stale docs. README documents commands that no longer exist
+  (`npm run invoke`) and a `tests/` suite that was removed.
+- One responsibility per file; each file's header comment states what it hands off to —
+  hold that convention everywhere.
+- Console components: one folder per component (`.html`/`.js`/`.css`), `mount(root)`,
+  delegated clicks, `window` CustomEvents. No stragglers outside the pattern.
+- HTML-escape interpolated values in components (goals and error strings are user text).
+- Consistent error shape across API routes.
+- Temporary test scripts live in the scratchpad and are deleted once green — this repo
+  ships no test directory, and the README must not claim one.
 
 ## 6. Final evidence pass
 
-The repo's `artifacts/` and `evidence/` were reset for the fresh-slate console (the old
-runs — some with pre-§1 unredacted credential lines — remain in git history). Before
-submission, record the full evidence set fresh with the fixed recorder — never hand-edit
-(non-negotiable #7). Then confirm `/evidence/` contains, each
-readable standalone: a discovery run (transcript, screenshots, result), a replay SUCCESS,
-a replay BUSINESS_OUTCOME (not-found and no-savings), the escalation run (paused → human
-actions → resumed → recorded), and the v1 HARD_FAILURE replay that motivated the locator
-feedback. Optionally: one permission-denied `BUSINESS_OUTCOME` recorded with a restricted
-persona (needs a fixture login with fewer rights; otherwise document it in Cuts as
-designed-not-demoed).
+Re-record the committed evidence set with the current code, so `/evidence/` shows the
+safety layer active (`redacted: true` lines) and the approval gate in the loop. Each run
+readable standalone: a discovery run, a replay SUCCESS, a replay BUSINESS_OUTCOME, and an
+escalation run (paused → human → resumed). Never hand-edit evidence.
 
-## 7. Submission
+## 7. REPORT.md — last, after everything is built and tested
 
-README demo path re-verified from a fresh clone — register → record → replay → report must
-work exactly as written — then push → email the repo URL (own line, application address,
-no zip) to assignments@interface.ai.
+~1–3 pages, these exact seven headings: Architecture, Artifact schema, Determinism & error
+handling, Heterogeneity & multi-tenant, Escalation & handoff, Safety, Cuts.
+
+**Cuts to defend explicitly.** The brief says pick at most one or two stretch goals. Two
+are implemented — the catalog and the approval gate — and they are one idea: *a human
+approves a recording, then an agent can call it by name, and the system tracks whether it
+keeps working.*
+
+| Stretch goal | Decision |
+|---|---|
+| Agent-facing capability interface | **Built** (§3) |
+| Confidence & approval | **Built** (§2) |
+| Code generation from an artifact | Cut — a generated script is a second thing that can click, and it drifts from the engine. It also loses the ranked-locator fallbacks, the outcome contract, and the evidence trail. |
+| Assisted LLM fallback on replay | Cut on principle — it puts the model back in the replay loop, which is the one thing determinism forbids. Human escalation covers the same failure honestly. |
+| Canonicalization / cross-tenant reuse | Designed, not built. `tenant_overrides` is in the schema; 3.7 asks for the design, not the build. The real seam to point at: `base_url` lives in the app config, not the recording, so aiming one `app_id` at another deployment replays the same capability against a different tenant. |
+| Multi-run stability sweep | Cut — the rolling `confidence` counter already accumulates the same signal across real replays; a sweep would only report it more loudly. |
+
+Also for Cuts: the console does not yet expose allowlist editing; multi-tenant and desktop
+surfaces are design-only, as the brief permits.

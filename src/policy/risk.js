@@ -17,6 +17,22 @@
 
 import { routeOf } from './allowlist.js';
 
+/**
+ * Raised when a capability is refused for want of human approval.
+ *
+ * A refusal is NOT a HARD_FAILURE: the run never started, so it says nothing about
+ * whether the recording still works. It surfaces as 403 and never touches the rolling
+ * confidence signal.
+ */
+export class ApprovalRequired extends Error {
+  constructor(reason, detail = {}) {
+    super(reason);
+    this.name = 'ApprovalRequired';
+    this.status = 403;
+    this.detail = detail;
+  }
+}
+
 /** Action types that cannot mutate server state, whatever route they happen on. */
 const INHERENTLY_SAFE_ACTIONS = new Set(['read', 'wait_for', 'navigate']);
 

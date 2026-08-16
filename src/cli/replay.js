@@ -9,11 +9,8 @@
  * Exit codes: 0 for SUCCESS and BUSINESS_OUTCOME (both are answers), 1 for HARD_FAILURE.
  */
 
-import { replayCapability } from '../engine/replay.js';
+import { runReplay } from '../api/run-replay.js';
 import { loadCapability } from '../schema/store.js';
-import { createRun, updateRun } from '../evidence/runs.js';
-import { RunLogger, newRunId } from '../evidence/logger.js';
-import { getTarget } from '../config/app-config.js';
 
 function parseArgs(argv) {
   const args = { params: {}, headless: true };
@@ -51,31 +48,18 @@ try {
   const capability = await loadCapability(args.id, args.version);
   console.log(`Replaying ${capability.id} v${capability.version} (no LLM)…`);
 
-  // Persona values land in the declared env names before the browser launches.
-
-  const runId = args.runId ?? newRunId(capability.target.app_id, 'replay');
-  createRun({ id: runId, kind: 'replay', appId: capability.target.app_id, status: 'running' });
-  const logger = new RunLogger(runId);
-
-  const result = await replayCapability({ capability, params: args.params, headless: args.headless, logger });
-
-  updateRun(runId, {
-    status: result.outcome,
-    detail: {
-      capability: capability.id,
-      version: capability.version,
-      outcome: result.outcome,
-      outputs: result.outputs && Object.keys(result.outputs).length ? result.outputs : null,
-      business_outcome: result.business_outcome ?? null,
-      failed_step: result.failure ? { step: result.failure.step, message: result.failure.message } : null,
-    },
+  // Same entry point the console and the agent catalog use, so the approval gate, the
+  // run row, and the evidence folder cannot differ by which door the caller came in.
+  const result = await runReplay(capability, args.params, {
+    headless: args.headless,
+    runId: args.runId,
   });
 
   console.log(`\nOutcome:  ${result.outcome}`);
   if (result.outputs) console.log(`Outputs:  ${JSON.stringify(result.outputs)}`);
   if (result.business_outcome) console.log(`Business: ${JSON.stringify(result.business_outcome)}`);
   if (result.failure) console.log(`Failure:  ${JSON.stringify(result.failure, null, 2)}`);
-  console.log(`Evidence: ${logger.dir}`);
+  console.log(`Evidence: ${result.evidence_dir}`);
 
   process.exit(result.outcome === 'HARD_FAILURE' ? 1 : 0);
 } catch (err) {
