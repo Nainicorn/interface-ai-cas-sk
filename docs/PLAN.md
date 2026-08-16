@@ -9,19 +9,7 @@
    (`npm run agent-demo`), open the report. Also document the caller badge and the
    Permissions section on the app form.
 
-2. **Write docs/DESIGN.md as Mermaid diagrams.** The file exists but is empty. It should
-   show the full flow visually, and every box should name the file that actually does the
-   work, so a reader can go from the picture to the code without hunting. At minimum:
-   discovery (goal → discovery.js loop → tools.js → actions.js → artifact-writer.js →
-   goal.json in the run folder); replay (run-replay.js gate → replay.js → locator.js →
-   actions.js → the four-way outcome); the approval gate and the two surfaces it separates
-   (artifacts.js for the operator, capabilities.js for agents); escalation (pause → owner
-   flag + mutex in escalation.js → human on the same page → resume); and where the policy
-   layer sits (checkAllowed opening every primitive in actions.js). A sequence diagram for
-   the agent-demo loop is worth adding too, since that is the one path that crosses the
-   process boundary.
-
-3. **Re-record the evidence set.** Record fresh with the current code so /evidence/ shows
+2. **Re-record the evidence set.** Record fresh with the current code so /evidence/ shows
    the safety layer active (`redacted: true` lines) and the approval gate in the loop.
    Needs, each readable standalone: a discovery run, a replay SUCCESS, a replay
    BUSINESS_OUTCOME, and an escalation run (paused → human → resumed). Never hand-edit
@@ -33,7 +21,7 @@
    HARD_FAILURE. The engine caught it and now reports the reason — but the recording
    itself is the demo, so it has to be a good one.
 
-4. **Write REPORT.md last, after everything above is built and tested.** One to three
+3. **Write REPORT.md last, after everything above is built and tested.** One to three
    pages under these exact seven headings: Architecture, Artifact schema, Determinism &
    error handling, Heterogeneity & multi-tenant, Escalation & handoff, Safety, Cuts.
 
@@ -70,3 +58,5 @@
 - HITL: the human's channel back is language, not selectors (`a98efdb`)
 - Escaped untrusted text; components share the fetch/error helpers (`c854e86`)
 - Allowlist editable from the console app form (`c9dd6c1`)
+- README rewritten to describe the system that exists (`d238290`)
+- DESIGN.md: Mermaid diagrams whose boxes name the files that do the work
