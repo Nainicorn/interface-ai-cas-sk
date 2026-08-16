@@ -148,7 +148,7 @@ const JsonSchemaObject = z.record(z.string(), z.unknown());
  *
  * `target.app_id` names the VENDOR PRODUCT, not a tenant and not a URL. That indirection
  * is what lets one recording serve many institutions running the same software, and it
- * is why the base URL lives in config/targets.json rather than in the artifact.
+ * is why the base URL lives in artifacts/<app>/config.json rather than in the recording.
  */
 export const CapabilitySchema = z.object({
   schema_version: z.literal(1).default(1),
@@ -160,7 +160,7 @@ export const CapabilitySchema = z.object({
   description: z.string().min(1).describe('What a calling agent gets from this capability'),
 
   target: z.object({
-    app_id: z.string().min(1).describe('Vendor product key; resolved via config/targets.json'),
+    app_id: z.string().min(1).describe('App key; resolved via artifacts/<app>/config.json'),
     entry_route: z.string().min(1),
     tenant_overrides: z.array(TenantOverrideSchema).default([]),
   }),

@@ -9,9 +9,7 @@
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PolicyViolation } from '../policy/allowlist.js';
 import artifactsRouter from './artifacts.js';
-import capabilitiesRouter from './capabilities.js';
 import escalationRouter from './escalation.js';
 import runsRouter from './runs.js';
 import targetsRouter from './targets.js';
@@ -25,16 +23,15 @@ app.use(express.static(path.resolve(here, '../../public')));
 app.use('/api/targets', targetsRouter);
 app.use('/api/runs', runsRouter);
 app.use('/api/artifacts', artifactsRouter);
-app.use('/api/capabilities', capabilitiesRouter);
 app.use('/api/escalations', escalationRouter);
 
-/** Uniform error shape. A PolicyViolation is a refusal (403), not a server fault. */
+/** Uniform error shape. Errors carry their own status; anything else is a server fault. */
 app.use((err, _req, res, _next) => {
-  const status = err instanceof PolicyViolation ? 403 : err.status ?? 500;
+  const status = err.status ?? 500;
   res.status(status).json({ error: err.message, detail: err.detail ?? null });
 });
 
-import { reconcileAtBoot } from '../db/sqlite.js';
+import { reconcileAtBoot } from '../evidence/runs.js';
 
 const { orphanedRuns, orphanedInterventions } = reconcileAtBoot();
 if (orphanedRuns || orphanedInterventions) {

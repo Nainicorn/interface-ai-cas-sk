@@ -6,7 +6,7 @@
   <title>CAS Console</title>
   <link rel="stylesheet" href="/styles.css" />
   <link rel="stylesheet" href="/components/app-sidebar/app-sidebar.css" />
-  <link rel="stylesheet" href="/components/target-modal/target-modal.css" />
+  <link rel="stylesheet" href="/components/app-editor/app-editor.css" />
   <link rel="stylesheet" href="/components/goal-form/goal-form.css" />
   <link rel="stylesheet" href="/components/live-viewer/live-viewer.css" />
   <link rel="stylesheet" href="/components/operator-console/operator-console.css" />
@@ -28,18 +28,18 @@
       </div>
     </div>
   </div>
-  <div id="target-modal"></div>
+  <div id="app-editor"></div>
 
   <script type="module">
     import { mount as appSidebar } from '/components/app-sidebar/app-sidebar.js';
-    import { mount as targetModal } from '/components/target-modal/target-modal.js';
+    import { mount as appEditor } from '/components/app-editor/app-editor.js';
     import { mount as goalForm } from '/components/goal-form/goal-form.js';
     import { mount as liveViewer } from '/components/live-viewer/live-viewer.js';
     import { mount as operatorConsole } from '/components/operator-console/operator-console.js';
     import { mount as workspace } from '/components/workspace/workspace.js';
 
     appSidebar(document.getElementById('app-sidebar'));
-    targetModal(document.getElementById('target-modal'));
+    appEditor(document.getElementById('app-editor'));
     goalForm(document.getElementById('goal-form'));
     liveViewer(document.getElementById('live-viewer'));
     operatorConsole(document.getElementById('operator-console'));

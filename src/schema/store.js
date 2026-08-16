@@ -1,76 +1,99 @@
 /**
- * Artifact persistence: versioned capability JSON on disk.
+ * Capability persistence: the recorded `goal.json` inside each discovery run folder.
  *
- * Deliberately files, not database rows. Artifacts are a deliverable meant to be read
- * and diffed by humans in a code review — "reviewable" is an explicit requirement, and
- * a row in SQLite is not reviewable without a client. Runs and interventions, which are
- * operational rather than reviewable, do live in SQLite.
+ * Deliberately files, not database rows. A capability is a deliverable meant to be read
+ * and diffed by a human in a code review — "reviewable" is an explicit requirement, and
+ * a row in SQLite is not reviewable without a client.
  *
- * Layout: artifacts/{capability-id}/v{n}.json
+ * Layout: evidence/{app}/{kind}/{stamp}/goal.json — the recording lives in the run that
+ * produced it, beside the screenshots and transcript proving it ran. There is no
+ * separate artifacts tree and no promotion step; artifacts/ holds user-authored config
+ * only. A discovery folder WITH a goal.json passed its gates and is replayable; one
+ * without did not.
  *
- * Hands off to: engine/replay.js, api/artifacts.js, cli/*.
+ * Hands off to: engine/replay.js, api/artifacts.js, agent/artifact-writer.js, cli/*.
  */
 
-import { existsSync } from 'node:fs';
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { EVIDENCE_DIR } from '../evidence/logger.js';
 import { parseCapability } from './capability.js';
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-export const ARTIFACTS_DIR = path.resolve(here, '../../artifacts');
+export const CAPABILITY_FILE = 'goal.json';
 
-const versionFile = (id, version) => path.join(ARTIFACTS_DIR, id, `v${version}.json`);
-
-/** Parse "v3.json" -> 3. Returns null for anything else. */
-function versionFromFilename(filename) {
-  const match = /^v(\d+)\.json$/.exec(filename);
-  return match ? Number(match[1]) : null;
-}
+const dirsIn = (parent) =>
+  existsSync(parent)
+    ? readdirSync(parent, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name)
+    : [];
 
 /**
- * Every stored version number for a capability, ascending.
- * @returns {Promise<number[]>} empty if the capability has never been saved
+ * Every recorded capability on disk, with the run folder that produced it.
+ * Walked rather than indexed — the folders are already the source of truth, and an
+ * index beside them is one more thing that can disagree.
+ * @returns {Array<{runId: string, file: string, capability: object}>}
  */
-export async function listVersions(id) {
-  const dir = path.join(ARTIFACTS_DIR, id);
-  if (!existsSync(dir)) return [];
-  const entries = await readdir(dir);
-  return entries.map(versionFromFilename).filter((v) => v !== null).sort((a, b) => a - b);
+export function listRecordings() {
+  const found = [];
+  for (const app of dirsIn(EVIDENCE_DIR)) {
+    for (const kind of dirsIn(path.join(EVIDENCE_DIR, app))) {
+      for (const stamp of dirsIn(path.join(EVIDENCE_DIR, app, kind))) {
+        const runId = `${app}/${kind}/${stamp}`;
+        const file = path.join(EVIDENCE_DIR, runId, CAPABILITY_FILE);
+        if (!existsSync(file)) continue;
+        try {
+          found.push({ runId, file, capability: JSON.parse(readFileSync(file, 'utf8')) });
+        } catch {
+          // A half-written recording is not a capability. It stays in the folder as evidence.
+        }
+      }
+    }
+  }
+  // Oldest first: run ids sort chronologically because the stamp is fixed-width.
+  return found.sort((a, b) => a.runId.localeCompare(b.runId));
+}
+
+/** Every stored version number for a capability id, ascending. */
+export function listVersions(id) {
+  return listRecordings()
+    .filter((r) => r.capability.id === id)
+    .map((r) => r.capability.version)
+    .sort((a, b) => a - b);
 }
 
 /** The next unused version number for a capability id (1 if it's new). */
-export async function nextVersion(id) {
-  const versions = await listVersions(id);
+export function nextVersion(id) {
+  const versions = listVersions(id);
   return versions.length === 0 ? 1 : versions[versions.length - 1] + 1;
 }
 
 /**
- * Validate and write a capability.
+ * Validate and write a capability into the run folder that produced it.
  *
- * Validation happens on the way in AND on the way out (see loadCapability). Writing an
- * artifact that would fail to load is the kind of bug that only surfaces during a demo,
- * so the boundary is checked in both directions.
+ * Validation happens on the way in AND on the way out (see loadCapability). Writing a
+ * recording that would fail to load is the kind of bug that only surfaces during a
+ * demo, so the boundary is checked in both directions.
  *
- * Refuses to overwrite an existing version — artifact history is append-only, because
- * a replay result in evidence/ references a specific version and must stay meaningful.
- *
- * @returns {Promise<{path: string, capability: object}>}
+ * @returns {{path: string, capability: object}}
  */
-export async function saveCapability(input, { overwrite = false } = {}) {
+export function saveCapabilityToRun(runId, input) {
   const capability = parseCapability(input);
-  const file = versionFile(capability.id, capability.version);
-
-  if (!overwrite && existsSync(file)) {
-    throw new Error(
-      `Capability ${capability.id} v${capability.version} already exists. ` +
-        `Bump the version rather than overwriting — evidence records reference versions.`,
-    );
+  const file = path.join(EVIDENCE_DIR, runId, CAPABILITY_FILE);
+  if (!existsSync(path.dirname(file))) {
+    throw new Error(`No run folder at evidence/${runId} — the recording has nowhere to live.`);
   }
-
-  await mkdir(path.dirname(file), { recursive: true });
-  await writeFile(file, `${JSON.stringify(capability, null, 2)}\n`, 'utf8');
+  writeFileSync(file, `${JSON.stringify(capability, null, 2)}\n`, 'utf8');
   return { path: file, capability };
+}
+
+/** Locate a recording by capability id, newest version when none is given. */
+function findRecording(id, version) {
+  const matches = listRecordings().filter((r) => r.capability.id === id);
+  if (matches.length === 0) throw new Error(`No capability found with id "${id}"`);
+  if (version === undefined) return matches[matches.length - 1];
+
+  const exact = matches.find((r) => r.capability.version === Number(version));
+  if (!exact) throw new Error(`Capability ${id} v${version} not found`);
+  return exact;
 }
 
 /**
@@ -78,63 +101,46 @@ export async function saveCapability(input, { overwrite = false } = {}) {
  * @param {string} id
  * @param {number} [version] latest if omitted
  */
-export async function loadCapability(id, version) {
-  let resolved = version;
-  if (resolved === undefined) {
-    const versions = await listVersions(id);
-    if (versions.length === 0) throw new Error(`No capability found with id "${id}"`);
-    resolved = versions[versions.length - 1];
-  }
-
-  const file = versionFile(id, resolved);
-  if (!existsSync(file)) throw new Error(`Capability ${id} v${resolved} not found at ${file}`);
-
-  return parseCapability(JSON.parse(await readFile(file, 'utf8')));
+export function loadCapability(id, version) {
+  return parseCapability(findRecording(id, version).capability);
 }
 
 /**
  * Summaries of the latest version of every capability.
- * Backs both the operator console's artifact list and the agent-facing catalog.
+ * Backs the operator console's capability table.
  */
-export async function listCapabilities() {
-  if (!existsSync(ARTIFACTS_DIR)) return [];
-  const ids = (await readdir(ARTIFACTS_DIR, { withFileTypes: true }))
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name);
+export function listCapabilities() {
+  const latest = new Map();
+  for (const record of listRecordings()) latest.set(record.capability.id, record);
 
-  const summaries = [];
-  for (const id of ids) {
-    const versions = await listVersions(id);
-    if (versions.length === 0) continue;
-    const capability = await loadCapability(id, versions[versions.length - 1]);
-    summaries.push({
-      id: capability.id,
-      name: capability.name,
-      version: capability.version,
-      versions,
-      status: capability.status,
-      description: capability.description,
-      risk_level: capability.risk_level,
-      app_id: capability.target.app_id,
-      input_schema: capability.input_schema,
-      output_schema: capability.output_schema,
-      confidence: capability.confidence,
-    });
-  }
-  return summaries;
+  return [...latest.values()].map(({ runId, capability }) => ({
+    id: capability.id,
+    name: capability.name,
+    version: capability.version,
+    versions: listVersions(capability.id),
+    status: capability.status,
+    description: capability.description,
+    risk_level: capability.risk_level,
+    app_id: capability.target.app_id,
+    input_schema: capability.input_schema,
+    output_schema: capability.output_schema,
+    confidence: capability.confidence,
+    run_id: runId, // where it was recorded — the path IS its provenance
+  }));
 }
 
 /**
- * Apply a partial update to an existing version, in place.
+ * Apply a partial update to a stored recording, in place.
  *
  * Only for fields that legitimately change after recording — `status` (the approval
- * gate) and `confidence` (the rolling reliability signal). Changing recorded STEPS is
- * a new version, never an edit, which is why this validates the merged result.
+ * gate) and `confidence` (the rolling reliability signal). Changing recorded STEPS is a
+ * new discovery run, never an edit, which is why this validates the merged result.
  */
-export async function updateCapability(id, version, patch) {
-  const current = await loadCapability(id, version);
-  const merged = { ...current, ...patch };
-  return saveCapability(merged, { overwrite: true });
+export function updateCapability(id, version, patch) {
+  const record = findRecording(id, version);
+  const merged = parseCapability({ ...record.capability, ...patch });
+  writeFileSync(record.file, `${JSON.stringify(merged, null, 2)}\n`, 'utf8');
+  return { path: record.file, capability: merged };
 }
 
 /**
@@ -142,11 +148,10 @@ export async function updateCapability(id, version, patch) {
  *
  * "Success" here means the RECORDING executed as designed — SUCCESS, BUSINESS_OUTCOME,
  * and RECOVERABLE all count, because in each the locators resolved and the outcome was
- * classified by a declared rule. Only HARD_FAILURE counts against the recording. The
- * ratio is what the approval gate (and a reviewer) reads as replay reliability.
+ * classified by a declared rule. Only HARD_FAILURE counts against the recording.
  */
-export async function recordReplayOutcome(id, version, outcome) {
-  const current = await loadCapability(id, version);
+export function recordReplayOutcome(id, version, outcome) {
+  const current = loadCapability(id, version);
   return updateCapability(id, version, {
     confidence: {
       runs: current.confidence.runs + 1,

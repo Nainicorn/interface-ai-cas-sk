@@ -1,0 +1,7 @@
+{
+  "name": "<PLACEHOLDER: friendly name, e.g. Acme Banking Sandbox>",
+  "url": "<PLACEHOLDER: where the agent starts, e.g. https://sandbox.example.com/login>",
+  "goal": "<PLACEHOLDER: plain English, e.g. Log in, open the dashboard, read the account balance>",
+  "username": "",
+  "password": ""
+}

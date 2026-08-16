@@ -22,11 +22,9 @@ import { chromium } from 'playwright';
 import { performAction } from '../engine/actions.js';
 import { LocatorResolutionError } from '../engine/errors.js';
 import { captureState, evaluateCondition } from '../engine/perception.js';
-import { PolicyViolation, getTarget } from '../policy/allowlist.js';
-import { applyPersona } from '../policy/personas.js';
-import { classifyRisk } from '../policy/risk.js';
+import { getTarget } from '../config/app-config.js';
 import { RunLogger, newRunId } from '../evidence/logger.js';
-import { createRun, updateRun } from '../db/sqlite.js';
+import { createRun, updateRun } from '../evidence/runs.js';
 import { writeCapability } from './artifact-writer.js';
 import {
   guardedAgentAction,
@@ -37,6 +35,14 @@ import {
 import { EmissionSchema, TOOLS } from './tools.js';
 
 export const DISCOVERY_MODEL = 'claude-sonnet-5';
+
+/** Thrown when an operator stops a parked run. Unwinds the loop; never a failure. */
+export class RunStopped extends Error {
+  constructor(reason) {
+    super(reason);
+    this.name = 'RunStopped';
+  }
+}
 
 /** Tool names that map 1:1 onto action primitives. */
 const ACTION_TOOLS = new Set(['navigate', 'click', 'read', 'wait_for', 'type']);
@@ -50,15 +56,13 @@ function buildSystemPrompt(target, params) {
     .map(([name, value]) => `- ${name} = ${value}`)
     .join('\n');
 
-  return `You are the discovery agent inside a computer-use automation system for legacy banking software. You drive a real browser through five primitives; a policy layer gates every action. Accomplish the goal ONCE, learning the UI as you go — then record what you learned as a typed, replayable capability that will later run with NO model in the loop. The recording is the product; reaching the goal is how you learn it.
+  return `You are the discovery agent inside a computer-use automation system for legacy business software. You drive a real browser through five primitives. Accomplish the goal ONCE, learning the UI as you go — then record what you learned as a typed, replayable capability that will later run with NO model in the loop. The recording is the product; reaching the goal is how you learn it.
 
 ## Target
 - App: ${target.display_name ?? target.app_id} (app_id: ${target.app_id})
 - Entry route: ${target.entry_route} — the browser is already there.
-- Routes you may touch: ${(target.allowlist?.route_prefixes ?? []).join(', ')}
-- Actions permitted: ${(target.allowlist?.action_types ?? []).join(', ')}
-- Routes classified risky (state-changing; need human confirmation): ${(target.risky_route_patterns ?? []).join(', ') || 'none'}
-- Credentials, by env var name (the harness injects values; you never see them): ${credentials.join(', ')}
+- Stay on this origin: ${target.base_url}. Never navigate off it.
+- Credentials, by env var name (the harness injects values; you never see them): ${credentials.join(', ') || 'none'}
 
 ## Run parameters
 ${paramLines || '- none'}
@@ -143,7 +147,7 @@ function resolveTypedValue(input, params) {
  *
  * @param {object} args
  * @param {string} args.goal    natural-language goal
- * @param {string} args.appId   key into config/targets.json
+ * @param {string} args.appId   folder name under artifacts/
  * @param {object} [args.params]   run parameters, e.g. { member_id: '10001' }
  * @param {number} [args.maxTurns] model-call budget before forced escalation
  * @param {boolean} [args.headless]
@@ -162,14 +166,11 @@ export async function runDiscovery({
   params = {},
   maxTurns = 24,
   headless = false,
-  runId = newRunId('discovery'),
-  persona,
+  runId,
   onEscalation = 'finish',
 }) {
   const target = getTarget(appId);
-  // Inject the chosen login's values into the target's declared env names before the
-  // browser exists; the prompt and artifact keep env-name indirection unchanged.
-  const appliedPersona = applyPersona(target, persona);
+  runId ??= newRunId(target.app_id, 'discovery'); // grouped by app on disk
   const logger = new RunLogger(runId);
   const client = new Anthropic();
 
@@ -179,7 +180,6 @@ export async function runDiscovery({
     goal,
     app_id: appId,
     params: Object.keys(params),
-    persona: appliedPersona,
     model: DISCOVERY_MODEL,
     max_turns: maxTurns,
   });
@@ -306,6 +306,11 @@ export async function runDiscovery({
         created_at: new Date().toISOString(),
       });
     }
+  } catch (err) {
+    // An operator stop unwinds the loop through here. It is a decision, not a fault, so
+    // it does not become a hard_failure — and stopRun() already wrote the run's status.
+    if (!(err instanceof RunStopped)) throw err;
+    outcome = { status: 'stopped', stop_reason: err.message };
   } finally {
     unregisterSession(runId);
     await browser.close().catch(() => {});
@@ -314,10 +319,18 @@ export async function runDiscovery({
   const result = { status: outcome.status, runId, evidenceDir: logger.dir, turns, usage };
   if (outcome.artifact) result.artifact = outcome.artifact;
   if (outcome.escalation) result.escalation = outcome.escalation;
-  logger.saveResult({ ...result, goal, app_id: appId, persona: appliedPersona, model: DISCOVERY_MODEL, finished_at: new Date().toISOString() });
+  if (outcome.status === 'stopped') return result; // stopRun() owns the record
   updateRun(runId, {
     status: outcome.status,
-    detail: { artifact: outcome.artifact ?? null, turns, usage, evidence_dir: logger.dir },
+    detail: {
+      artifact: outcome.artifact ?? null,
+      turns,
+      usage,
+      model: DISCOVERY_MODEL,
+      evidence_dir: logger.dir,
+      escalation: outcome.escalation ?? null,
+      finished_at: new Date().toISOString(),
+    },
   });
   return result;
 }
@@ -340,7 +353,9 @@ function resumeMessage(note) {
  */
 async function parkForOperator(session, { reason, source }) {
   const { resumed } = await pauseForIntervention(session, { reason, source });
-  const { note } = await resumed;
+  const { note, stopped } = await resumed;
+  // stopRun() settles the same promise resume() does; the loop must not carry on.
+  if (stopped || session.stopped) throw new RunStopped(note ?? 'Stopped by operator');
   return note;
 }
 
@@ -352,21 +367,6 @@ async function dispatch(call, session, ctx, params, { goal, runId, logger }) {
   const { name, input } = call;
 
   if (ACTION_TOOLS.has(name)) {
-    // Risky actions need a human, and the operator console arrives in a later phase —
-    // so during discovery the gate is: refuse and point the model at escalate.
-    if (name === 'click' || name === 'type') {
-      const risk = classifyRisk({ target: ctx.target, action: name, url: ctx.page.url() });
-      if (risk.level === 'risky') {
-        logger.logEvent('risk_refusal', { action: name, reason: risk.reason });
-        return {
-          resultBlocks: [
-            { type: 'text', text: `RISKY ACTION BLOCKED: ${risk.reason}. Use escalate to request human confirmation.` },
-          ],
-          isError: true,
-        };
-      }
-    }
-
     try {
       // Under the session lock, with an ownership check: while a human holds the
       // session, the agent physically cannot act on the page.
@@ -446,9 +446,6 @@ async function dispatch(call, session, ctx, params, { goal, runId, logger }) {
 
 /** Turn a caught action error into a message the model can act on. */
 function describeActionError(err) {
-  if (err instanceof PolicyViolation) {
-    return `POLICY VIOLATION: ${err.message} ${JSON.stringify(err.detail)}`;
-  }
   if (err instanceof LocatorResolutionError) {
     const tried = err.attempts
       .map((a) => {

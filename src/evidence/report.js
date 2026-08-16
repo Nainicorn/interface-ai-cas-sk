@@ -10,14 +10,23 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { EVIDENCE_DIR } from './logger.js';
 
-const RUN_ID = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+const RUN_SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const SCREENSHOT = /^\d{3}-[A-Za-z0-9._-]+\.png$/;
 const DROP_KEYS = new Set(['ariaTree', 'visibleText']);
 const TEXT_CAP = 500;
 const MAX_EVENTS = 2000;
 
-/** Run ids become path segments — reject anything that could traverse. */
-export const isSafeRunId = (id) => RUN_ID.test(String(id ?? ''));
+/**
+ * Run ids become path segments — reject anything that could traverse.
+ *
+ * An id is exactly "<app>/<kind>/<stamp>", three segments each starting with an
+ * alphanumeric. That leading-character rule is what rejects "." and ".." outright, so
+ * no combination of segments can climb out of evidence/.
+ */
+export const isSafeRunId = (id) => {
+  const parts = String(id ?? '').split('/');
+  return parts.length === 3 && parts.every((part) => RUN_SEGMENT.test(part));
+};
 
 /** Screenshot names follow logger.js's NNN-label.png scheme; nothing else is served. */
 export const isSafeScreenshotName = (name) => SCREENSHOT.test(String(name ?? ''));

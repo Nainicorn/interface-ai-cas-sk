@@ -3,15 +3,12 @@ node_modules/
 .DS_Store
 *.log
 
-# Runtime state. Artifacts and evidence ARE committed (they're deliverables);
-# the local database and scratch screenshots are not.
-data/*.db
-data/*.db-journal
-tmp/
-data/*.db-wal
-data/*.db-shm
-
-# Persona credentials registered at runtime — real logins, never committed.
+# App configs carry credentials — never committed. The template is committed in
+# their place, so a fresh clone still shows the shape.
 # (ignore the files, not the directory, so the .example stays re-includable)
-data/creds/*
-!data/creds/*.example.json
+artifacts/*/config.json
+!artifacts/config.example.json
+
+# Runtime state. Evidence IS committed (it's the deliverable); scratch is not.
+tmp/
+data/

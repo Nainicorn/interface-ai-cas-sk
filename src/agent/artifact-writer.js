@@ -15,7 +15,7 @@
  */
 
 import { safeParseCapability } from '../schema/capability.js';
-import { nextVersion, saveCapability } from '../schema/store.js';
+import { nextVersion, saveCapabilityToRun } from '../schema/store.js';
 
 /** Build the flat input_schema replay's parameter validator understands. */
 function buildInputSchema(inputs) {
@@ -101,7 +101,7 @@ function crossCheck(emission, target) {
  *
  * New recordings are ALWAYS status "draft" — promotion to "approved" is a human act,
  * never something the recorder grants itself. A safe draft may still replay unattended;
- * a risky draft may not (see policy/risk.js).
+ * a risky draft may not.
  *
  * @param {object} args
  * @param {object} args.emission validated EmissionSchema payload from the model
@@ -118,7 +118,7 @@ export async function writeCapability({ emission, target, runId, model }) {
     schema_version: 1,
     id: emission.id,
     name: emission.name,
-    version: await nextVersion(emission.id),
+    version: nextVersion(emission.id),
     status: 'draft',
     description: emission.description,
 
@@ -156,6 +156,7 @@ export async function writeCapability({ emission, target, runId, model }) {
     };
   }
 
-  const { path, capability } = await saveCapability(parsed.data);
+  // The recording lands in the run folder that produced it, as goal.json.
+  const { path, capability } = saveCapabilityToRun(runId, parsed.data);
   return { ok: true, capability, path };
 }

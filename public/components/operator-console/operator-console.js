@@ -57,22 +57,22 @@ function render(root, pending) {
   const feedback = panel.querySelector('[data-feedback]');
   panel.querySelector('[data-act]').addEventListener('click', async () => {
     try {
-      feedback.className = 'muted';
-      const outcome = await post(`/api/escalations/${pending.id}/action`, buildAction(panel));
+      feedback.className = 'feedback muted';
+      const outcome = await post(`/api/escalations/${encodeURIComponent(pending.id)}/action`, buildAction(panel));
       feedback.textContent = `Done — now at ${outcome.url}`;
     } catch (err) {
       feedback.textContent = err.message;
-      feedback.className = 'error';
+      feedback.className = 'feedback error';
     }
   });
   panel.querySelector('[data-resume]').addEventListener('click', async () => {
     try {
-      await post(`/api/escalations/${pending.id}/resume`, { note: panel.querySelector('[name=note]').value });
+      await post(`/api/escalations/${encodeURIComponent(pending.id)}/resume`, { note: panel.querySelector('[name=note]').value });
       delete panel.dataset.intervention;
       root.hidden = true; // the panel's job is done; the live viewer shows the rest
     } catch (err) {
       feedback.textContent = err.message;
-      feedback.className = 'error';
+      feedback.className = 'feedback error';
     }
   });
 }

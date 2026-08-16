@@ -4,7 +4,7 @@
  * promoting a draft to approved (which is what admits it to the agent-facing catalog
  * and unlocks unattended replay for risky capabilities).
  *
- * Hands off to: schema/store.js, api/run-replay.js, policy/risk.js (the gates that read `status`).
+ * Hands off to: schema/store.js, api/run-replay.js.
  */
 
 import { Router } from 'express';
@@ -33,15 +33,15 @@ router.get('/:id', async (req, res, next) => {
 });
 
 /**
- * Deterministic replay. Body: { params: {...}, version?: n, persona?: name }
+ * Deterministic replay. Body: { params: {...}, version?: n }
  * Responds with the full four-way outcome — BUSINESS_OUTCOME is a 200, because it is
  * an answer, not an error.
  */
 router.post('/:id/replay', async (req, res, next) => {
   try {
-    const { params = {}, version, persona } = req.body ?? {};
+    const { params = {}, version } = req.body ?? {};
     const capability = await loadCapability(req.params.id, version);
-    res.json(await runReplay(capability, params, { persona }));
+    res.json(await runReplay(capability, params));
   } catch (err) {
     next(err);
   }

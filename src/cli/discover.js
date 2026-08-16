@@ -6,7 +6,7 @@
  *     --param member_id=10001
  *
  * Flags: --app-id (required), --goal (required), --param k=v (repeatable),
- *        --persona <name>, --max-turns N, --headless, --run-id <id>
+ *        --max-turns N, --headless, --run-id <id>
  *
  * Exit codes: 0 recorded, 2 escalated (a handled outcome, not a crash), 1 failure.
  * Headed by default — watching Chromium do it live is the demo; pass --headless in CI.
@@ -32,9 +32,6 @@ function parseArgs(argv) {
         args.params[pair.slice(0, eq)] = pair.slice(eq + 1);
         break;
       }
-      case '--persona':
-        args.persona = argv[++i];
-        break;
       case '--max-turns':
         args.maxTurns = Number(argv[++i]);
         break;
@@ -49,7 +46,7 @@ function parseArgs(argv) {
     }
   }
   if (!args.appId || !args.goal) {
-    throw new Error('Required: --app-id <key from config/targets.json> --goal "<natural language goal>"');
+    throw new Error('Required: --app-id <folder under artifacts/> --goal "<natural language goal>"');
   }
   return args;
 }

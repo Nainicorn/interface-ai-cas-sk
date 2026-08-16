@@ -6,26 +6,25 @@
  * privileged variant — the model does not get to "just click"; it chooses which of
  * these five functions to invoke, exactly as replay does.
  *
- * Two invariants hold for every function here:
- *   1. checkAllowed() is the first thing that runs. Policy is not something a caller
- *      can forget to apply, because it is not the caller's job.
- *   2. Every call is logged with its actor, so agent, replay, and human actions all
- *      land in one evidence trail in one format.
+ * Every call is logged with its actor, so agent, replay, and human actions all land in
+ * one evidence trail in one format.
  *
  * If a reviewer finds a second implementation of "click" anywhere in this repo, the
  * design claim in REPORT.md is false.
  *
+ * The policy gate that used to open every function here is out for the MVP. When it
+ * returns it belongs at the top of each primitive, so no caller can forget to apply it.
+ *
  * Hands off to: agent/discovery.js, engine/replay.js, agent/escalation.js.
  */
 
-import { checkAllowed, resolveUrl } from '../policy/allowlist.js';
-import { redact } from '../policy/redact.js';
+import { resolveUrl } from '../config/app-config.js';
 import { resolveLocator } from './locator.js';
 
 /**
  * @typedef {object} ActionContext
  * @property {import('playwright').Page} page
- * @property {object} target resolved config from config/targets.json
+ * @property {object} target resolved config from artifacts/<app>/config.json
  * @property {{logStep: Function}} [logger] optional evidence logger
  * @property {'llm'|'replay'|'human'} actor who is performing this action
  */
@@ -41,8 +40,6 @@ function log(ctx, entry) {
  * @param {{url: string}} args relative route or absolute URL on the target origin
  */
 export async function navigate(ctx, { url }) {
-  checkAllowed({ target: ctx.target, action: 'navigate', url });
-
   const absolute = resolveUrl(ctx.target, url);
   await ctx.page.goto(absolute, { waitUntil: 'domcontentloaded' });
 
@@ -56,8 +53,6 @@ export async function navigate(ctx, { url }) {
  * @param {{locator: object}} args LocatorStrategy
  */
 export async function click(ctx, { locator: strategy }) {
-  checkAllowed({ target: ctx.target, action: 'click', url: ctx.page.url() });
-
   const { locator, candidate, attempts } = await resolveLocator(ctx.page, strategy);
   await locator.click();
 
@@ -74,44 +69,39 @@ export async function click(ctx, { locator: strategy }) {
 /**
  * Type into a field.
  *
- * `value` is used verbatim against the live page; only the LOG is redacted. That split
- * is the whole point — the browser needs the real password, the evidence trail must
- * never contain it.
+ * `value` is used verbatim against the live page but never reaches the log. The browser
+ * needs the real password; the evidence trail only needs to know a field was filled.
+ * Field-aware redaction comes back with the policy layer — until then, logging nothing
+ * is the safe default, not logging everything.
  *
  * @param {ActionContext} ctx
  * @param {{locator: object, value: string, fieldName?: string}} args
  */
 export async function typeText(ctx, { locator: strategy, value, fieldName }) {
-  checkAllowed({ target: ctx.target, action: 'type', url: ctx.page.url() });
-
   const { locator, candidate, attempts } = await resolveLocator(ctx.page, strategy);
   await locator.fill(String(value ?? ''));
 
-  const policy = { redact_fields: ctx.target.redact_fields ?? [] };
-  const { value: loggable, redacted } = redact(value, fieldName ?? strategy.description, policy);
-
   log(ctx, {
     action: 'type',
-    detail: { description: strategy.description, field: fieldName ?? null, value: loggable, redacted },
+    detail: {
+      description: strategy.description,
+      field: fieldName ?? null,
+      chars: String(value ?? '').length,
+    },
     locatorUsed: candidate,
     candidatesTried: attempts.length,
     result: 'ok',
   });
-  return { typedInto: strategy.description, redacted };
+  return { typedInto: strategy.description };
 }
 
 /**
  * Read text from the page, optionally pulling a substring out with a regex.
  *
- * A read is inherently safe, but it still goes through checkAllowed — a read on a route
- * nobody approved is still an unapproved read, and regulated data makes that matter.
- *
  * @param {ActionContext} ctx
  * @param {{locator: object, pattern?: string}} args
  */
 export async function readText(ctx, { locator: strategy, pattern }) {
-  checkAllowed({ target: ctx.target, action: 'read', url: ctx.page.url() });
-
   const { locator, candidate, attempts } = await resolveLocator(ctx.page, strategy);
   const raw = (await locator.innerText()).trim();
 
@@ -139,8 +129,6 @@ export async function readText(ctx, { locator: strategy, pattern }) {
  * @param {{condition: object}} args
  */
 export async function waitFor(ctx, { condition }) {
-  checkAllowed({ target: ctx.target, action: 'wait_for', url: ctx.page.url() });
-
   const { evaluateCondition } = await import('./perception.js');
   const result = await evaluateCondition(ctx.page, condition);
 

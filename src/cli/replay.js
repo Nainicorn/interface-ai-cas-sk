@@ -4,17 +4,16 @@
  *   npm run replay -- --id lookup-member-savings-account --param member_id=10001
  *
  * Flags: --id (required), --param k=v (repeatable), --version N (latest if omitted),
- *        --persona <name>, --headed (watch it), --run-id <id>
+ *        --headed (watch it), --run-id <id>
  *
  * Exit codes: 0 for SUCCESS and BUSINESS_OUTCOME (both are answers), 1 for HARD_FAILURE.
  */
 
 import { replayCapability } from '../engine/replay.js';
 import { loadCapability } from '../schema/store.js';
-import { createRun, updateRun } from '../db/sqlite.js';
+import { createRun, updateRun } from '../evidence/runs.js';
 import { RunLogger, newRunId } from '../evidence/logger.js';
-import { getTarget } from '../policy/allowlist.js';
-import { applyPersona } from '../policy/personas.js';
+import { getTarget } from '../config/app-config.js';
 
 function parseArgs(argv) {
   const args = { params: {}, headless: true };
@@ -32,9 +31,6 @@ function parseArgs(argv) {
       }
       case '--version':
         args.version = Number(argv[++i]);
-        break;
-      case '--persona':
-        args.persona = argv[++i];
         break;
       case '--headed':
         args.headless = false;
@@ -56,16 +52,13 @@ try {
   console.log(`Replaying ${capability.id} v${capability.version} (no LLM)…`);
 
   // Persona values land in the declared env names before the browser launches.
-  const appliedPersona = applyPersona(getTarget(capability.target.app_id), args.persona);
-  if (appliedPersona) console.log(`Persona:  ${appliedPersona}`);
 
-  const runId = args.runId ?? newRunId('replay');
+  const runId = args.runId ?? newRunId(capability.target.app_id, 'replay');
   createRun({ id: runId, kind: 'replay', appId: capability.target.app_id, status: 'running' });
   const logger = new RunLogger(runId);
 
   const result = await replayCapability({ capability, params: args.params, headless: args.headless, logger });
 
-  logger.saveResult({ run_id: runId, capability: capability.id, version: capability.version, ...result });
   updateRun(runId, {
     status: result.outcome,
     detail: {

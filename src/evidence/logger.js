@@ -19,10 +19,16 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const EVIDENCE_DIR = path.resolve(here, '../../evidence');
 
-/** A short, sortable, human-readable run id: run-20260814-131502-discovery */
-export function newRunId(kind = 'run') {
-  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
-  return `${stamp}-${kind}`;
+/**
+ * A run id IS its path under evidence/: "some_app/discovery/2026-08-15_142233".
+ *
+ * Grouping by app and kind is what lets a reviewer open one app's folder and see its
+ * whole history, and it means the id needs no lookup to locate the run on disk.
+ */
+export function newRunId(appId, kind = 'run') {
+  const iso = new Date().toISOString(); // 2026-08-15T14:22:33.123Z
+  const stamp = `${iso.slice(0, 10)}_${iso.slice(11, 19).replace(/:/g, '')}`;
+  return `${appId}/${kind}/${stamp}`;
 }
 
 export class RunLogger {

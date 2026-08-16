@@ -1,68 +1,144 @@
 /**
- * Targets over HTTP: the list the console offers, runtime registration, edit, and
- * delete — "point it at your own app" from a form. Secrets never round-trip: the
- * projection exposes persona names/usernames and saved goals, never passwords, and
- * writes route values to the gitignored creds file via policy/register-target.js.
+ * App listing and editing for the console sidebar.
  *
- * Hands off to: policy/register-target.js, policy/personas.js, policy/allowlist.js.
+ * Apps live as artifacts/<app>/config.json, so editing one from the UI is a file write,
+ * not a registration API — reading the file back is the source of truth either way.
+ *
+ * Hands off to: config/app-config.js.
  */
 
 import { Router } from 'express';
-import { loadTargets } from '../policy/allowlist.js';
-import { listPersonas } from '../policy/personas.js';
-import { deleteTarget, registerTarget, updateTarget } from '../policy/register-target.js';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+import { ARTIFACTS_DIR, configPath, loadTargets, slugify } from '../config/app-config.js';
 
 const router = Router();
 
-/** Saved goals as [{name, text}] — tolerating the legacy single `goal` field. */
-function goalsOf(target) {
-  const goals = Object.entries(target.goals ?? {}).map(([name, text]) => ({ name, text }));
-  if (!goals.length && target.goal) goals.push({ name: 'default', text: target.goal });
-  return goals;
+/** The five keys a config file holds. Anything else in the body is ignored. */
+const FIELDS = ['name', 'url', 'goal', 'username', 'password'];
+
+/**
+ * Resolve an app id to its config path, refusing anything that isn't a plain slug.
+ * The id reaches this from a URL segment, so "../.." must never become a file write.
+ */
+function configPathFor(appId) {
+  if (!appId || slugify(appId) !== appId) return null;
+  const file = configPath(appId);
+  return path.resolve(path.dirname(file)) === path.resolve(ARTIFACTS_DIR, appId) ? file : null;
 }
 
-/** Config minus anything sensitive-adjacent; base_url is committed config, so it ships. */
 router.get('/', (_req, res) => {
-  const targets = Object.values(loadTargets()).map((t) => ({
-    app_id: t.app_id,
-    display_name: t.display_name ?? t.app_id,
-    base_url: t.base_url,
-    entry_route: t.entry_route,
-    goals: goalsOf(t),
-    allowlist: t.allowlist,
-    risky_route_patterns: t.risky_route_patterns ?? [],
-    personas: listPersonas(t.app_id),
-  }));
-  res.json(targets);
+  res.json(
+    Object.values(loadTargets()).map((t) => ({
+      app_id: t.app_id,
+      display_name: t.display_name,
+      base_url: t.base_url,
+      entry_route: t.entry_route,
+      goal: t.goal,
+    })),
+  );
 });
 
-/** Register an app at runtime. 201 { app_id, display_name, personas: [names] }. */
-router.post('/', (req, res, next) => {
-  try {
-    const { app_id, target, personas } = registerTarget(req.body ?? {});
-    res.status(201).json({ app_id, display_name: target.display_name, personas });
-  } catch (err) {
-    next(err);
-  }
+/**
+ * The raw config for one app, for the edit form.
+ * `password` is returned as a boolean, never a value — the form shows "set" and only
+ * sends a new one when the user types one.
+ */
+router.get('/:appId', (req, res) => {
+  const file = configPathFor(req.params.appId);
+  if (!file || !existsSync(file)) return res.status(404).json({ error: 'No such app' });
+  const raw = JSON.parse(readFileSync(file, 'utf8'));
+  res.json({
+    app_id: req.params.appId,
+    name: raw.name ?? '',
+    url: raw.url ?? '',
+    goal: raw.goal ?? '',
+    username: raw.username ?? '',
+    has_password: Boolean(raw.password),
+  });
 });
 
-/** Edit an app. Submitted logins replace the set; empty password keeps the stored one. */
-router.put('/:appId', (req, res, next) => {
+/**
+ * Create an app. The slug of the name becomes both the filename and the app id, so
+ * there is one identifier rather than two that can disagree.
+ */
+router.post('/', (req, res) => {
+  const { name, url } = req.body ?? {};
+  if (!name?.trim()) return res.status(400).json({ error: 'A name is required' });
+
+  let origin;
   try {
-    const { app_id, target, personas } = updateTarget(req.params.appId, req.body ?? {});
-    res.json({ app_id, display_name: target.display_name, personas });
-  } catch (err) {
-    next(err);
+    origin = new URL(url).origin;
+  } catch {
+    return res.status(400).json({ error: `Not a usable URL: ${url ?? '(none)'}` });
   }
+
+  const appId = slugify(name);
+  if (!appId) return res.status(400).json({ error: 'That name has no letters or digits in it' });
+
+  const file = configPathFor(appId);
+  if (!file) return res.status(400).json({ error: 'That name is not usable as a filename' });
+  if (existsSync(file)) return res.status(409).json({ error: `An app called "${name}" already exists` });
+
+  mkdirSync(path.dirname(file), { recursive: true });
+  writeFileSync(
+    file,
+    `${JSON.stringify(
+      {
+        name: name.trim(),
+        url,
+        goal: req.body.goal ?? '',
+        username: req.body.username ?? '',
+        password: req.body.password ?? '',
+      },
+      null,
+      2,
+    )}\n`,
+    'utf8',
+  );
+  res.status(201).json({ app_id: appId, base_url: origin });
 });
 
-/** Delete an app (and its creds file). Its runs and artifacts stay on disk as records. */
-router.delete('/:appId', (req, res, next) => {
-  try {
-    res.json(deleteTarget(req.params.appId));
-  } catch (err) {
-    next(err);
+/**
+ * Update an app's config file. Blank `password` keeps the stored one, so saving the
+ * form without retyping a secret does not wipe it.
+ */
+router.put('/:appId', (req, res) => {
+  const file = configPathFor(req.params.appId);
+  if (!file || !existsSync(file)) return res.status(404).json({ error: 'No such app' });
+
+  const current = JSON.parse(readFileSync(file, 'utf8'));
+  const body = req.body ?? {};
+
+  if (body.url) {
+    try {
+      new URL(body.url);
+    } catch {
+      return res.status(400).json({ error: `Not a usable URL: ${body.url}` });
+    }
   }
+
+  const next = { ...current };
+  for (const field of FIELDS) {
+    if (body[field] === undefined) continue;
+    if (field === 'password' && body[field] === '') continue; // blank means "unchanged"
+    next[field] = body[field];
+  }
+
+  writeFileSync(file, `${JSON.stringify(next, null, 2)}\n`, 'utf8');
+  res.json({ app_id: req.params.appId, saved: true });
+});
+
+/**
+ * Delete an app: its whole artifacts/<app>/ folder. The evidence folders are left alone
+ * deliberately — recorded runs are the deliverable, and removing an app is not a reason
+ * to destroy the proof that it once ran.
+ */
+router.delete('/:appId', (req, res) => {
+  const file = configPathFor(req.params.appId);
+  if (!file || !existsSync(file)) return res.status(404).json({ error: 'No such app' });
+  rmSync(path.dirname(file), { recursive: true });
+  res.json({ app_id: req.params.appId, deleted: true });
 });
 
 export default router;

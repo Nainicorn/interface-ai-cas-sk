@@ -22,9 +22,7 @@
  */
 
 import { chromium } from 'playwright';
-import { getTarget, resolveUrl } from '../policy/allowlist.js';
-import { PolicyViolation } from '../policy/allowlist.js';
-import { checkUnattendedAllowed } from '../policy/risk.js';
+import { getTarget, resolveUrl } from '../config/app-config.js';
 import { recordReplayOutcome } from '../schema/store.js';
 import { validateParams } from '../schema/validate-params.js';
 import { performAction, click } from './actions.js';
@@ -187,7 +185,7 @@ export async function executeSteps(ctx, capability, params) {
       // more question asked of it before being called a failure: does the page match a
       // business outcome this step declared?
       //
-      // Deliberately narrow. A PolicyViolation or MalformedStep is a fault in us, never
+      // Deliberately narrow. A MalformedStep is a fault in us, never
       // a business answer, and must never be reclassified this way.
       if (err instanceof LocatorResolutionError) {
         const business = await matchBusinessOutcome(ctx.page, step);
@@ -285,21 +283,6 @@ export async function replayCapability({ capability, params = {}, headless = tru
     started_at: new Date(startedAt).toISOString(),
   };
 
-  // --- approval gate: risky + draft never runs unattended --------------------
-  const gate = checkUnattendedAllowed(capability);
-  if (!gate.allowed) {
-    return {
-      ...base,
-      outcome: 'HARD_FAILURE',
-      outputs: null,
-      steps: [],
-      recoveries: [],
-      business_outcome: null,
-      failure: { step: 'pre-flight', error_type: 'ApprovalRequired', message: gate.reason },
-      duration_ms: Date.now() - startedAt,
-    };
-  }
-
   // --- typed parameter validation -------------------------------------------
   try {
     validateParams(capability.input_schema, params);
@@ -348,7 +331,11 @@ export async function replayCapability({ capability, params = {}, headless = tru
     // errors say nothing about the recording's reliability. Best-effort by design: a
     // capability that never came from the store (a test fixture) has nowhere to record
     // to, and telemetry must never turn a completed replay into a failure.
-    await recordReplayOutcome(capability.id, capability.version, result.outcome).catch(() => {});
+    try {
+      recordReplayOutcome(capability.id, capability.version, result.outcome);
+    } catch {
+      /* see above — telemetry never fails a completed replay */
+    }
 
     return { ...base, ...result, duration_ms: Date.now() - startedAt };
   } catch (err) {
@@ -364,7 +351,6 @@ export async function replayCapability({ capability, params = {}, headless = tru
         step: 'infrastructure',
         error_type: err.name,
         message: err.message,
-        policy_detail: err instanceof PolicyViolation ? err.detail : null,
       },
       duration_ms: Date.now() - startedAt,
     };

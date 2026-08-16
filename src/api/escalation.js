@@ -5,14 +5,14 @@
  * primitives the agent and replay use, logged into the same evidence trail with
  * actor 'human'. This surface is deliberately bare; the handoff underneath it is real.
  *
- * Hands off to: agent/escalation.js, db/sqlite.js.
+ * Hands off to: agent/escalation.js, evidence/runs.js.
  */
 
 import { Router } from 'express';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { getSession, performManualAction, resumeRun } from '../agent/escalation.js';
-import { getIntervention, listInterventions } from '../db/sqlite.js';
+import { getIntervention, listInterventions } from '../evidence/runs.js';
 import { EVIDENCE_DIR } from '../evidence/logger.js';
 
 const router = Router();
@@ -23,7 +23,7 @@ router.get('/', (req, res) => {
 });
 
 router.get('/:id', (req, res) => {
-  const row = getIntervention(Number(req.params.id));
+  const row = getIntervention(req.params.id);
   if (!row) return res.status(404).json({ error: 'No such intervention' });
   const live = getSession(row.run_id);
   res.json({ ...row, live: Boolean(live), owner: live?.owner ?? null });
@@ -31,7 +31,7 @@ router.get('/:id', (req, res) => {
 
 /** The screenshot captured at the moment the run paused (or the latest human step). */
 router.get('/:id/screenshot', (req, res) => {
-  const row = getIntervention(Number(req.params.id));
+  const row = getIntervention(req.params.id);
   if (!row?.context?.screenshot) return res.status(404).end();
   const file = path.join(EVIDENCE_DIR, row.run_id, row.context.screenshot);
   if (!existsSync(file)) return res.status(404).end();
@@ -44,7 +44,7 @@ router.get('/:id/screenshot', (req, res) => {
  */
 router.post('/:id/action', async (req, res, next) => {
   try {
-    const row = getIntervention(Number(req.params.id));
+    const row = getIntervention(req.params.id);
     if (!row) return res.status(404).json({ error: 'No such intervention' });
     if (row.status !== 'pending') return res.status(409).json({ error: 'Intervention already resolved' });
 
@@ -61,7 +61,7 @@ router.post('/:id/action', async (req, res, next) => {
 /** Hand control back. The parked discovery loop re-observes and continues. */
 router.post('/:id/resume', (req, res, next) => {
   try {
-    const row = getIntervention(Number(req.params.id));
+    const row = getIntervention(req.params.id);
     if (!row) return res.status(404).json({ error: 'No such intervention' });
     if (row.status !== 'pending') return res.status(409).json({ error: 'Intervention already resolved' });
 

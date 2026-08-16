@@ -5,7 +5,7 @@
  * string would let nondeterminism back in — a replay that matched checkpoints "fuzzily",
  * or an outcome taxonomy that grew a fifth ambiguous case, would defeat the point.
  *
- * Hands off to: schema/capability.js, engine/replay.js, policy/risk.js.
+ * Hands off to: schema/capability.js, engine/replay.js.
  */
 
 /**

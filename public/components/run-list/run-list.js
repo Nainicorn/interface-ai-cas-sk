@@ -34,7 +34,7 @@ function render(root, runs) {
           <td class="mono">${esc(run.id)}</td>
           <td>${esc(run.app_id ?? '')}</td>
           <td>${esc(run.kind)}</td>
-          <td><span class="badge ${esc(run.status)}">${esc(run.status)}</span>${run.live ? ` <span class="muted">${esc(run.owner)}</span>` : ''}</td>
+          <td><span class="badge ${esc(run.status)}">${esc(run.status)}</span>${run.live ? ` <span class="muted">${esc(ownerLabel(run.owner))}</span>` : ''}</td>
           <td>${what}</td>
           <td><a class="report-link" target="_blank" rel="noopener" href="/report.html?run=${encodeURIComponent(run.id)}">Report</a></td>
         </tr>`;
@@ -44,6 +44,10 @@ function render(root, runs) {
   root.querySelector('tbody').innerHTML =
     rows || `<tr><td colspan="6" class="muted">No runs for this app yet — start one above.</td></tr>`;
 }
+
+/** Who is holding the live session, in the live viewer's words. */
+const ownerLabel = (owner) =>
+  ({ agent: 'agent driving', human: 'human driving', paused: 'awaiting operator' })[owner] ?? owner ?? '';
 
 export async function mount(root) {
   root.innerHTML = await (await fetch('/components/run-list/run-list.html')).text();

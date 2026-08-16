@@ -6,35 +6,33 @@
  * for minutes while a human works. The console then polls GET for status, and the
  * report page reads the run's evidence through /report and /screenshots/:name.
  *
- * Hands off to: agent/discovery.js, db/sqlite.js, evidence/logger.js, evidence/report.js.
+ * Hands off to: agent/discovery.js, evidence/runs.js, evidence/logger.js, evidence/report.js.
  */
 
 import { Router } from 'express';
 import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { runDiscovery } from '../agent/discovery.js';
-import { getSession } from '../agent/escalation.js';
-import { getRun, listRuns, updateRun } from '../db/sqlite.js';
+import { getSession, stopRun } from '../agent/escalation.js';
+import { getRun, listRuns, updateRun } from '../evidence/runs.js';
 import { EVIDENCE_DIR, newRunId } from '../evidence/logger.js';
 import { buildRunReport, isSafeRunId, isSafeScreenshotName } from '../evidence/report.js';
-import { getTarget, loadTargets } from '../policy/allowlist.js';
-import { resolvePersona } from '../policy/personas.js';
+import { getTarget, loadTargets } from '../config/app-config.js';
 
 const router = Router();
 
 router.post('/', (req, res) => {
-  const { goal, app_id: appId, params = {}, max_turns: maxTurns, headless = false, persona } = req.body ?? {};
+  const { goal, app_id: appId, params = {}, max_turns: maxTurns, headless = false } = req.body ?? {};
   if (!goal || !appId) {
     return res.status(400).json({ error: 'Required: goal, app_id' });
   }
-  const target = getTarget(appId); // throws PolicyViolation → 403 for an unconfigured target
-  resolvePersona(target, persona); // unknown persona is a synchronous 400, never a background failure
+  const target = getTarget(appId); // throws UnknownApp → 404 for an unconfigured target
 
-  const runId = newRunId('discovery');
+  const runId = newRunId(target.app_id, 'discovery');
 
   // Background task, deliberately not awaited. Server mode pauses on escalation so a
   // human can take the live session and hand it back.
-  runDiscovery({ goal, appId, params, maxTurns, headless, runId, persona, onEscalation: 'pause' }).catch((err) => {
+  runDiscovery({ goal, appId, params, maxTurns, headless, runId, onEscalation: 'pause' }).catch((err) => {
     console.error(`run ${runId} failed:`, err);
     try {
       updateRun(runId, { status: 'failed', detail: { error: err.message } });
@@ -52,6 +50,20 @@ router.get('/', (_req, res) => {
     return live ? { ...row, live: true, owner: live.owner } : { ...row, live: false };
   });
   res.json(rows);
+});
+
+/** Stop a run: close its browser, release any pending pause, mark it stopped. */
+router.post('/:id/stop', async (req, res, next) => {
+  try {
+    const row = getRun(req.params.id);
+    if (!row) return res.status(404).json({ error: 'No such run' });
+    if (!['running', 'paused'].includes(row.status)) {
+      return res.status(409).json({ error: `Run is already ${row.status}` });
+    }
+    res.json(await stopRun(req.params.id, { reason: req.body?.reason ?? 'Stopped by operator' }));
+  } catch (err) {
+    next(err);
+  }
 });
 
 router.get('/:id', (req, res) => {

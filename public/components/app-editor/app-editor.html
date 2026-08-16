@@ -1,0 +1,37 @@
+<!-- app-editor.html — the add/edit-app dialog; app-editor.js opens it, loads the config, saves it back -->
+<dialog data-dialog>
+  <h2 data-title>Add an app</h2>
+  <p class="muted intro" data-intro>
+    Point the agent at any web app you're allowed to automate — a sandbox or demo,
+    never real customer data.
+  </p>
+
+  <label>Friendly name</label>
+  <input name="name" placeholder="Acme Banking Sandbox" />
+
+  <label>URL <span class="hint">where the agent starts; its origin is the only one it may touch</span></label>
+  <input name="url" placeholder="https://sandbox.example.com/login" />
+
+  <label>Goal <span class="hint">plain English — what the agent should accomplish</span></label>
+  <textarea name="goal" rows="3" placeholder="Log in, open the dashboard, read the account balance"></textarea>
+
+  <div class="row">
+    <div>
+      <label>Username <span class="hint">optional</span></label>
+      <input name="username" autocomplete="off" placeholder="demo_user" />
+    </div>
+    <div>
+      <label>Password <span class="hint" data-pw-hint>optional</span></label>
+      <input name="password" type="password" autocomplete="new-password" placeholder="" />
+    </div>
+  </div>
+
+  <p class="muted err" data-error hidden></p>
+
+  <div class="actions">
+    <button class="secondary danger" data-delete type="button" hidden>Delete app</button>
+    <span class="spacer"></span>
+    <button class="secondary" data-cancel type="button">Cancel</button>
+    <button data-save type="button">Save</button>
+  </div>
+</dialog>

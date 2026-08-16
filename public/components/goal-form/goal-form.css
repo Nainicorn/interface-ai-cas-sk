@@ -1,4 +1,4 @@
-/* goal-form.css — the prompt box: goal on top, app/login/params/run in the foot row. */
+/* goal-form.css — the prompt box: goal on top, app name and Run in the foot row. */
 
 #goal-form .ask {
   font-family: var(--serif);
@@ -28,10 +28,6 @@
 }
 #goal-form .app-chip { font-size: 12px; white-space: nowrap; }
 #goal-form .app-chip strong { color: var(--ink-2); }
-#goal-form .foot-field { flex: 0 1 auto; }
-#goal-form .foot-field select,
-#goal-form .foot-field.params { font-size: 12.5px; padding: 5px 8px; border-radius: 999px; width: auto; }
-#goal-form .foot-field.params { flex: 1 1 120px; min-width: 0; }
 #goal-form .prompt-foot button { margin: 0 0 0 auto; border-radius: 999px; padding: 6px 18px; }
 
 #goal-form [data-status] { margin: 8px 4px 0; }
