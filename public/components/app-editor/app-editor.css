@@ -4,7 +4,7 @@
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 22px;
-  width: min(560px, 92vw);
+  width: min(680px, 94vw);
   max-height: 88vh;
   overflow-y: auto;
   color: var(--ink);
@@ -19,28 +19,66 @@
 /* --- permissions ------------------------------------------------------------- */
 /* Collapsed by default: the shipped defaults are safe, so most operators never open
    this — but it is a disclosure, not a hidden setting, and the summary says so. */
+/* The container owns no padding — the summary and the body each own theirs, so the
+   collapsed state is a single tidy row rather than a row floating inside a box. */
 #app-editor .permissions {
-  margin-top: 16px;
-  padding: 10px 12px;
+  margin-top: 18px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--bg);
+  overflow: hidden; /* keeps the summary's hover fill inside the radius */
 }
+
+/* The whole row is the control: full width, its own padding, and a chevron that
+   rotates — the console's expander idiom, rather than the browser's default triangle
+   sitting tight against the border. */
 #app-editor .permissions summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 14px;
   cursor: pointer;
   font-size: 12.5px;
   font-weight: 600;
-  list-style-position: outside;
+  list-style: none;
+  user-select: none;
 }
-#app-editor .permissions summary::marker { color: var(--ink-3); }
+#app-editor .permissions summary::-webkit-details-marker { display: none; }
+#app-editor .permissions summary:hover { background: var(--brand-wash); }
+#app-editor .permissions summary:focus-visible {
+  outline: 2px solid var(--accent-soft);
+  outline-offset: -2px;
+}
+
+#app-editor .permissions summary::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-right: 1.6px solid var(--ink-3);
+  border-bottom: 1.6px solid var(--ink-3);
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+}
+#app-editor .permissions[open] summary::before { transform: rotate(45deg); }
+#app-editor .permissions[open] summary { border-bottom: 1px solid var(--line); }
+
+@media (prefers-reduced-motion: reduce) {
+  #app-editor .permissions summary::before { transition: none; }
+}
+
+#app-editor .perm-body { padding: 4px 14px 14px; }
 #app-editor .permissions .note {
-  margin: 10px 0 12px;
-  max-width: 62ch;
+  margin: 10px 0 14px;
+  max-width: 64ch;
   font-size: 11.5px;
   line-height: 1.5;
 }
-#app-editor .permissions label { margin-top: 10px; }
+#app-editor .permissions label { margin-top: 12px; }
+#app-editor .permissions .note + label { margin-top: 0; }
 #app-editor .permissions code { font-size: 11px; }
+#app-editor .permissions .row { margin-top: 12px; }
+#app-editor .permissions .row label { margin-top: 0; }
 
 /* The five primitives, wrapping on narrow dialogs. */
 #app-editor .checks { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 4px; }

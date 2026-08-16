@@ -9,10 +9,10 @@
   <label>Friendly name</label>
   <input name="name" placeholder="Acme Banking Sandbox" />
 
-  <label>URL <span class="hint">where the agent starts; its origin is the only one it may touch</span></label>
+  <label>URL <span class="hint"></span></label>
   <input name="url" placeholder="https://sandbox.example.com/login" />
 
-  <label>Goal <span class="hint">plain English — what the agent should accomplish</span></label>
+  <label>Goal <span class="hint">what the agent should accomplish</span></label>
   <textarea name="goal" rows="3" placeholder="Log in, open the dashboard, read the account balance"></textarea>
 
   <div class="row">
@@ -32,22 +32,29 @@
   <details class="permissions">
     <summary>Permissions <span class="hint">what the agent may do on this app</span></summary>
 
-    <p class="muted note">
-      The app's own origin is the hard edge — no setting here widens it, and a link
-      that navigates off-site stops the run. These narrow it further.
-    </p>
+    <div class="perm-body">
+      <p class="muted note">
+        The app's own origin is the hard edge — no setting here widens it, and a link
+        that navigates off-site stops the run. These narrow it further.
+      </p>
 
-    <label>Allowed routes <span class="hint">path prefixes, one per line; <code>/</code> means the whole site</span></label>
-    <textarea name="route_prefixes" rows="2" placeholder="/"></textarea>
+      <label>Allowed routes <span class="hint">path prefixes, one per line; <code>/</code> means the whole site</span></label>
+      <textarea name="route_prefixes" rows="2" placeholder="/"></textarea>
 
-    <label>Allowed actions <span class="hint">unticking one removes it from the agent, replay, and the operator alike</span></label>
-    <div class="checks" data-action-types></div>
+      <label>Allowed actions <span class="hint">unticking one removes it from the agent, replay, and the operator alike</span></label>
+      <div class="checks" data-action-types></div>
 
-    <label>Risky routes <span class="hint">path fragments that change state; one per line</span></label>
-    <textarea name="risky_route_patterns" rows="2" placeholder="/transfer&#10;/submit"></textarea>
-
-    <label>Never log these fields <span class="hint">one per line; passwords and tokens are always redacted</span></label>
-    <textarea name="redact_fields" rows="2" placeholder="account_number"></textarea>
+      <div class="row">
+        <div>
+          <label>Risky routes <span class="hint">state changes; one per line</span></label>
+          <textarea name="risky_route_patterns" rows="3" placeholder="/transfer&#10;/submit"></textarea>
+        </div>
+        <div>
+          <label>Never log these fields <span class="hint">one per line</span></label>
+          <textarea name="redact_fields" rows="3" placeholder="account_number"></textarea>
+        </div>
+      </div>
+    </div>
   </details>
 
   <p class="muted err" data-error hidden></p>
