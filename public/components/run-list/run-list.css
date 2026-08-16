@@ -3,6 +3,7 @@
 #run-list .scroll { overflow-x: auto; }
 #run-list table { min-width: 440px; }
 #run-list .date { white-space: nowrap; font-weight: 500; }
+#run-list .kind-cell { white-space: nowrap; }
 #run-list .time { white-space: nowrap; color: var(--ink-2); }
 /* Report and Delete get a column each rather than sharing one. Two different acts under
    one "Actions" heading made the reader work out which icon was which; a heading per

@@ -53,6 +53,7 @@ try {
   const result = await runReplay(capability, args.params, {
     headless: args.headless,
     runId: args.runId,
+    caller: 'cli',
   });
 
   console.log(`\nOutcome:  ${result.outcome}`);

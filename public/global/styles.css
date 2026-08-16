@@ -345,6 +345,12 @@ tbody tr:last-child td { border-bottom: none; }
   white-space: nowrap;
 }
 
+/* Who started a run, when it wasn't the console. An agent acting on its own is
+   the notable case, so it takes the accent; cli is quieter, and an operator run
+   carries no badge at all. */
+.badge.agent { background: var(--st-answer-bg); color: var(--st-answer-fg); }
+.badge.cli { background: var(--st-neutral-bg); color: var(--st-neutral-fg); }
+
 .badge.untested { background: var(--st-neutral-bg); color: var(--st-neutral-fg); }
 .badge.clean { background: var(--st-good-bg); color: var(--st-good-fg); }
 .badge.flaky { background: var(--st-partial-bg); color: var(--st-partial-fg); }

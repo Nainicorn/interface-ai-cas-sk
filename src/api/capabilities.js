@@ -84,7 +84,9 @@ router.post('/:id/invoke', async (req, res, next) => {
     if (!gate.allowed) return res.status(403).json({ error: gate.reason });
 
     const { params = {} } = req.body ?? {};
-    res.json(await runReplay(capability, params));
+    // Tagged at the surface, not guessed downstream: reaching this route IS what
+    // makes a run agent-invoked.
+    res.json(await runReplay(capability, params, { caller: 'agent' }));
   } catch (err) {
     next(err);
   }
