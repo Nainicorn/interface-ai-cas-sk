@@ -1,12 +1,65 @@
-/* capability-table.css — expansion rows, step lists, and the replay result line. */
+/* capability-table.css — the rows, the chevron-expanded detail, and the replay line. */
 
-tr.expand td { background: var(--brand-wash); padding: 12px 16px; }
+#capabilities .scroll { overflow-x: auto; }
+#capabilities table { min-width: 560px; }
+#capabilities td { padding: 13px 10px; }
 
-ol.steps { margin: 6px 0; padding-left: 22px; color: var(--ink-2); }
-ol.steps li { margin: 3px 0; }
-ol.steps .mono { color: var(--ink-3); }
+/* --- name + expander ------------------------------------------------------- */
+#capabilities td:first-child { min-width: 210px; }
+#capabilities .name-cell { display: flex; align-items: baseline; gap: 8px; }
 
-.result-line { margin-top: 8px; }
+/* The chevron is the expander, so the control is a control rather than a link that
+   happens to be the title. It rotates to point down while the row is open. */
+#capabilities .chevron {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  transform: translateY(2px);
+}
+#capabilities .chevron svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.15s ease;
+}
+#capabilities .chevron[aria-expanded='true'] svg { transform: rotate(90deg); }
+#capabilities .chevron:hover { color: var(--accent); background: var(--brand-wash); border-color: var(--line); }
+#capabilities .chevron:focus-visible { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+#capabilities .chevron .sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  #capabilities .chevron svg { transition: none; }
+}
+
+/* --- state ----------------------------------------------------------------- */
+#capabilities .state-cell { min-width: 150px; }
+#capabilities .state-cell .badges { display: flex; flex-wrap: wrap; gap: 5px; }
+#capabilities .state-cell .replays { margin-top: 6px; font-size: 11px; }
+#capabilities .state-cell [data-approve] { margin-top: 9px; }
+
+/* --- replay ---------------------------------------------------------------- */
+#capabilities .replay-cell { min-width: 130px; }
+.result-line { margin-top: 8px; font-size: 12px; }
 .result-line pre {
   background: var(--brand-wash);
   border: 1px solid var(--line);
@@ -17,19 +70,42 @@ ol.steps .mono { color: var(--ink-3); }
   overflow: auto;
 }
 
-#capabilities .scroll { overflow-x: auto; }
+/* --- the expanded detail --------------------------------------------------- */
+tr.expand td { background: var(--brand-wash); padding: 14px 18px 16px; }
+tr.expand .lede { margin: 0 0 12px; }
+tr.expand h4 {
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+tr.expand .steps + h4, tr.expand .contract + h4 { margin-top: 14px; }
 
-/* State: badges on one line, replays count under, Approve below — room to breathe. */
-#capabilities td { padding: 13px 10px; }
-#capabilities .state-cell { min-width: 160px; }
-#capabilities .state-cell .badges { display: flex; flex-wrap: wrap; gap: 5px; }
-#capabilities .state-cell .replays { margin-top: 6px; font-size: 11px; }
-#capabilities .state-cell [data-approve] { margin-top: 9px; }
+/* The contract, side by side: what it takes, what it gives back. */
+tr.expand .contract {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 22px;
+  padding: 12px 14px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.contract-list { margin: 0; padding: 0; list-style: none; }
+.contract-list li { margin: 0 0 7px; font-size: 12.5px; }
+.contract-list li:last-child { margin-bottom: 0; }
+.contract-list .mono { color: var(--ink); }
+.contract-list .desc { font-size: 11.5px; margin-top: 1px; }
+tr.expand .none { margin: 0; font-size: 12.5px; }
 
-#capabilities td:first-child { min-width: 185px; }
-#capabilities [data-expand] { color: var(--ink); text-decoration: none; }
-#capabilities [data-expand]:hover { color: var(--accent-strong); text-decoration: underline; }
+ol.steps { margin: 6px 0; padding-left: 22px; color: var(--ink-2); }
+ol.steps li { margin: 3px 0; }
+ol.steps .mono { color: var(--ink-3); }
 
-#capabilities .replay-cell { min-width: 205px; }
-#capabilities .replay-cell .row { gap: 6px; }
-#capabilities .replay-cell input { min-width: 0; }
+tr.expand .provenance { margin: 14px 0 0; font-size: 11.5px; }
+
+@media (max-width: 720px) {
+  tr.expand .contract { grid-template-columns: minmax(0, 1fr); }
+}

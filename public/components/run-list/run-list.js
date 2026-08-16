@@ -1,8 +1,10 @@
 /**
- * Test runs table: every discovery and replay, newest first, each with a Report link
- * that opens the full evidence view in a new tab, and a Delete that removes the run and
- * its evidence. Re-renders only when the data actually changes, so the table never
- * flickers.
+ * Test runs table: every discovery and replay, newest first, with a Report icon that
+ * opens the full evidence view in a new tab and a Delete icon that removes the run.
+ * Re-renders only when the data actually changes, so the table never flickers.
+ *
+ * Columns are deliberately thin: the run's path is where it lives, not information, so
+ * only its timestamp is shown; the goal and outcome live in the report behind it.
  * Scoped to the sidebar's selected app: a run belongs to one app, and showing another
  * app's runs here is wrong, not merely noisy.
  * API: GET /api/runs, DELETE /api/runs/:id.
@@ -11,45 +13,43 @@
 import { hasSelection, onSelectedApp, selectedAppId } from '/lib/selected-app.js';
 import { deleteJson, esc, getJson } from '/lib/ui.js';
 
-/** What a replay run produced, in one readable line. */
-function replaySummary(detail) {
-  if (detail?.outputs) {
-    return Object.entries(detail.outputs)
-      .map(([k, v]) => `${esc(k)}: ${esc(v)}`)
-      .join(' · ');
-  }
-  if (detail?.business_outcome) {
-    return `${esc(detail.business_outcome.code)} — ${esc(detail.business_outcome.message)}`;
-  }
-  if (detail?.failed_step) {
-    return `failed at step ${esc(detail.failed_step.step)}: ${esc(detail.failed_step.message)}`;
-  }
-  return '';
+/** Inline icons, so the table needs no icon font or network fetch. */
+const ICON = {
+  report: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9 1.5H4.5A1.5 1.5 0 0 0 3 3v10a1.5 1.5 0 0 0 1.5 1.5h7A1.5 1.5 0 0 0 13 13V5.5L9 1.5Z"/><path class="fold" d="M9 1.5V5a.5.5 0 0 0 .5.5H13"/><path class="rule" d="M5.5 8.5h5M5.5 11h3.5"/></svg>',
+  trash: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11M6.5 4V2.75A.75.75 0 0 1 7.25 2h1.5a.75.75 0 0 1 .75.75V4"/><path d="M4 4.5v8A1.5 1.5 0 0 0 5.5 14h5a1.5 1.5 0 0 0 1.5-1.5v-8"/><path d="M6.75 7v4M9.25 7v4"/></svg>',
+};
+
+/** The run's timestamp, read from its id — the rest of the path is just where it lives. */
+function when(run) {
+  const stamp = String(run.id).split('/').pop() ?? '';           // 2026-08-16_041115
+  const [date, time] = stamp.split('_');
+  if (!date || !time) return esc(stamp);
+  const hhmm = `${time.slice(0, 2)}:${time.slice(2, 4)}`;
+  const day = new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return `${esc(day)} <span class="muted">${esc(hhmm)}</span>`;
 }
 
 function render(root, runs) {
   const rows = runs
-    .map((run) => {
-      const what = run.goal
-        ? esc(run.goal)
-        : `<span class="muted">${run.detail?.capability ? `${esc(run.detail.capability)} · ` : ''}${replaySummary(run.detail)}</span>`;
-      return `
+    .map((run) => `
         <tr>
-          <td class="mono">${esc(run.id)}</td>
-          <td>${esc(run.app_id ?? '')}</td>
+          <td class="when">${when(run)}</td>
           <td>${esc(run.kind)}</td>
           <td><span class="badge ${esc(run.status)}">${esc(run.status)}</span>${run.live ? ` <span class="muted">${esc(ownerLabel(run.owner))}</span>` : ''}</td>
-          <td>${what}</td>
           <td class="actions">
-            <a class="report-link" target="_blank" rel="noopener" href="/report.html?run=${encodeURIComponent(run.id)}">Report</a>
-            ${run.live ? '' : `<button class="del" data-delete="${esc(run.id)}" type="button" title="Delete this run and its evidence">Delete</button>`}
+            <a class="icon report-link" target="_blank" rel="noopener" title="Open the full report"
+               href="/report.html?run=${encodeURIComponent(run.id)}">${ICON.report}<span class="sr">Report</span></a>
+            ${
+              run.live
+                ? ''
+                : `<button class="icon del" data-delete="${esc(run.id)}" type="button" title="Delete this run and its evidence">${ICON.trash}<span class="sr">Delete</span></button>`
+            }
           </td>
-        </tr>`;
-    })
+        </tr>`)
     .join('');
 
   root.querySelector('tbody').innerHTML =
-    rows || `<tr><td colspan="6" class="muted">No runs for this app yet — start one above.</td></tr>`;
+    rows || `<tr><td colspan="4" class="muted">No runs for this app yet — start one above.</td></tr>`;
 }
 
 /** Who is holding the live session, in the live viewer's words. */

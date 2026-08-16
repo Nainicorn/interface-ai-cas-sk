@@ -138,7 +138,7 @@ tbody tr:last-child td { border-bottom: none; }
 .badge.RECOVERABLE { background: #fdf3d9; color: #8a6410; }
 .badge.HARD_FAILURE, .badge.failed, .badge.ended_without_artifact { background: var(--danger-wash); color: #b32d2d; }
 .badge.paused, .badge.escalated { background: #fdf0cf; color: #8a6410; }
-.badge.running { background: var(--accent-soft); color: var(--accent-strong); }
+.badge.running { background: #fdf0cf; color: #8a6410; }
 .badge.draft { background: #e8edf6; color: var(--ink-2); }
 .badge.approved { background: #dcf0e4; color: #1c6b41; }
 .badge.safe { background: #e7f2ea; color: #3f6b4d; }

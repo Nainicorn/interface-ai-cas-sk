@@ -5,7 +5,7 @@
  * The store rather than an event, because this component resolves its fetch before the
  * workspace has mounted its tables: an event fired here would reach nobody.
  *
- * + Add app and each row's hover Edit button hand off to app-editor.
+ * + Add app and each row's Edit icon hand off to app-editor.
  * API: GET /api/targets.
  */
 
@@ -45,7 +45,10 @@ export async function mount(root) {
           <li data-app="${esc(t.app_id)}" class="${t.app_id === selectedId ? 'selected' : ''}">
             <span class="name">${esc(t.display_name)}</span>
             <span class="host mono">${esc(host)}</span>
-            <button class="edit-btn" data-edit="${esc(t.app_id)}" type="button" title="Edit this app">Edit</button>
+            <button class="edit-btn" data-edit="${esc(t.app_id)}" type="button" title="Edit ${esc(t.display_name)}">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11.2 2.3a1.4 1.4 0 0 1 2 2l-7.1 7.1-2.7.7.7-2.7 7.1-7.1Z"/><path d="M10 3.6 12.4 6"/></svg>
+              <span class="sr">Edit</span>
+            </button>
           </li>`;
       })
       .join('');

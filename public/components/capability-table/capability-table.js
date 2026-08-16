@@ -1,7 +1,8 @@
 /**
- * Capabilities tab: each recorded capability with its contract in plain words, a
- * per-row Replay action, replay-reliability (confidence), the Approve control that
- * admits a draft to the agent-facing catalog, and a click-to-expand summary.
+ * Capabilities tab: each recorded capability with a per-row Replay action,
+ * replay-reliability (confidence), the Approve control that admits a draft to the
+ * agent-facing catalog, and a chevron that expands the full detail — contract,
+ * recorded steps, and the outcomes it can answer without failing.
  * Scoped to the sidebar's selected app, like the runs table beside it.
  * API: GET /api/artifacts, GET /api/artifacts/:id, POST /api/artifacts/:id/replay,
  *      PATCH /api/artifacts/:id/status.
@@ -34,25 +35,19 @@ async function replay(id, params) {
   return json;
 }
 
-function parseParams(text) {
-  const params = {};
-  for (const pair of text.split(/[\s,]+/).filter(Boolean)) {
-    const eq = pair.indexOf('=');
-    if (eq > 0) params[pair.slice(0, eq)] = pair.slice(eq + 1);
-  }
-  return params;
-}
-
-/** "member_id=…" placeholder built from the capability's own input schema. */
-function paramsPlaceholder(artifact) {
-  const names = Object.keys(artifact.input_schema?.properties ?? {});
-  return names.map((n) => `${n}=…`).join(' ') || 'no params';
-}
-
-function contractText(artifact) {
-  const inputs = Object.keys(artifact.input_schema?.properties ?? {}).join(', ') || '—';
-  const outputs = Object.keys(artifact.output_schema?.properties ?? {}).join(', ') || '—';
-  return `${inputs} → ${outputs}`;
+/** One side of the contract as a definition list; "none" reads better than an em dash. */
+function schemaList(schema) {
+  const props = Object.entries(schema?.properties ?? {});
+  if (!props.length) return '<p class="none muted">none</p>';
+  const required = new Set(schema?.required ?? []);
+  return `<ul class="contract-list">${props
+    .map(([name, spec]) => `
+      <li>
+        <span class="mono">${name}</span>
+        <span class="muted">${spec?.type ?? 'string'}${required.has(name) ? '' : ' · optional'}</span>
+        ${spec?.description ? `<div class="muted desc">${spec.description}</div>` : ''}
+      </li>`)
+    .join('')}</ul>`;
 }
 
 /** Rolling reliability, written back by every replay. */
@@ -71,10 +66,17 @@ function detailsHtml(capability) {
     .map((b) => `<li><b>${b.code}</b> — ${b.message}</li>`)
     .join('');
   return `
-    <p style="margin:0 0 6px">${capability.description}</p>
+    <p class="lede">${capability.description}</p>
+
+    <div class="contract">
+      <div><h4>Takes</h4>${schemaList(capability.input_schema)}</div>
+      <div><h4>Returns</h4>${schemaList(capability.output_schema)}</div>
+    </div>
+
+    <h4>Recorded steps</h4>
     <ol class="steps">${steps}</ol>
-    ${outcomes ? `<p class="muted" style="margin:8px 0 2px">Also answers, without failing:</p><ol class="steps">${outcomes}</ol>` : ''}
-    <p class="muted" style="margin:8px 0 0">Recorded by ${capability.created_from.model ?? 'hand'} · run <span class="mono">${capability.created_from.run_id}</span></p>
+    ${outcomes ? `<h4>Also answers, without failing</h4><ol class="steps">${outcomes}</ol>` : ''}
+    <p class="muted provenance">Recorded by ${capability.created_from.model ?? 'hand'} · run <span class="mono">${capability.created_from.run_id}</span></p>
   `;
 }
 
@@ -85,7 +87,14 @@ function render(root, artifacts) {
       .map(
         (a) => `
       <tr data-id="${a.id}">
-        <td><a href="#" data-expand="${a.id}"><b>${a.name}</b></a><br><span class="mono muted">${a.id} v${a.version}</span></td>
+        <td class="name-cell">
+          <button class="chevron" data-expand="${a.id}" type="button"
+                  aria-expanded="false" title="Show what this capability takes and does">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg>
+            <span class="sr">Expand</span>
+          </button>
+          <b>${a.name}</b>
+        </td>
         <td class="state-cell">
           <div class="badges">
             <span class="badge ${a.status}">${a.status}</span>
@@ -94,18 +103,14 @@ function render(root, artifacts) {
           <div class="muted mono replays">${confidenceText(a)}</div>
           ${a.status === 'draft' ? `<button class="small secondary" data-approve="${a.id}" title="Admit to the agent-facing catalog">Approve</button>` : ''}
         </td>
-        <td class="muted mono">${contractText(a)}</td>
         <td class="replay-cell">
-          <div class="row">
-            <input class="mono" data-params="${a.id}" placeholder="${paramsPlaceholder(a)}" />
-            <button class="small" data-replay="${a.id}" style="flex:0 0 auto">Replay</button>
-          </div>
+          <button class="small" data-replay="${a.id}">Replay</button>
           <div class="result-line" data-result="${a.id}"></div>
         </td>
       </tr>
-      <tr class="expand" data-details="${a.id}" hidden><td colspan="4"></td></tr>`,
+      <tr class="expand" data-details="${a.id}" hidden><td colspan="3"></td></tr>`,
       )
-      .join('') || `<tr><td colspan="4" class="muted">No capabilities for this app yet — record one with a run above.</td></tr>`;
+      .join('') || `<tr><td colspan="3" class="muted">No capabilities for this app yet — record one with a run above.</td></tr>`;
 }
 
 export async function mount(root) {
@@ -143,10 +148,10 @@ export async function mount(root) {
   root.addEventListener('click', async (event) => {
     const expand = event.target.closest('[data-expand]');
     if (expand) {
-      event.preventDefault();
       const row = root.querySelector(`[data-details="${expand.dataset.expand}"]`);
       if (row.hidden) row.querySelector('td').innerHTML = detailsHtml(await fetchArtifact(expand.dataset.expand));
       row.hidden = !row.hidden;
+      expand.setAttribute('aria-expanded', String(!row.hidden));
       return;
     }
 
@@ -171,7 +176,7 @@ export async function mount(root) {
     button.disabled = true;
     result.innerHTML = `<span class="muted">Replaying…</span>`;
     try {
-      await replay(id, parseParams(root.querySelector(`[data-params="${id}"]`).value));
+      await replay(id, {}); // recorded capabilities replay as recorded
       // A replay IS a run: its result lives in the Test runs tab; here only the
       // replays count in State moves. Refresh now so the count ticks immediately.
       window.dispatchEvent(new CustomEvent('replay-finished'));

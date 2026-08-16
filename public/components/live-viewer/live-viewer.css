@@ -1,5 +1,8 @@
 /* live-viewer.css — scoped to #live-viewer. Empty state stays quiet until
-   Chromium is actually running. */
+   Chromium is actually running.
+
+   The brand's yellow marks a session that is actually live, which is the same thing it
+   marks on the HITL panel below: attention is here, right now. Idle, the card is plain. */
 
 #live-viewer.idle .meta, #live-viewer.idle img { display: none; }
 #live-viewer .empty { display: none; color: var(--ink-3); margin: 2px 0; }
@@ -15,6 +18,24 @@
 }
 
 #live-viewer h2 { color: var(--accent-strong); }
+
+/* A live run gives the card the brand's yellow edge and a pulsing dot beside the title. */
+#live-viewer:not(.idle) { border-left: 4px solid var(--attention); }
+#live-viewer h2::before {
+  content: '';
+  display: none;
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--attention);
+  vertical-align: middle;
+}
+#live-viewer:not(.idle) h2::before { display: inline-block; animation: live-pulse 1.6s ease-in-out infinite; }
+@keyframes live-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) {
+  #live-viewer:not(.idle) h2::before { animation: none; }
+}
 
 /* Stop is destructive but must be reachable at a glance while a run is live. */
 #live-viewer .stop {
