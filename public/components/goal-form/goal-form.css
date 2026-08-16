@@ -22,6 +22,7 @@
 #goal-form .prompt-foot {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   border-top: 1px solid var(--line);
   padding-top: 10px;
@@ -32,3 +33,8 @@
 
 #goal-form [data-status] { margin: 8px 4px 0; }
 
+
+@media (max-width: 560px) {
+  #goal-form .ask { font-size: 22px; }
+  #goal-form .prompt-foot button { margin-left: 0; width: 100%; }
+}

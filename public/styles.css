@@ -150,10 +150,22 @@ tbody tr:last-child td { border-bottom: none; }
 .muted { color: var(--ink-3); }
 .error { color: var(--danger); }
 
-/* ── responsive ── */
+/* ── responsive ──
+   Two shapes, not a squeeze: above 980px the sidebar is a column beside the work;
+   below it, the app list becomes a horizontal strip along the top so the apps stay
+   one tap away without eating the screen. */
 @media (max-width: 980px) {
   .app { flex-direction: column; }
-  #app-sidebar { width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--line); }
+  #app-sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    padding: 12px 14px;
+    overflow-y: visible;
+  }
+  .column { padding: 20px 20px 48px; }
 }
 @media (max-width: 640px) {
   header { padding: 18px 14px 2px; }
@@ -161,5 +173,5 @@ tbody tr:last-child td { border-bottom: none; }
   .card { padding: 14px; }
   .row { flex-direction: column; gap: 6px; }
   th, td { padding: 8px 8px; }
-  table { min-width: 560px; }
+  table { min-width: 0; }
 }

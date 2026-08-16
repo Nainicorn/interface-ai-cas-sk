@@ -99,7 +99,7 @@ function render(root, artifacts) {
           ${
             a.status === 'draft'
               ? `<button class="small secondary" data-approve="${a.id}" title="Admit to the agent-facing catalog">Approve</button>`
-              : '<span class="muted">—</span>'
+              : '<span class="muted dash">—</span>'
           }
         </td>
         <td class="replay-cell">

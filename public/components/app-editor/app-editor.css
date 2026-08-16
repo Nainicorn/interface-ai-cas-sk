@@ -5,6 +5,8 @@
   border-radius: var(--radius);
   padding: 22px;
   width: min(560px, 92vw);
+  max-height: 88vh;
+  overflow-y: auto;
   color: var(--ink);
 }
 #app-editor dialog::backdrop { background: rgba(0, 9, 29, 0.45); }
@@ -18,3 +20,12 @@
 #app-editor .actions .spacer { flex: 1; }
 #app-editor .danger { color: var(--danger); border-color: var(--danger-line); }
 #app-editor .actions button { margin-top: 16px; }
+
+@media (max-width: 520px) {
+  #app-editor dialog { padding: 16px; }
+  #app-editor .row { flex-direction: column; gap: 0; }
+  #app-editor .actions { flex-wrap: wrap; }
+  #app-editor .actions .spacer { display: none; }
+  #app-editor .actions button { flex: 1 1 auto; }
+  #app-editor .danger { order: 3; flex-basis: 100%; }
+}
