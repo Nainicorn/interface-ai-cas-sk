@@ -1,9 +1,10 @@
 /**
  * App configs: artifacts/<app>/config.json, authored by the user.
  *
- * This is target resolution, not policy — it answers "what am I driving and where does
- * it live", nothing more. The allowlist gate that used to live alongside it is out for
- * the MVP and will come back as its own unit.
+ * This is target resolution, not enforcement — it answers "what am I driving, where does
+ * it live, and what is it permitted to do". The gate that reads the permissions assembled
+ * here lives in policy/allowlist.js, so resolving a target is never mistaken for
+ * approving an action on it.
  *
  * artifacts/ holds what an app IS (gitignored — it carries credentials); evidence/ holds
  * what its runs DID. The recorded capability is written to the evidence run folder that
@@ -15,9 +16,21 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ACTION_TYPES } from '../schema/enums.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const ARTIFACTS_DIR = path.resolve(here, '../../artifacts');
+
+/**
+ * The permissions a config file gets when it does not state its own.
+ *
+ * `route_prefixes: ['/']` is the whole of the app's own origin and nothing else — the
+ * origin itself is not widenable by any prefix (policy/allowlist.js enforces that), so
+ * the default is "this app, all of it", never "the web". Every app created through the
+ * console gets this block written into its config file literally, so narrowing it is
+ * editing a visible value rather than discovering an undocumented one.
+ */
+export const DEFAULT_ALLOWLIST = { route_prefixes: ['/'], action_types: [...ACTION_TYPES] };
 
 /** "Some App" -> "some_app". The slug is the folder name and the app id; one name, not two. */
 export const slugify = (name) =>
@@ -46,17 +59,23 @@ export class UnknownApp extends Error {
  * Credentials keep their env-name indirection: the config's literal values are pushed
  * into process.env under derived names, and only the NAMES travel into the prompt and
  * the recording. The model chooses where a password goes; it never learns what it is.
+ *
+ * Those derived names are also unioned into `redact_fields`, because the name is what
+ * the replay path passes to the logger — so the value behind it is redacted by the same
+ * rule whether it was called "password" or "MY_APP_PASSWORD".
  */
 function toTarget(appId, raw) {
   const url = new URL(raw.url);
   const envPrefix = appId.toUpperCase();
   const credentials = {};
+  const credentialFields = [];
 
   for (const field of ['username', 'password']) {
     if (!raw[field]) continue;
     const envName = `${envPrefix}_${field.toUpperCase()}`;
     process.env[envName] ??= raw[field];
     credentials[field] = envName;
+    credentialFields.push(envName, field);
   }
 
   return {
@@ -68,6 +87,12 @@ function toTarget(appId, raw) {
     entry_route: `${url.pathname}${url.search}`,
     entry_url: raw.url,
     credentials,
+    allowlist: {
+      route_prefixes: raw.allowlist?.route_prefixes ?? DEFAULT_ALLOWLIST.route_prefixes,
+      action_types: raw.allowlist?.action_types ?? DEFAULT_ALLOWLIST.action_types,
+    },
+    risky_route_patterns: raw.risky_route_patterns ?? [],
+    redact_fields: [...new Set([...(raw.redact_fields ?? []), ...credentialFields])],
   };
 }
 

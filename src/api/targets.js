@@ -10,12 +10,34 @@
 import { Router } from 'express';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { ARTIFACTS_DIR, configPath, loadTargets, slugify } from '../config/app-config.js';
+import {
+  ARTIFACTS_DIR,
+  DEFAULT_ALLOWLIST,
+  configPath,
+  loadTargets,
+  slugify,
+} from '../config/app-config.js';
 
 const router = Router();
 
-/** The five keys a config file holds. Anything else in the body is ignored. */
-const FIELDS = ['name', 'url', 'goal', 'username', 'password'];
+/**
+ * The keys a config file holds. Anything else in the body is ignored.
+ *
+ * The last three are the app's policy: which routes and action types are permitted,
+ * which routes mutate state, and which field names must never have their values logged.
+ * They are editable through this route on purpose — an allowlist that only a developer
+ * with a text editor can narrow is not a control an operator actually has.
+ */
+const FIELDS = [
+  'name',
+  'url',
+  'goal',
+  'username',
+  'password',
+  'allowlist',
+  'risky_route_patterns',
+  'redact_fields',
+];
 
 /**
  * Resolve an app id to its config path, refusing anything that isn't a plain slug.
@@ -55,6 +77,9 @@ router.get('/:appId', (req, res) => {
     goal: raw.goal ?? '',
     username: raw.username ?? '',
     has_password: Boolean(raw.password),
+    allowlist: raw.allowlist ?? null,
+    risky_route_patterns: raw.risky_route_patterns ?? [],
+    redact_fields: raw.redact_fields ?? [],
   });
 });
 
@@ -90,6 +115,11 @@ router.post('/', (req, res) => {
         goal: req.body.goal ?? '',
         username: req.body.username ?? '',
         password: req.body.password ?? '',
+        // Written literally rather than left to a runtime default: the permissions an
+        // app runs under should be readable in its config file, not inferred from code.
+        allowlist: req.body.allowlist ?? DEFAULT_ALLOWLIST,
+        risky_route_patterns: req.body.risky_route_patterns ?? [],
+        redact_fields: req.body.redact_fields ?? [],
       },
       null,
       2,

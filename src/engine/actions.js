@@ -12,13 +12,18 @@
  * If a reviewer finds a second implementation of "click" anywhere in this repo, the
  * design claim in REPORT.md is false.
  *
- * The policy gate that used to open every function here is out for the MVP. When it
- * returns it belongs at the top of each primitive, so no caller can forget to apply it.
+ * checkAllowed() opens every function below, before the page is touched. Putting it here
+ * rather than in the callers is the whole point: there is one gate and no caller can
+ * forget to apply it. Actions that operate on the already-loaded page are checked against
+ * the URL currently in the browser, so a mid-run redirect off the allowlist stops the
+ * next action rather than being noticed after the fact.
  *
  * Hands off to: agent/discovery.js, engine/replay.js, agent/escalation.js.
  */
 
 import { resolveUrl } from '../config/app-config.js';
+import { checkAllowed } from '../policy/allowlist.js';
+import { redact } from '../policy/redact.js';
 import { resolveLocator } from './locator.js';
 
 /**
@@ -41,6 +46,7 @@ function log(ctx, entry) {
  */
 export async function navigate(ctx, { url }) {
   const absolute = resolveUrl(ctx.target, url);
+  checkAllowed({ target: ctx.target, action: 'navigate', url: absolute });
   await ctx.page.goto(absolute, { waitUntil: 'domcontentloaded' });
 
   log(ctx, { action: 'navigate', detail: { url }, result: 'ok', landedOn: ctx.page.url() });
@@ -53,6 +59,7 @@ export async function navigate(ctx, { url }) {
  * @param {{locator: object}} args LocatorStrategy
  */
 export async function click(ctx, { locator: strategy }) {
+  checkAllowed({ target: ctx.target, action: 'click', url: ctx.page.url() });
   const { locator, candidate, attempts } = await resolveLocator(ctx.page, strategy);
   await locator.click();
 
@@ -69,24 +76,28 @@ export async function click(ctx, { locator: strategy }) {
 /**
  * Type into a field.
  *
- * `value` is used verbatim against the live page but never reaches the log. The browser
- * needs the real password; the evidence trail only needs to know a field was filled.
- * Field-aware redaction comes back with the policy layer — until then, logging nothing
- * is the safe default, not logging everything.
+ * `value` reaches the live page verbatim and the evidence trail only through redact():
+ * the browser needs the real password, the transcript needs to know a field was filled
+ * and roughly with what. A sensitive field logs its SHAPE (`<string:13>`), everything
+ * else logs its value, because a replay that typed the wrong member ID is undebuggable
+ * otherwise. The `redacted` flag is written either way so a reviewer can see the gate ran.
  *
  * @param {ActionContext} ctx
  * @param {{locator: object, value: string, fieldName?: string}} args
  */
 export async function typeText(ctx, { locator: strategy, value, fieldName }) {
+  checkAllowed({ target: ctx.target, action: 'type', url: ctx.page.url() });
   const { locator, candidate, attempts } = await resolveLocator(ctx.page, strategy);
   await locator.fill(String(value ?? ''));
 
+  const logged = redact(value, fieldName, ctx.target);
   log(ctx, {
     action: 'type',
     detail: {
       description: strategy.description,
       field: fieldName ?? null,
-      chars: String(value ?? '').length,
+      value: logged.value,
+      redacted: logged.redacted,
     },
     locatorUsed: candidate,
     candidatesTried: attempts.length,
