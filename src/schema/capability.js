@@ -185,7 +185,9 @@ export const CapabilitySchema = z.object({
       .describe('Field names whose VALUES must never reach a log or artifact'),
   }),
 
-  confidence: ConfidenceSchema.default({}),
+  // Spelled out rather than `.default({})`: Zod 4 returns a default value as-is instead
+  // of parsing it, so `{}` stayed `{}` and the first replay computed `undefined + 1`.
+  confidence: ConfidenceSchema.default({ runs: 0, successes: 0, last_outcome: null, updated_at: null }),
 });
 
 /**

@@ -113,6 +113,7 @@ export async function typeText(ctx, { locator: strategy, value, fieldName }) {
  * @param {{locator: object, pattern?: string}} args
  */
 export async function readText(ctx, { locator: strategy, pattern }) {
+  checkAllowed({ target: ctx.target, action: 'read', url: ctx.page.url() });
   const { locator, candidate, attempts } = await resolveLocator(ctx.page, strategy);
   const raw = (await locator.innerText()).trim();
 
@@ -140,6 +141,7 @@ export async function readText(ctx, { locator: strategy, pattern }) {
  * @param {{condition: object}} args
  */
 export async function waitFor(ctx, { condition }) {
+  checkAllowed({ target: ctx.target, action: 'wait_for', url: ctx.page.url() });
   const { evaluateCondition } = await import('./perception.js');
   const result = await evaluateCondition(ctx.page, condition);
 
