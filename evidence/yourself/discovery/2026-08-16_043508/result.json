@@ -1,0 +1,27 @@
+{
+  "id": "yourself/discovery/2026-08-16_043508",
+  "kind": "discovery",
+  "app_id": "yourself",
+  "goal": "add a new app called www.zazvata.com. find a link for demo and launch it.",
+  "status": "recorded",
+  "detail": {
+    "artifact": {
+      "id": "add-app-and-launch-demo",
+      "version": 1,
+      "path": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/yourself/discovery/2026-08-16_043508/goal.json"
+    },
+    "turns": 15,
+    "usage": {
+      "input_tokens": 30,
+      "output_tokens": 6763,
+      "cache_read_input_tokens": 326347,
+      "cache_creation_input_tokens": 41633
+    },
+    "model": "claude-sonnet-5",
+    "evidence_dir": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/yourself/discovery/2026-08-16_043508",
+    "escalation": null,
+    "finished_at": "2026-08-16T04:37:10.192Z"
+  },
+  "started_at": "2026-08-16T04:35:08.044Z",
+  "updated_at": "2026-08-16T04:37:10.192Z"
+}
