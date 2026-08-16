@@ -16,6 +16,44 @@
 #app-editor textarea { width: 100%; resize: vertical; }
 #app-editor .err { color: var(--danger); margin: 10px 0 0; font-size: 12.5px; }
 
+/* --- permissions ------------------------------------------------------------- */
+/* Collapsed by default: the shipped defaults are safe, so most operators never open
+   this — but it is a disclosure, not a hidden setting, and the summary says so. */
+#app-editor .permissions {
+  margin-top: 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+}
+#app-editor .permissions summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  list-style-position: outside;
+}
+#app-editor .permissions summary::marker { color: var(--ink-3); }
+#app-editor .permissions .note {
+  margin: 10px 0 12px;
+  max-width: 62ch;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+#app-editor .permissions label { margin-top: 10px; }
+#app-editor .permissions code { font-size: 11px; }
+
+/* The five primitives, wrapping on narrow dialogs. */
+#app-editor .checks { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 4px; }
+#app-editor .check {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  font-weight: 400;
+  cursor: pointer;
+}
+#app-editor .check input { width: auto; margin: 0; }
+
 #app-editor .actions { display: flex; align-items: center; gap: 10px; }
 #app-editor .actions .spacer { flex: 1; }
 #app-editor .danger { color: var(--danger); border-color: var(--danger-line); }
