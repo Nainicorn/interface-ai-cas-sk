@@ -211,7 +211,7 @@ Catalog entries are deliberately shaped like tool definitions (`name`, `descript
 call one, and nothing about *how* the flow is implemented, which it has no business
 reasoning about.
 
-That shape is why `examples/agent-demo.js` needs no adapter: it GETs the catalog, hands it
+That shape is why `tests/agent-demo.js` needs no adapter: it GETs the catalog, hands it
 to Claude as `tools`, and lets the model pick one and fill in its arguments.
 
 ```bash
@@ -306,7 +306,7 @@ src/agent/      discovery loop, LLM tools, artifact writer, escalation & session
 src/api/        control plane: targets, runs, artifacts (operator), capabilities (agents)
 src/evidence/   RunLogger, the run index, the report projection the report page reads
 src/cli/        discover, replay, invoke (the agent's-eye view, over HTTP)
-examples/       agent-demo.js — a real model calling the catalog. Not part of the system.
+tests/          invariants, policy, schema — plus agent-demo.js, a real model calling the catalog (not part of the system)
 public/         console: sidebar, app modal, runs/capabilities/catalog tabs, report page
 artifacts/      one folder per app: config.json (gitignored — it holds logins)
 evidence/       one folder per run: transcript, screenshots, result, and its goal.json

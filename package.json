@@ -10,7 +10,7 @@
     "discover": "node --env-file-if-exists=.env src/cli/discover.js",
     "replay": "node --env-file-if-exists=.env src/cli/replay.js",
     "invoke": "node --env-file-if-exists=.env src/cli/invoke.js",
-    "agent-demo": "node --env-file-if-exists=.env examples/agent-demo.js",
+    "agent-demo": "node --env-file-if-exists=.env tests/agent-demo.js",
     "test": "node --test tests/*.test.js"
   },
   "engines": {

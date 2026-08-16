@@ -206,13 +206,13 @@ exists and still routes human actions through the same five primitives tagged
 
 ## 5. An agent calling the catalog
 
-The one path that crosses a process boundary. `examples/agent-demo.js` imports nothing
+The one path that crosses a process boundary. `tests/agent-demo.js` imports nothing
 from `src/` — if it could reach into the codebase it would prove nothing about what an
 outside caller can do.
 
 ```mermaid
 sequenceDiagram
-    participant D as examples/agent-demo.js
+    participant D as tests/agent-demo.js
     participant C as api/capabilities.js
     participant M as Claude
     participant R as api/run-replay.js → engine/replay.js
