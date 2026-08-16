@@ -36,71 +36,75 @@ nothing else up.
 
 ## 1. Register your application
 
-In the console sidebar, hit **+ Add app**: friendly name, URL, and optionally saved
-goals (named tests), allowed paths, and one or more logins. That's the whole form. Each
-app row's **⋯ menu** edits or deletes it later. The same thing over HTTP:
+In the console sidebar, hit **+ Add app**: friendly name, URL, a default goal, and
+optionally a login. That's the whole form. The pencil on each app row edits or deletes it
+later, and a collapsed **Permissions** section narrows what the agent may do. The same
+thing over HTTP:
 
 ```bash
 curl -X POST localhost:3000/api/targets -H 'content-type: application/json' -d '{
-  "display_name": "The Internet",
-  "base_url": "https://the-internet.herokuapp.com",
-  "entry_route": "/login",
-  "goals": { "login test": "Log in and read the message shown in the secure area" },
-  "personas": { "tom": { "username": "tomsmith", "password": "SuperSecretPassword!" } }
+  "name": "The Internet",
+  "url": "https://the-internet.herokuapp.com/login",
+  "goal": "Log in and read the message shown in the secure area",
+  "username": "tomsmith",
+  "password": "SuperSecretPassword!"
 }'
 ```
 
 (`PUT /api/targets/<app_id>` edits, `DELETE /api/targets/<app_id>` removes.)
 
-Where everything lives — registration is dynamic, but nothing lives in code:
+Where everything lives — nothing about your app lives in code:
 
-- [`config/targets.json`](config/targets.json) gets the target's *shape*: name, URL,
-  allowlist, risky routes, saved goals, and the **names** of the env vars that will hold
-  credentials (derived from the app id — the payload cannot carry a `credentials` key).
-  This file is the reviewable safety surface: a boundary test fails the suite if a secret
-  value ever appears in it, and the writer re-asserts that same shape before every write.
-- `data/creds/<app_id>.json` gets the personas (the logins) — **gitignored**, written
-  `0600`. Values are injected into the env names at browser launch and redacted from
-  every transcript, artifact, and log.
-- Runs and interventions live in a local SQLite database under `data/` (gitignored);
-  recordings land in `artifacts/`, per-run evidence in `evidence/`.
-- The agent can never leave your app's origin — that's structural. Allowed paths default
-  to `/` (the whole app) for a friction-free start; narrow them whenever you want, and
-  mark risky paths to require confirmation. Action types default to the five primitives
-  (`navigate`, `click`, `type`, `read`, `wait_for`).
-
-**Why several logins?** Each run picks a `persona`. Different logins carry different
-app-side permissions, so the same capability can surface *"permission denied"* as a
-`BUSINESS_OUTCOME` — a legitimate, typed answer the caller handles as data — rather than
-a crash.
+- `artifacts/<app_id>/config.json` is the app: name, URL, goal, credentials, and its
+  permissions. **Gitignored**, because it carries logins. A `config.example.json` ships in
+  its place. The app id is the slug of the name, so there is one identifier, not two that
+  can disagree.
+- Credentials keep an env-name indirection: the config's values are pushed into
+  `process.env` under derived names (`<APP_ID>_PASSWORD`), and only the **names** travel
+  into the prompt and the recording. The model chooses where a password goes; it never
+  learns what it is. Those names are also unioned into the redaction list, so the value
+  behind one is a shape (`<string:13>`) in every transcript.
+- **A run is its folder.** `evidence/<app>/<kind>/<stamp>/` holds `transcript.jsonl`,
+  numbered screenshots, and `result.json` — and, if the run produced one, the recorded
+  capability as `goal.json`. There is no database and no separate artifacts tree: the
+  recording sits beside the evidence proving it ran.
+- The agent can never leave your app's origin — that is structural, and no permission
+  setting widens it. Allowed paths default to `/` (the whole app) for a friction-free
+  start; narrow them whenever you want, and mark risky paths so they need approval before
+  they can replay unattended. Action types default to the five primitives (`navigate`,
+  `click`, `type`, `read`, `wait_for`); unticking one removes it from the LLM, from
+  replay, and from the operator alike.
 
 ## 2. Record a test run
 
-From the console: pick a saved goal and a login in the prompt box, add params if the
-task needs them, hit **Run** — and watch it happen in the live viewer.
+From the console: the app's goal is prefilled in the prompt box — edit it or write a new
+one, hit **Run**, and watch it happen in the live viewer.
 
-One real LLM-driven run (`claude-sonnet-5`, headed Chromium, ~1 min). The recording is the
-typed artifact at `artifacts/<capability-id>/v1.json` — ordered steps, ranked locator
-candidates, typed inputs and outputs, a success checkpoint. That file **is** the script;
-no code is generated from it.
+One real LLM-driven run (`claude-sonnet-5`, headed Chromium, ~1 min). The recording lands
+in that run's own folder as `goal.json` — ordered steps, ranked locator candidates, typed
+inputs and outputs, a success checkpoint. That file **is** the script; no code is generated
+from it. A discovery folder *with* a `goal.json` passed its gates and is replayable; one
+without did not.
 
 ## 3. Replay it — deterministically
 
-Capabilities tab → **Replay** (params + login are per-replay choices). The result lands
-in Test runs; the capability's replays count ticks up in place.
+Capabilities tab → the **replay icon**. The result lands in Runs; the capability's
+reliability chip ticks up in place (`untested` → `2/2`, tinted if anything failed).
 
 No model in the loop — stable locators, explicit waits, checkpoint verification, ~5s.
 Every replay resolves to one of the four outcomes below, stores a full report, and writes
-a rolling reliability signal (`confidence`) back into the artifact.
+a rolling reliability signal (`confidence`) back into the recording.
 
 ## 4. Review every run
 
-The console's **Test runs** table lists every run — discovery and replay, newest first,
-with its outcome and what it produced. Each row's **Report** link opens the run in a new
-tab: outcome banner, configuration (app, goal, login, params, capability), the
-step-by-step trail, the screenshot gallery, and token usage for discovery runs. The page
-is a read-only projection of `evidence/<run-id>/` — the transcript, screenshots, and
-result written as the run happened — and keeps updating while a run is live.
+The console's **Runs** table lists every run — discovery and replay, newest first, with its
+outcome. A replay that an outside agent invoked carries an `agent` badge, and one started
+from the terminal a `cli` badge, so a run something else triggered is never mistaken for a
+button press. Each row's **Report** icon opens the run in a new tab: outcome banner,
+configuration, the step-by-step trail, the screenshot gallery, and token usage for
+discovery runs. The page is a read-only projection of the run's folder — the transcript,
+screenshots, and result written as the run happened — and keeps updating while a run is
+live.
 
 ## Prefer the terminal? The same flow, CLI end to end
 
@@ -108,31 +112,33 @@ The CLI drives the same engine through the same gates — runs made here appear 
 console too. Worked example against a public practice site:
 
 ```bash
-npm start                                  # control plane (registration + catalog are HTTP)
+npm start                                  # control plane; registration and catalog are HTTP
 
 # 1. Register (same payload the modal sends — see section 1 for the curl)
 
 # 2. Record: one real LLM run, headed Chromium. The CLI takes any free-text goal.
-npm run discover -- --app-id the-internet \
-  --goal "Log in and read the message shown in the secure area" \
-  --persona tom
+npm run discover -- --app-id the_internet \
+  --goal "Log in and read the message shown in the secure area"
 #    → prints status, run id, evidence folder, token usage, and the capability id
 
-# 3. Inspect the recording and the evidence
-cat artifacts/<capability-id>/v1.json
-ls evidence/<run-id>/                      # transcript.jsonl, screenshots, result.json
+# 3. Inspect the recording and the evidence — both live in the run's folder
+ls evidence/the_internet/discovery/<stamp>/   # transcript.jsonl, screenshots, result.json
+cat evidence/the_internet/discovery/<stamp>/goal.json
 
 # 4. Replay — no LLM. Exit 0 = SUCCESS or BUSINESS_OUTCOME, 1 = HARD_FAILURE.
-npm run replay -- --id <capability-id> --persona tom --headed
+npm run replay -- --id <capability-id> --headed
 
 # 5. The agent's-eye view: approve, then invoke by name over HTTP
 npm run invoke                             # catalog — empty until something is approved
 curl -X PATCH localhost:3000/api/artifacts/<capability-id>/status \
   -H 'content-type: application/json' -d '{"status":"approved"}'
-npm run invoke -- --id <capability-id>     # typed args in, four-way result out
+npm run invoke -- --id <capability-id> --param member_id=12345
 
-# 6. The report for any run, CLI-made or not:
-#    open localhost:3000/report.html?run=<run-id> — or read evidence/<run-id>/result.json
+# 6. Or let a real model choose the capability and fill in its arguments:
+npm run agent-demo -- "log in and read the secure-area message"
+
+# 7. The report for any run, CLI-made or not:
+#    open localhost:3000/report.html?run=<run-id> — or read the run folder's result.json
 ```
 
 ### Proof of work
@@ -157,14 +163,14 @@ trail, tagged `actor: "human"`.
 The same handoff is scriptable over HTTP (`/api/escalations`), which is how the committed
 evidence run with `paused`/`resumed` events was produced.
 
-### Stretch goals: the agent-facing catalog & confidence gating
+### Stretch goals: the agent-facing catalog & the approval gate
 
-Recorded capabilities are exposed to AI agents as a **catalog of callable tools** — but
-only after a human approves them.
+Two are built, and they are one idea: **a human approves a recording, an agent can then
+call it by name, and the system tracks whether it keeps working.**
 
 ```bash
-# The catalog an agent sees. Empty until something is approved — drafts are invisible
-# to agents no matter how safe they are.
+# The catalog an agent sees. Empty until something is approved — a draft is not
+# "listed but refused", it is invisible, whatever its risk level.
 npm run invoke
 
 # The one human act the system never grants itself (also a button in the console):
@@ -176,9 +182,28 @@ npm run invoke -- --id <capability-id> --param member_id=12345
 ```
 
 Catalog entries are deliberately shaped like tool definitions (`name`, `description`,
-`input_schema`) — what a function-calling agent needs to decide whether and how to call.
-After two clean invokes the artifact reads `"confidence": { "runs": 2, "successes": 2 }`
-and the catalog line shows `2/2 replays ok`.
+`input_schema`) — exactly what a function-calling agent needs to decide whether and how to
+call one, and nothing about *how* the flow is implemented, which it has no business
+reasoning about.
+
+That shape is why `examples/agent-demo.js` needs no adapter: it GETs the catalog, hands it
+to Claude as `tools`, and lets the model pick one and fill in its arguments.
+
+```bash
+npm run agent-demo -- "log in and read the secure-area message"
+```
+
+Revoke the capability and run it again — the model is told it has no tools at all. A
+human's approval decision is what an agent is able to do.
+
+The gate bites in both directions. A **risky** capability is refused unattended replay
+until approved (403 before a run row or evidence folder exists, because a refusal says
+nothing about the recording). An **approved** capability cannot be deleted, and neither
+can the run holding it, until it is revoked — nothing an agent may be calling right now
+vanishes on one click.
+
+After two clean invokes the recording reads `"confidence": { "runs": 2, "successes": 2 }`
+and its chip shows `2/2`.
 
 ---
 
@@ -216,11 +241,10 @@ chooses which primitive to invoke, exactly as replay does. The policy gate runs 
 line of each, so no caller can forget it.
 
 **The model never sees a secret.** Credentials are referenced by env var *name*; the
-harness resolves values after the model has chosen where to type. Personas extend this,
-not replace it: the chosen login's values are injected into those same env names at
-launch, so the prompt, the artifact, and the replay path are identical whichever persona
-runs. Caller data is typed via named parameters (`value_from`), which is also what keeps
-recordings parameterized.
+harness resolves the value after the model has chosen where to type it, and the name is
+what reaches the recording — so the artifact is publishable and the replay path resolves
+the same way. Caller data is typed via named parameters (`value_from`), which is also what
+keeps recordings parameterized.
 
 **Ownership + a mutex, not vibes.** A paused run keeps its Playwright session open. An
 explicit `owner` flag says who *should* act; a per-run async mutex says who *is* acting —
@@ -230,43 +254,38 @@ because Node's single thread does not stop two async handlers interleaving on on
 screenshot. It exists on legacy web apps and native desktop apps alike. Swapping Playwright
 for an OS accessibility API later changes one file.
 
-**Artifacts are files, not rows.** "Reviewable" is a requirement; a JSON file is diffable in
-a code review. Operational state (runs, interventions) uses SQLite.
+**Artifacts are files, not rows.** "Reviewable" is a requirement, and a JSON file is
+diffable in a code review. There is no database at all: a run is a folder, `result.json` is
+its record, and the recording it produced sits in that same folder as `goal.json`. Folder
+names sort chronologically, so the history needs no index that could disagree with it.
 
 ---
 
 ## Tests
 
-```bash
-npm test
-```
-
-81 tests. The replay and escalation suites drive a live fixture on port 3001 and skip
-cleanly unless that fixture is registered *and* running; every other suite — schema,
-policy, registration, personas, reports, capabilities, boundaries — runs with nothing
-else up. Several are architectural invariants that fail the suite if a structural claim
-in this README ever stops being true — replay importing an LLM SDK, `src/` importing a
-target app, a hardcoded hostname, a secret in `targets.json`, or a second caller of the
-policy gate.
-
----
+**There is no test suite in this repo, and that is a deliberate cut.** An earlier one was
+removed with the MVP restructure and re-adding it was not the best use of the remaining
+time; the checks that survive are structural rather than assertive — the policy gate opens
+every action primitive so no caller can bypass it, and `src/engine/replay.js` imports no
+LLM SDK, which is the one invariant the whole determinism claim rests on. `REPORT.md`
+lists this under Cuts. What a reviewer can run instead is the demo path above end to end:
+record, replay, approve, invoke.
 
 ## Layout
 
 ```
-src/schema/     Zod capability schema, artifact store, parameter validation
+src/schema/     Zod capability schema, the on-disk store, parameter validation
 src/engine/     perception, ranked locator resolution, action primitives, replay, recovery
-src/policy/     allowlist, risk, redaction, personas, runtime target registration
-src/agent/      discovery loop, tools, artifact writer, escalation & session ownership
-src/api/        control plane: targets, runs, artifacts, capabilities, escalations
-src/evidence/   RunLogger + the report projection the report page reads
-src/db/         SQLite: runs + interventions
+src/policy/     the allowlist gate, redaction, risk classification + approval predicates
+src/agent/      discovery loop, LLM tools, artifact writer, escalation & session ownership
+src/api/        control plane: targets, runs, artifacts (operator), capabilities (agents)
+src/evidence/   RunLogger, the run index, the report projection the report page reads
 src/cli/        discover, replay, invoke (the agent's-eye view, over HTTP)
-public/         console: sidebar + add-app modal + runs + report page (vanilla JS)
-config/         targets.json — starts empty; registration fills it, never with a secret
-data/creds/     your logins per app, written at registration (gitignored)
-artifacts/      recorded capabilities, versioned JSON (genuine model output only)
-evidence/       per-run transcripts, screenshots, results
+examples/       agent-demo.js — a real model calling the catalog. Not part of the system.
+public/         console: sidebar, app modal, runs/capabilities/catalog tabs, report page
+artifacts/      one folder per app: config.json (gitignored — it holds logins)
+evidence/       one folder per run: transcript, screenshots, result, and its goal.json
+docs/           the assignment, PLAN.md, DESIGN.md
 ```
 
 Working agreement in [CLAUDE.md](CLAUDE.md); remaining work in [PLAN.md](PLAN.md).

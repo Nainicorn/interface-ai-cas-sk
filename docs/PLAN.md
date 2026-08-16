@@ -1,36 +1,15 @@
 # PLAN.md — Remaining Work
 
-1. **Fix HITL so the handoff is natural language.** The operator console asks a human to
-   hand-assemble a Playwright step: action type, locator kind, role, text, URL. The goal
-   is written in plain English and the model reasons in plain English, so this inverts the
-   premise. Most of the fix already exists: `resumeRun(runId, { note })` passes the note
-   back into the model's context as language, and the loop re-observes the live page
-   (src/agent/discovery.js:348). The run is headed Chromium, so the human can already take
-   the window. So: make the note box the primary control, point the operator at the live
-   browser window for manual work, and retire the locator form. Keep `performManualAction`
-   in src/agent/escalation.js — human actions through the same five primitives, tagged
-   `actor: "human"` in the evidence, is real design — it just stops being what the operator
-   is asked to fill in.
+1. **Update the README.** It is the most out-of-date file in the repo and describes a
+   system that no longer exists: `npm test` and "81 tests" (the suite was removed),
+   `src/db/` and SQLite (replaced by the filesystem — a run IS its folder), `config/` and
+   `targets.json` (apps live in `artifacts/<app>/config.json`), `data/creds/` and personas
+   (removed). It must match what the code actually does now: register an app, record a
+   run, replay it, approve it, invoke it from the catalog or from an agent
+   (`npm run agent-demo`), open the report. Also document the caller badge and the
+   Permissions section on the app form.
 
-2. **Clean up the codebase.** Delete dead code and stale docs (README still describes a
-   `tests/` suite that was removed). One responsibility per file, with each file's header
-   comment naming what it hands off to. Console components stay one folder each
-   (.html/.js/.css) with `mount(root)`, delegated clicks, and window CustomEvents — no
-   stragglers. Escape every interpolated value; use the shared helpers in
-   public/global/ui.js rather than per-component copies. One error shape across all API
-   routes. Temporary test scripts live in the scratchpad and get deleted once green; this
-   repo ships no test directory and the README must not claim one.
-
-3. **Expose the allowlist in the app form.** The API accepts `allowlist`,
-   `risky_route_patterns`, and `redact_fields` (src/api/targets.js), but the console's app
-   editor does not show them, so an operator cannot narrow permissions without a text
-   editor. Small, and it makes the safety story demonstrable rather than asserted.
-
-4. **Update the README.** It documents the demo path end to end and must match what the
-   code actually does after 1–3: register an app, record a run, replay it, approve it,
-   invoke it from the catalog, open the report.
-
-5. **Write docs/DESIGN.md as Mermaid diagrams.** The file exists but is empty. It should
+2. **Write docs/DESIGN.md as Mermaid diagrams.** The file exists but is empty. It should
    show the full flow visually, and every box should name the file that actually does the
    work, so a reader can go from the picture to the code without hunting. At minimum:
    discovery (goal → discovery.js loop → tools.js → actions.js → artifact-writer.js →
@@ -42,13 +21,19 @@
    the agent-demo loop is worth adding too, since that is the one path that crosses the
    process boundary.
 
-6. **Re-record the evidence set.** Record fresh with the current code so /evidence/ shows
+3. **Re-record the evidence set.** Record fresh with the current code so /evidence/ shows
    the safety layer active (`redacted: true` lines) and the approval gate in the loop.
    Needs, each readable standalone: a discovery run, a replay SUCCESS, a replay
    BUSINESS_OUTCOME, and an escalation run (paused → human → resumed). Never hand-edit
    evidence.
 
-7. **Write REPORT.md last, after everything above is built and tested.** One to three
+   The committed `login-and-open-study-space` recording is currently broken and must be
+   re-recorded: its step-1 checkpoint is `element_exists "input[value]"`, a selector that
+   means "an input with a value attribute" and matches nothing, so every replay is a
+   HARD_FAILURE. The engine caught it and now reports the reason — but the recording
+   itself is the demo, so it has to be a good one.
+
+4. **Write REPORT.md last, after everything above is built and tested.** One to three
    pages under these exact seven headings: Architecture, Artifact schema, Determinism &
    error handling, Heterogeneity & multi-tenant, Escalation & handoff, Safety, Cuts.
 
@@ -66,3 +51,22 @@
    different tenant); multi-run stability sweep (the rolling `confidence` counter already
    accumulates the same signal across real replays). Also disclose that multi-tenant and
    desktop surfaces are design-only, as the brief permits.
+
+   Also for Cuts, both found while building: the control plane has **no authentication at
+   all** — approval controls which capabilities an agent sees, never who may ask, so a
+   real deployment needs a key on `/api/capabilities`. And a **capability lives inside the
+   run folder that produced it**, so deleting that run deletes the recording; approved
+   capabilities are refused deletion for exactly that reason.
+
+---
+
+## Done
+
+- Safety layer restored — allowlist gate, redaction, risk (`338f3fd`)
+- Stretch goals 1 and 3 — agent catalog + an approval gate that bites (`e512331`)
+- Console: one row grammar, chips, per-action columns, removal model (`2956b97`, `f914e3c`, `e89dedc`)
+- An agent actually calling the catalog, in `examples/` (`112d101`)
+- Caller badge on runs, and a failure reason that is never blank (`50f478c`)
+- HITL: the human's channel back is language, not selectors (`a98efdb`)
+- Escaped untrusted text; components share the fetch/error helpers (`c854e86`)
+- Allowlist editable from the console app form (`c9dd6c1`)
