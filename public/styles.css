@@ -27,9 +27,15 @@
   --accent-strong: var(--brand-dark);
   --accent-soft: var(--brand-tint);
 
+  /* Yellow means one thing only: a session is live right now. */
   --attention: var(--brand-yellow);
   --attention-line: #f0d091;
   --attention-wash: #fffaf0;
+
+  /* Violet means one thing only: a human is needed. */
+  --needs-human: #7a3fd1;
+  --needs-human-line: #d9c6f2;
+  --needs-human-wash: #f8f4fe;
 
   --danger: #e64949;       /* from their palette (used there at 50% alpha) */
   --danger-line: #f3c4c4;
@@ -133,16 +139,40 @@ tbody tr:last-child td { border-bottom: none; }
   color: var(--ink-2);
   white-space: nowrap;
 }
-.badge.SUCCESS, .badge.recorded { background: #dcf0e4; color: #1c6b41; }
-.badge.BUSINESS_OUTCOME { background: var(--brand-tint); color: var(--brand-dark); }
-.badge.RECOVERABLE { background: #fdf3d9; color: #8a6410; }
-.badge.HARD_FAILURE, .badge.failed, .badge.ended_without_artifact { background: var(--danger-wash); color: #b32d2d; }
-.badge.paused, .badge.escalated { background: #fdf0cf; color: #8a6410; }
+/* One hue per state, so two statuses never read as the same thing:
+     yellow  running        — live right now
+     violet  paused         — stopped, waiting for a human
+     slate   interrupted    — the process went away
+     stone   stopped        — ended deliberately, nothing kept
+     green   recorded       — produced a capability
+     blue    business       — a legitimate answer that is not the happy path
+     amber   recoverable    — wobbled, recovered on a declared rule
+     red     failed         — genuinely broken */
 .badge.running { background: #fdf0cf; color: #8a6410; }
+.badge.paused, .badge.escalated { background: #efe6fb; color: #6b3ba4; }
+.badge.interrupted { background: #e4e8ef; color: #56607a; }
+.badge.stopped { background: #eceae6; color: #6a6459; }
+
+.badge.SUCCESS, .badge.recorded, .badge.approved { background: #dcf0e4; color: #1c6b41; }
+.badge.BUSINESS_OUTCOME { background: var(--brand-tint); color: var(--brand-dark); }
+.badge.RECOVERABLE { background: #fce7cd; color: #94530c; }
+.badge.HARD_FAILURE, .badge.failed { background: #fbdada; color: #a92626; }
+.badge.ended_without_artifact { background: #f2dfd2; color: #8a5230; }
+
 .badge.draft { background: #e8edf6; color: var(--ink-2); }
-.badge.approved { background: #dcf0e4; color: #1c6b41; }
 .badge.safe { background: #e7f2ea; color: #3f6b4d; }
 .badge.risky { background: #fdeedb; color: #96560f; }
+
+/* Transcript EVENT badges in the run report. Same rule as the statuses above — an
+   event that means something different must not look the same. They deliberately
+   echo the run statuses: an `escalation` event is the violet of a `paused` run, a
+   `resumed` event the yellow of a `running` one. */
+.badge.run_start { background: var(--brand-tint); color: var(--brand-dark); }
+.badge.escalation { background: #efe6fb; color: #6b3ba4; }
+.badge.resumed { background: #fdf0cf; color: #8a6410; }
+.badge.artifact_recorded { background: #dcf0e4; color: #1c6b41; }
+.badge.risk_refusal { background: #fbdada; color: #a92626; }
+.badge.observation, .badge.model_turn { background: #e8edf6; color: var(--ink-2); }
 
 .row { display: flex; gap: 10px; }
 .row > * { flex: 1; }

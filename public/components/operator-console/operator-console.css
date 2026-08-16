@@ -3,10 +3,13 @@
 
    Laid out as three stacked blocks — why you're here, drive the page, hand it back —
    because an operator reads this panel under pressure and should never have to work out
-   which control does what. */
+   which control does what.
+
+   Violet, matching the `paused` badge: yellow is reserved for "a session is live", and
+   this panel means something narrower — a human is needed. */
 
 .card.operator {
-  border-left: 4px solid var(--attention);
+  border-left: 4px solid var(--needs-human);
   padding: 18px 20px 20px;
 }
 
@@ -14,8 +17,8 @@
 
 /* --- why you're here ------------------------------------------------------- */
 .operator .ask-box {
-  background: var(--attention-wash);
-  border: 1px solid var(--attention-line);
+  background: var(--needs-human-wash);
+  border: 1px solid var(--needs-human-line);
   border-radius: 12px;
   padding: 12px 14px;
   margin-bottom: 18px;
