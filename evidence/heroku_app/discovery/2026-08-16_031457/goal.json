@@ -1,0 +1,169 @@
+{
+  "schema_version": 1,
+  "id": "scan-challenging-dom-links",
+  "name": "Scan Challenging DOM Link Labels",
+  "version": 1,
+  "status": "draft",
+  "description": "Navigates to the Challenging DOM page and reads the labels of its links: the distinct 'baz' button link, the 'edit' action link in the first data row of the table (representative of the repeated edit/delete row-action links), and the footer 'Elemental Selenium' link. Useful for confirming link labels are readable despite the page's unhelpful, non-unique locators.",
+  "target": {
+    "app_id": "heroku_app",
+    "entry_route": "/challenging_dom",
+    "tenant_overrides": []
+  },
+  "input_schema": {
+    "type": "object",
+    "properties": {},
+    "required": [],
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "baz_link_label": {
+        "type": "string",
+        "description": "Label text of the distinct 'baz' colored button link"
+      },
+      "first_row_edit_link_label": {
+        "type": "string",
+        "description": "Label text of the 'edit' action link in the first data row of the table"
+      },
+      "footer_link_label": {
+        "type": "string",
+        "description": "Label text of the footer 'Elemental Selenium' link"
+      }
+    },
+    "required": [
+      "baz_link_label",
+      "first_row_edit_link_label",
+      "footer_link_label"
+    ],
+    "additionalProperties": false
+  },
+  "risk_level": "safe",
+  "steps": [
+    {
+      "index": 0,
+      "intent": "Go to the Challenging DOM page",
+      "action": "navigate",
+      "url": "/challenging_dom",
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Challenging DOM",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 1,
+      "intent": "Read the label of the distinct 'baz' link",
+      "action": "read",
+      "locator": {
+        "description": "Link labeled baz",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "baz",
+            "role": "link",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "baz",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "baz_link_label",
+      "risk": "safe"
+    },
+    {
+      "index": 2,
+      "intent": "Read the label of the 'edit' action link in the first data row of the table",
+      "action": "read",
+      "locator": {
+        "description": "Edit link in first data row of table",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "table#table1 tbody tr:nth-child(1) a:nth-child(1)",
+            "exact": false,
+            "confidence": 0.5,
+            "note": "Assumes table id table1 with tbody rows"
+          },
+          {
+            "kind": "css",
+            "value": "table tbody tr:first-child a:first-child",
+            "exact": false,
+            "confidence": 0.4,
+            "note": "Fallback: first row, first action link, scoped to tbody"
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "edit",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [
+        {
+          "code": "TABLE_EMPTY",
+          "detect": {
+            "type": "text_absent",
+            "value": "Iuvaret0",
+            "timeout_ms": 3000
+          },
+          "message": "The generated data table has no rows, so no edit/delete action links exist to read."
+        }
+      ],
+      "extract_as": "first_row_edit_link_label",
+      "risk": "safe"
+    },
+    {
+      "index": 3,
+      "intent": "Read the label of the footer 'Elemental Selenium' link",
+      "action": "read",
+      "locator": {
+        "description": "Footer link Elemental Selenium",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Elemental Selenium",
+            "role": "link",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Elemental Selenium",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "footer_link_label",
+      "risk": "safe"
+    }
+  ],
+  "success_checkpoint": {
+    "type": "text_visible",
+    "value": "Elemental Selenium",
+    "timeout_ms": 5000
+  },
+  "created_from": {
+    "run_id": "20260816-031457-discovery",
+    "model": "claude-sonnet-5",
+    "recorded_at": "2026-08-16T03:15:49.149Z"
+  },
+  "redaction_policy": {
+    "redact_fields": []
+  },
+  "confidence": {
+    "runs": 0,
+    "successes": 0,
+    "last_outcome": null,
+    "updated_at": null
+  }
+}

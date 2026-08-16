@@ -1,0 +1,26 @@
+{
+  "id": "heroku_app/discovery/2026-08-16_031457",
+  "kind": "discovery",
+  "app_id": "heroku_app",
+  "goal": "Scan all links on the challenging DOM page and read their labels",
+  "status": "recorded",
+  "detail": {
+    "artifact": {
+      "id": "scan-challenging-dom-links",
+      "version": 1,
+      "path": "/Users/nainicorn/Documents/interface-ai-cas-sk/artifacts/scan-challenging-dom-links/v1.json"
+    },
+    "turns": 5,
+    "usage": {
+      "input_tokens": 10,
+      "output_tokens": 3292,
+      "cache_read_input_tokens": 64728,
+      "cache_creation_input_tokens": 24237
+    },
+    "evidence_dir": "evidence/heroku_app/discovery/2026-08-16_031457",
+    "model": "claude-sonnet-5",
+    "finished_at": "2026-08-16T03:15:49.202Z"
+  },
+  "started_at": "2026-08-16T03:14:57.000Z",
+  "updated_at": "2026-08-16T03:15:49.202Z"
+}

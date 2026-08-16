@@ -1,0 +1,208 @@
+{
+  "schema_version": 1,
+  "id": "scan-challenging-dom-links",
+  "name": "Scan Challenging DOM Links",
+  "version": 2,
+  "status": "draft",
+  "description": "Navigates to the Challenging DOM page and reads the labels of its distinguishing links: the three colored action buttons (foo/baz/foo), the footer link, and the edit link in the first data table row. Useful for validating link labels on this notoriously locator-hostile page.",
+  "target": {
+    "app_id": "heroku_app",
+    "entry_route": "/challenging_dom",
+    "tenant_overrides": []
+  },
+  "input_schema": {
+    "type": "object",
+    "properties": {},
+    "required": [],
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "blue_button_label": {
+        "type": "string",
+        "description": "Label text of the first (blue, plain 'button' class) action link"
+      },
+      "red_button_label": {
+        "type": "string",
+        "description": "Label text of the second (red, 'button alert' class) action link"
+      },
+      "green_button_label": {
+        "type": "string",
+        "description": "Label text of the third (green, 'button success' class) action link"
+      },
+      "footer_link_label": {
+        "type": "string",
+        "description": "Label text of the footer 'Elemental Selenium' link"
+      },
+      "first_row_edit_label": {
+        "type": "string",
+        "description": "Label text of the 'edit' link in the first table data row"
+      }
+    },
+    "required": [
+      "blue_button_label",
+      "red_button_label",
+      "green_button_label",
+      "footer_link_label",
+      "first_row_edit_label"
+    ],
+    "additionalProperties": false
+  },
+  "risk_level": "safe",
+  "steps": [
+    {
+      "index": 0,
+      "intent": "Go to the Challenging DOM page",
+      "action": "navigate",
+      "url": "/challenging_dom",
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Challenging DOM",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 1,
+      "intent": "Read the label of the first (blue) action link, distinguished by having plain 'button' class without alert/success modifiers",
+      "action": "read",
+      "locator": {
+        "description": "First button link (blue, class 'button')",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "a.button:not(.alert):not(.success)",
+            "exact": false,
+            "confidence": 0.7
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "foo",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "blue_button_label",
+      "risk": "safe"
+    },
+    {
+      "index": 2,
+      "intent": "Read the label of the second (red) action link, distinguished by 'button alert' class",
+      "action": "read",
+      "locator": {
+        "description": "Second button link (red, class 'button alert')",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "a.button.alert",
+            "exact": false,
+            "confidence": 0.7
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "baz",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "red_button_label",
+      "risk": "safe"
+    },
+    {
+      "index": 3,
+      "intent": "Read the label of the third (green) action link, distinguished by 'button success' class",
+      "action": "read",
+      "locator": {
+        "description": "Third button link (green, class 'button success')",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "a.button.success",
+            "exact": false,
+            "confidence": 0.7
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "foo",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "green_button_label",
+      "risk": "safe"
+    },
+    {
+      "index": 4,
+      "intent": "Read the footer 'Elemental Selenium' link label",
+      "action": "read",
+      "locator": {
+        "description": "Footer link Elemental Selenium",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Elemental Selenium",
+            "role": "link",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Elemental Selenium",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "footer_link_label",
+      "risk": "safe"
+    },
+    {
+      "index": 5,
+      "intent": "Read the 'edit' link label in the first data row of the challenging table",
+      "action": "read",
+      "locator": {
+        "description": "Edit link in first table data row",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "table tbody tr:nth-child(1) a[href='#edit']",
+            "exact": false,
+            "confidence": 0.7
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "edit",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "first_row_edit_label",
+      "risk": "safe"
+    }
+  ],
+  "success_checkpoint": {
+    "type": "text_visible",
+    "value": "Challenging DOM",
+    "timeout_ms": 5000
+  },
+  "created_from": {
+    "run_id": "heroku_app/discovery/2026-08-16_032331",
+    "model": "claude-sonnet-5",
+    "recorded_at": "2026-08-16T03:24:34.956Z"
+  },
+  "redaction_policy": {
+    "redact_fields": []
+  },
+  "confidence": {
+    "runs": 0,
+    "successes": 0,
+    "last_outcome": null,
+    "updated_at": null
+  }
+}

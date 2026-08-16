@@ -1,0 +1,12 @@
+{
+  "id": "heroku_app/discovery/2026-08-16_033618",
+  "kind": "discovery",
+  "app_id": "heroku_app",
+  "goal": "hitl resume-case",
+  "status": "interrupted",
+  "detail": {
+    "reconciled_at": "2026-08-16T03:38:59.906Z"
+  },
+  "started_at": "2026-08-16T03:36:18.060Z",
+  "updated_at": "2026-08-16T03:38:59.907Z"
+}
