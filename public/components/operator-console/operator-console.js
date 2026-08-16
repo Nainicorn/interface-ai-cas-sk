@@ -1,55 +1,38 @@
 /**
  * Operator panel: appears ONLY when a run is paused and needs a human, and closes
- * itself once control is handed back. The human drives the run's own live page
- * through the same action primitives the agent uses.
+ * itself once control is handed back.
+ *
+ * The human's channel back to the agent is language, not selectors. The goal was
+ * written in plain English and the model reasons in plain English, so asking an
+ * operator to hand-assemble an action type, a locator kind, and a role inverted the
+ * premise — and it was never necessary: the run is headed Chromium, so a human can
+ * simply use the window, and `resume` already passes a note into the model's context
+ * before it re-observes the page (src/agent/discovery.js resumeMessage).
+ *
+ * So this panel offers exactly two things: a place to say what happened or what should
+ * happen next, and a button to hand control back. Manual clicking happens in the real
+ * browser window, which is the same session by construction — which is precisely what
+ * the brief's "operate the SAME live session" requirement asks for.
+ *
+ * performManualAction (src/agent/escalation.js) is still there and still routes human
+ * actions through the same five primitives, tagged `actor: "human"` in the evidence.
+ * It is a real part of the design; it just stops being what the operator is asked to
+ * fill in by hand.
+ *
  * Scoped to the selected app, like everything else in the console: the panel drives one
  * specific run's live page, so it must belong to the app you are looking at.
- * API: GET /api/escalations?status=pending, POST /api/escalations/:id/{action,resume}.
+ * API: GET /api/escalations?status=pending, POST /api/escalations/:id/resume.
  */
 
 import { onSelectedApp, selectedAppId } from '/global/selected-app.js';
+import { postJson } from '/global/ui.js';
 
 const fetchPending = () => fetch('/api/escalations?status=pending').then((r) => r.json());
 
-async function post(url, body) {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.error ?? res.statusText);
-  return json;
-}
-
-/** Build the {action, args} body from the form's fields. */
-function buildAction(panel) {
-  const value = (name) => panel.querySelector(`[name=${name}]`).value.trim();
-  const action = value('action');
-
-  if (action === 'navigate') return { action, args: { url: value('url') } };
-
-  const locator = {
-    description: `operator ${action}`,
-    candidates: [
-      {
-        kind: value('kind'),
-        value: value('locator'),
-        ...(value('kind') === 'role' ? { role: value('role') } : {}),
-        confidence: 1,
-      },
-    ],
-  };
-  if (action === 'type') {
-    return { action, args: { locator, value: value('text'), fieldName: 'operator_input' } };
-  }
-  return { action, args: { locator } };
-}
-
 function render(root, pending) {
   const panel = root.querySelector('[data-panel]');
-  // Re-render only when a different intervention arrives, so form input isn't clobbered.
-  // (The live viewer above this panel already shows the paused page.)
+  // Re-render only when a different intervention arrives, so a half-typed note survives
+  // the poll. (The live viewer above this panel already shows the paused page.)
   if (panel.dataset.intervention === String(pending.id)) return;
   panel.dataset.intervention = String(pending.id);
 
@@ -59,22 +42,17 @@ function render(root, pending) {
   panel.querySelector('[data-url]').textContent = pending.context.url ?? '';
 
   const feedback = panel.querySelector('[data-feedback]');
-  panel.querySelector('[data-act]').addEventListener('click', async () => {
+  const resume = panel.querySelector('[data-resume]');
+
+  resume.addEventListener('click', async () => {
+    resume.disabled = true;
     try {
-      feedback.className = 'feedback muted';
-      const outcome = await post(`/api/escalations/${encodeURIComponent(pending.id)}/action`, buildAction(panel));
-      feedback.textContent = `Done — now at ${outcome.url}`;
-    } catch (err) {
-      feedback.textContent = err.message;
-      feedback.className = 'feedback error';
-    }
-  });
-  panel.querySelector('[data-resume]').addEventListener('click', async () => {
-    try {
-      await post(`/api/escalations/${encodeURIComponent(pending.id)}/resume`, { note: panel.querySelector('[name=note]').value });
+      const note = panel.querySelector('[name=note]').value.trim();
+      await postJson(`/api/escalations/${encodeURIComponent(pending.id)}/resume`, { note: note || null });
       delete panel.dataset.intervention;
       root.hidden = true; // the panel's job is done; the live viewer shows the rest
     } catch (err) {
+      resume.disabled = false;
       feedback.textContent = err.message;
       feedback.className = 'feedback error';
     }
@@ -104,7 +82,7 @@ export async function mount(root) {
   setInterval(refresh, 2000);
   onSelectedApp(() => {
     // A different app means a different (or no) pending run; drop the rendered panel so
-    // its buttons can never post to the previous app's run.
+    // its button can never post to the previous app's run.
     root.querySelector('[data-panel]').dataset.intervention = '';
     refresh();
   });

@@ -1,9 +1,9 @@
 /* operator-console.css — the HITL panel. A distinct edge so it reads as "needs you";
    stacks vertically under the live viewer.
 
-   Laid out as three stacked blocks — why you're here, drive the page, hand it back —
-   because an operator reads this panel under pressure and should never have to work out
-   which control does what.
+   Two blocks, not three — why you're here, and what to tell the agent. The manual-step
+   form is gone: manual work happens in the run's own Chromium window, which is the same
+   session by construction, so the panel's only job is the message back.
 
    Violet, matching the `paused` badge: yellow is reserved for "a session is live", and
    this panel means something narrower — a human is needed. */
@@ -29,7 +29,6 @@
 
 /* --- shared section chrome -------------------------------------------------- */
 .operator section { border-top: 1px solid var(--line); padding-top: 14px; }
-.operator section + section { margin-top: 18px; }
 .operator section h3 {
   margin: 0 0 4px;
   font-size: 12.5px;
@@ -42,41 +41,39 @@
   margin-left: 6px;
 }
 
-/* --- the manual-step form --------------------------------------------------- */
-/* Two columns that collapse to one when the console is narrow; each field owns its
-   own label so nothing relies on source order to stay readable. */
-.operator .fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 14px;
-  margin-top: 10px;
-}
-.operator .field { min-width: 0; }
-.operator .field label { margin: 0 0 4px; }
-.operator .field .hint { color: var(--ink-3); font-size: 11px; }
-.operator .field input,
-.operator .field select { width: 100%; }
-
-.operator .step-foot {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 14px;
+/* --- the message back -------------------------------------------------------- */
+/* An operator reads this under pressure, so the instruction sits above the box it
+   explains rather than in a tooltip. */
+.operator .how {
+  margin: 8px 0 10px;
+  max-width: 72ch;
+  font-size: 12.5px;
+  line-height: 1.5;
 }
 
-/* --- hand back -------------------------------------------------------------- */
+.operator .note-field { display: block; }
+.operator .note-field textarea {
+  width: 100%;
+  margin: 0;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .operator .handback-row {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 10px;
-  margin-top: 10px;
+  margin-top: 12px;
 }
-.operator .handback-row .field { flex: 1; }
-.operator [data-resume] { flex: 0 0 auto; }
+.operator [data-resume] { flex: 0 0 auto; margin: 0; }
+.operator .handback-row .hint { color: var(--ink-3); font-size: 11.5px; }
 
 .operator .feedback { margin: 14px 0 0; font-size: 12.5px; }
 .operator .feedback:empty { margin: 0; }
 
 @media (max-width: 720px) {
-  .operator .fields { grid-template-columns: minmax(0, 1fr); }
   .operator .handback-row { flex-direction: column; align-items: stretch; }
+  .operator .handback-row .hint { text-align: center; }
 }

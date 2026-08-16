@@ -1,6 +1,6 @@
 <!-- operator-console.html — markup only. operator-console.js clones the <template>
      into [data-panel] per intervention and fills [data-goal]/[data-reason]/[data-url]. -->
-<h2>Human needed <span class="hint">the run is paused; you are driving its live browser (above)</span></h2>
+<h2>Human needed <span class="hint">the run is paused and its browser window is waiting for you</span></h2>
 <div class="context">
   <div data-panel></div>
 </div>
@@ -12,53 +12,24 @@
     <p class="where mono muted" data-url></p>
   </div>
 
-  <section class="step">
-    <h3>Drive the page <span class="hint">one step at a time, through the agent's own primitives</span></h3>
-
-    <div class="fields">
-      <div class="field">
-        <label for="op-action">Action</label>
-        <select id="op-action" name="action">
-          <option>click</option><option>type</option><option>navigate</option><option>read</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="op-kind">Find element by</label>
-        <select id="op-kind" name="kind">
-          <option>role</option><option>label</option><option>placeholder</option><option>text</option><option>css</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="op-locator">Element name / value</label>
-        <input id="op-locator" name="locator" placeholder="Search" />
-      </div>
-      <div class="field">
-        <label for="op-role">Role <span class="hint">when finding by role</span></label>
-        <input id="op-role" name="role" placeholder="button" />
-      </div>
-      <div class="field">
-        <label for="op-text">Text to type <span class="hint">type only</span></label>
-        <input id="op-text" name="text" />
-      </div>
-      <div class="field">
-        <label for="op-url">Route <span class="hint">navigate only</span></label>
-        <input id="op-url" name="url" placeholder="/search" />
-      </div>
-    </div>
-
-    <div class="step-foot">
-      <button data-act class="small">Perform manual step</button>
-    </div>
-  </section>
-
   <section class="handback">
-    <h3>Hand control back <span class="hint">the agent re-reads the page as you left it</span></h3>
+    <h3>Tell the agent what it needs <span class="hint">plain English — it re-reads the page itself</span></h3>
+
+    <p class="how muted">
+      Do anything manual in the run's own Chromium window: it is the same session the
+      agent is using, so whatever you leave behind is what it sees. Or just say what
+      should happen next — the code from an email, a value to enter, which link to take.
+    </p>
+
+    <label class="note-field" for="op-note">
+      <span class="sr">Message to the agent</span>
+      <textarea id="op-note" name="note" rows="2"
+                placeholder="The verification code is 481920 — type it into the code box and continue."></textarea>
+    </label>
+
     <div class="handback-row">
-      <div class="field">
-        <label for="op-note">Note for the agent</label>
-        <input id="op-note" name="note" placeholder="Signed back in; session had expired" />
-      </div>
-      <button data-resume class="small secondary">Hand control back</button>
+      <button data-resume class="small">Hand control back</button>
+      <span class="hint">resumes from whatever state the page is in now</span>
     </div>
   </section>
 
