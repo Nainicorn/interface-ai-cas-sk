@@ -2,8 +2,12 @@
  * Operator panel: appears ONLY when a run is paused and needs a human, and closes
  * itself once control is handed back. The human drives the run's own live page
  * through the same action primitives the agent uses.
+ * Scoped to the selected app, like everything else in the console: the panel drives one
+ * specific run's live page, so it must belong to the app you are looking at.
  * API: GET /api/escalations?status=pending, POST /api/escalations/:id/{action,resume}.
  */
+
+import { onSelectedApp, selectedAppId } from '/lib/selected-app.js';
 
 const fetchPending = () => fetch('/api/escalations?status=pending').then((r) => r.json());
 
@@ -82,7 +86,10 @@ export async function mount(root) {
 
   const refresh = async () => {
     try {
-      const pending = (await fetchPending())[0] ?? null;
+      const appId = selectedAppId();
+      const pending = appId
+        ? ((await fetchPending()).find((p) => p.context?.app_id === appId) ?? null)
+        : null;
       if (!pending) {
         root.hidden = true;
         return;
@@ -95,4 +102,10 @@ export async function mount(root) {
   };
   refresh();
   setInterval(refresh, 2000);
+  onSelectedApp(() => {
+    // A different app means a different (or no) pending run; drop the rendered panel so
+    // its buttons can never post to the previous app's run.
+    root.querySelector('[data-panel]').dataset.intervention = '';
+    refresh();
+  });
 }

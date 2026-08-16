@@ -2,9 +2,13 @@
  * Live viewer: what the run's Chromium is looking at, refreshed every 2s.
  * Sits top-right. Quiet empty state when idle; fills with the live screenshot
  * while a run is active and empties again when the run finishes.
+ * Shows only the SELECTED app's live run — another app's browser under this app's
+ * heading would be a lie about what you are watching.
  * A Stop button ends the run — it closes the browser and releases any pending pause.
  * API: GET /api/runs, GET /api/runs/:id/screenshot, POST /api/runs/:id/stop.
  */
+
+import { onSelectedApp, selectedAppId } from '/lib/selected-app.js';
 
 const fetchRuns = () => fetch('/api/runs').then((r) => r.json());
 
@@ -21,7 +25,8 @@ export async function mount(root) {
 
   const refresh = async () => {
     try {
-      const live = (await fetchRuns()).find((r) => r.live);
+      const appId = selectedAppId();
+      const live = appId ? (await fetchRuns()).find((r) => r.live && r.app_id === appId) : null;
       root.classList.toggle('idle', !live);
       stopButton.hidden = !live;
       liveId = live?.id ?? null;
@@ -52,5 +57,6 @@ export async function mount(root) {
 
   refresh();
   setInterval(refresh, 2000);
+  onSelectedApp(refresh);
   window.addEventListener('run-started', refresh);
 }

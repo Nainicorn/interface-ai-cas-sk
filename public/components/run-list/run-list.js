@@ -3,9 +3,12 @@
  * that opens the full evidence view in a new tab, and a Delete that removes the run and
  * its evidence. Re-renders only when the data actually changes, so the table never
  * flickers.
+ * Scoped to the sidebar's selected app: a run belongs to one app, and showing another
+ * app's runs here is wrong, not merely noisy.
  * API: GET /api/runs, DELETE /api/runs/:id.
  */
 
+import { hasSelection, onSelectedApp, selectedAppId } from '/lib/selected-app.js';
 import { deleteJson, esc, getJson } from '/lib/ui.js';
 
 /** What a replay run produced, in one readable line. */
@@ -57,13 +60,20 @@ export async function mount(root) {
   root.innerHTML = await (await fetch('/components/run-list/run-list.html')).text();
 
   let lastKey = '';
-  let selectedApp = null;
   const refresh = async () => {
+    // Until the sidebar has decided, render nothing. Falling back to "all runs" here is
+    // what used to splice other apps' runs into the table on a refresh.
+    const appId = selectedAppId();
+    if (!hasSelection() || !appId) {
+      if (lastKey === 'none') return;
+      lastKey = 'none';
+      render(root, []);
+      return;
+    }
     try {
       const runs = await getJson('/api/runs');
-      // The list is scoped to the app selected in the sidebar.
-      const scoped = selectedApp ? runs.filter((r) => r.app_id === selectedApp) : runs;
-      const key = JSON.stringify([selectedApp, scoped.map((r) => [r.id, r.status, r.owner, r.live])]);
+      const scoped = runs.filter((r) => r.app_id === appId);
+      const key = JSON.stringify([appId, scoped.map((r) => [r.id, r.status, r.owner, r.live])]);
       if (key === lastKey) return;
       lastKey = key;
       render(root, scoped);
@@ -92,8 +102,8 @@ export async function mount(root) {
   setInterval(refresh, 2000);
   window.addEventListener('run-started', refresh);
   window.addEventListener('replay-finished', refresh);
-  window.addEventListener('app-selected', (event) => {
-    selectedApp = event.detail.target.app_id;
+  onSelectedApp(() => {
+    lastKey = ''; // a different app is a different table; never reuse the last render
     refresh();
   });
 }

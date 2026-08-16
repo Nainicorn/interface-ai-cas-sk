@@ -2,9 +2,12 @@
  * Capabilities tab: each recorded capability with its contract in plain words, a
  * per-row Replay action, replay-reliability (confidence), the Approve control that
  * admits a draft to the agent-facing catalog, and a click-to-expand summary.
+ * Scoped to the sidebar's selected app, like the runs table beside it.
  * API: GET /api/artifacts, GET /api/artifacts/:id, POST /api/artifacts/:id/replay,
  *      PATCH /api/artifacts/:id/status.
  */
+
+import { hasSelection, onSelectedApp, selectedAppId } from '/lib/selected-app.js';
 
 const fetchArtifacts = () => fetch('/api/artifacts').then((r) => r.json());
 const fetchArtifact = (id) => fetch(`/api/artifacts/${id}`).then((r) => r.json());
@@ -109,13 +112,20 @@ export async function mount(root) {
   root.innerHTML = await (await fetch('/components/capability-table/capability-table.html')).text();
 
   let lastKey = '';
-  let selectedApp = null;
+
   const refresh = async () => {
+    // Same rule as the runs table: nothing decided yet means render nothing, never all.
+    const appId = selectedAppId();
+    if (!hasSelection() || !appId) {
+      if (lastKey === 'none') return;
+      lastKey = 'none';
+      render(root, []);
+      return;
+    }
     try {
       const artifacts = await fetchArtifacts();
-      // The catalog is scoped to the app selected in the sidebar.
-      const scoped = selectedApp ? artifacts.filter((a) => a.app_id === selectedApp) : artifacts;
-      const key = JSON.stringify([selectedApp, scoped.map((a) => [a.id, a.version, a.status, a.confidence?.runs ?? 0])]);
+      const scoped = artifacts.filter((a) => a.app_id === appId);
+      const key = JSON.stringify([appId, scoped.map((a) => [a.id, a.version, a.status, a.confidence?.runs ?? 0])]);
       if (key === lastKey) return; // don't clobber inputs/results while the user works
       lastKey = key;
       render(root, scoped);
@@ -125,8 +135,8 @@ export async function mount(root) {
   };
   refresh();
   setInterval(refresh, 5000);
-  window.addEventListener('app-selected', (event) => {
-    selectedApp = event.detail.target.app_id;
+  onSelectedApp(() => {
+    lastKey = '';
     refresh();
   });
 

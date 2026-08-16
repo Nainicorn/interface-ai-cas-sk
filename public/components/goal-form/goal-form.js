@@ -5,6 +5,7 @@
  * API: POST /api/runs.
  */
 
+import { onSelectedApp } from '/lib/selected-app.js';
 import { postJson } from '/lib/ui.js';
 
 export async function mount(root) {
@@ -32,9 +33,8 @@ export async function mount(root) {
     runButton.disabled = !goal;
   };
 
-  window.addEventListener('app-selected', (event) => show(event.detail.target));
-
-  window.addEventListener('apps-empty', () => {
+  onSelectedApp((selected) => {
+    if (selected) return show(selected);
     target = null;
     noApp.hidden = false;
     form.hidden = true;

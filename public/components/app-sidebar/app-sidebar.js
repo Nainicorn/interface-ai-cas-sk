@@ -1,11 +1,15 @@
 /**
- * App sidebar: every configured app, click to select. Owns selection — broadcasts
- * `app-selected` {target} (or `apps-empty`) so the rest of the console follows.
+ * App sidebar: every configured app, click to select. Owns selection — publishes it to
+ * lib/selected-app.js, which the rest of the console reads.
+ *
+ * The store rather than an event, because this component resolves its fetch before the
+ * workspace has mounted its tables: an event fired here would reach nobody.
  *
  * + Add app and each row's hover Edit button hand off to app-editor.
  * API: GET /api/targets.
  */
 
+import { setSelectedApp, storedAppId } from '/lib/selected-app.js';
 import { esc, getJson } from '/lib/ui.js';
 
 export async function mount(root) {
@@ -13,7 +17,6 @@ export async function mount(root) {
 
   const list = root.querySelector('[data-apps]');
   const empty = root.querySelector('[data-empty]');
-  const STORAGE_KEY = 'cas-selected-app';
   let targets = [];
   let selectedId = null;
   let lastKey = '';
@@ -22,11 +25,10 @@ export async function mount(root) {
     const target = targets.find((t) => t.app_id === appId);
     if (!target) return;
     selectedId = appId;
-    localStorage.setItem(STORAGE_KEY, appId); // survive a refresh
     for (const item of list.querySelectorAll('[data-app]')) {
       item.classList.toggle('selected', item.dataset.app === appId);
     }
-    window.dispatchEvent(new CustomEvent('app-selected', { detail: { target } }));
+    setSelectedApp(target); // persists the choice and replays it to late subscribers
   };
 
   const render = () => {
@@ -59,12 +61,12 @@ export async function mount(root) {
       }
       if (!targets.length) {
         selectedId = null;
-        window.dispatchEvent(new CustomEvent('apps-empty'));
+        setSelectedApp(null); // a decision, not an absence of one
         return;
       }
-      if (selectId) select(selectId);
+      if (selectId && targets.some((t) => t.app_id === selectId)) select(selectId);
       else if (!selectedId || !targets.some((t) => t.app_id === selectedId)) {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = storedAppId();
         select(targets.some((t) => t.app_id === stored) ? stored : targets[0].app_id);
       }
     } catch {
