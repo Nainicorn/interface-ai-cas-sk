@@ -7,7 +7,7 @@
  * API: GET /api/escalations?status=pending, POST /api/escalations/:id/{action,resume}.
  */
 
-import { onSelectedApp, selectedAppId } from '/lib/selected-app.js';
+import { onSelectedApp, selectedAppId } from '/selected-app.js';
 
 const fetchPending = () => fetch('/api/escalations?status=pending').then((r) => r.json());
 

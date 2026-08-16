@@ -1,28 +1,3 @@
-# CLAUDE.md — Working Agreement
-
-**Assignment:** interface.ai take-home — Computer-Use Automation System (the PDF in the
-repo root is the source of truth). **Deliverables:** public repo + `/README.md` +
-`/REPORT.md` (7 fixed headings) + `/evidence/`.
-
-> The model discovers once. The recording becomes a reusable, typed **capability**.
-> Deterministic replay is how a production agent invokes it later — no LLM in the loop.
-
-## Two apps, two repos — never conflate them
-
-`../mock-bank` (port 3001) is the **target** being automated: a sibling repo, ugly on
-purpose, reached only over HTTP through a real browser. This repo (port 3000) is the
-**system**. `tests/boundaries.test.js` enforces the separation: no SDK on the replay path,
-no cross-repo imports, no hardcoded hostnames (targets live in `config/targets.json`),
-and only `engine/actions.js` calls the policy gate.
-
-## Stack
-
-Plain JS on Node 20+ (ESM, no build step). Zod (contracts), Playwright (browser),
-`@anthropic-ai/sdk` with `claude-sonnet-5` (discovery only), Express 5 (control plane),
-better-sqlite3 (runs/interventions) + JSON files (artifacts), `node --test`, vanilla JS
-console in `public/`. API baseline: `output_config: { effort: "medium" }`,
-`max_tokens: 16000`, thinking left on (Sonnet 5 default), viewport capped at 1024×768.
-
 ## Conventions
 
 - One file per unit, one job each; 2–3 line header saying what it does and hands off to.

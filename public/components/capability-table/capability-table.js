@@ -10,7 +10,7 @@
  *      PATCH /api/artifacts/:id/status.
  */
 
-import { hasSelection, onSelectedApp, selectedAppId } from '/lib/selected-app.js';
+import { hasSelection, onSelectedApp, selectedAppId } from '/selected-app.js';
 
 const fetchArtifacts = () => fetch('/api/artifacts').then((r) => r.json());
 const fetchArtifact = (id) => fetch(`/api/artifacts/${id}`).then((r) => r.json());

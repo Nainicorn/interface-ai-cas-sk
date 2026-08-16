@@ -5,8 +5,8 @@
  * API: POST /api/runs.
  */
 
-import { onSelectedApp } from '/lib/selected-app.js';
-import { postJson } from '/lib/ui.js';
+import { onSelectedApp } from '/selected-app.js';
+import { postJson } from '/ui.js';
 
 export async function mount(root) {
   root.innerHTML = await (await fetch('/components/goal-form/goal-form.html')).text();

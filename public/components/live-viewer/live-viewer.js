@@ -8,7 +8,7 @@
  * API: GET /api/runs, GET /api/runs/:id/screenshot, POST /api/runs/:id/stop.
  */
 
-import { onSelectedApp, selectedAppId } from '/lib/selected-app.js';
+import { onSelectedApp, selectedAppId } from '/selected-app.js';
 
 const fetchRuns = () => fetch('/api/runs').then((r) => r.json());
 

@@ -5,7 +5,7 @@
  * API: GET /api/runs/:id/report, GET /api/runs/:id/screenshots/:name.
  */
 
-import { esc, getJson } from '/lib/ui.js';
+import { esc, getJson } from '/ui.js';
 
 const dt = (value) => (value ? new Date(value).toLocaleString() : '');
 
