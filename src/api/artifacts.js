@@ -9,7 +9,7 @@
 
 import { Router } from 'express';
 import { CAPABILITY_STATUSES } from '../schema/enums.js';
-import { listCapabilities, loadCapability, updateCapability } from '../schema/store.js';
+import { deleteCapability, listCapabilities, loadCapability, updateCapability } from '../schema/store.js';
 import { runReplay } from './run-replay.js';
 
 const router = Router();
@@ -71,6 +71,39 @@ router.patch('/:id/status', async (req, res, next) => {
 
     const { capability: updated } = await updateCapability(capability.id, capability.version, { status });
     res.json({ id: updated.id, version: updated.version, status: updated.status });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * Delete a capability — the recording only, never the run that produced it.
+ *
+ * An approved capability is refused. Approval is what admits it to the agent catalog, so
+ * it has to be the thing withdrawn first: revoke, then delete. That makes the gate mean
+ * something on the way out as well as on the way in, and it means nothing an agent may be
+ * calling right now can disappear on a single click.
+ */
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const version = req.query.version ? Number(req.query.version) : undefined;
+
+    let capability;
+    try {
+      capability = await loadCapability(req.params.id, version);
+    } catch (err) {
+      err.status = 404;
+      throw err;
+    }
+
+    if (capability.status === 'approved') {
+      return res.status(409).json({
+        error: `"${capability.id}" is approved and callable by agents. Revoke it first, then delete.`,
+      });
+    }
+
+    const { run_id } = deleteCapability(capability.id, capability.version);
+    res.json({ id: capability.id, version: capability.version, deleted: true, evidence_kept: run_id });
   } catch (err) {
     next(err);
   }

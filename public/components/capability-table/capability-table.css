@@ -22,48 +22,9 @@
   white-space: nowrap;
 }
 
-/* --- expander -------------------------------------------------------------- */
-/* Its own column on the right, so the control is a control rather than a link that
-   happens to be the title. It rotates to point down while the row is open. */
+/* The expander column. The chevron itself, and the expanded row it opens, are shared
+   with the Agent catalog and live in global/styles.css. */
 #capabilities .expand-cell { width: 1%; text-align: right; }
-#capabilities .chevron {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  margin: 0;
-  padding: 0;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--ink-3);
-  cursor: pointer;
-}
-#capabilities .chevron svg {
-  width: 17px;
-  height: 17px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  transition: transform 0.15s ease;
-}
-#capabilities .chevron[aria-expanded='true'] svg { transform: rotate(90deg); }
-#capabilities .chevron:hover { color: var(--accent); background: var(--brand-wash); border-color: var(--line); }
-#capabilities .chevron:focus-visible { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
-#capabilities .chevron .sr {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-@media (prefers-reduced-motion: reduce) {
-  #capabilities .chevron svg { transition: none; }
-}
 
 /* --- state: badges and reliability on the one line -------------------------- */
 /* The flex lives on a wrapper inside the cell, never on the <td> itself: a table cell
@@ -74,10 +35,85 @@
 
 /* --- approval: its own column, so the control never shifts with badge width --- */
 #capabilities .approve-cell { width: 1%; }
-#capabilities .approve-cell [data-approve] { margin: 0; }
+#capabilities .approve-cell [data-status] { margin: 0; }
+/* Revoke is the same control as Approve, styled as the quieter of the two: withdrawing
+   is reversible and keeps everything, so it should not read as a destructive action. */
+#capabilities .approve-cell .revoke { color: var(--ink-3); }
+#capabilities .approve-cell .revoke:hover { color: var(--ink); }
 
 /* --- replay ---------------------------------------------------------------- */
-#capabilities .replay-cell { width: 1%; }
+/* An icon button, same size and grammar as the run-list row actions, centred under its
+   heading so the column reads as a control rather than as a label that shifts with the
+   result text appearing beside it. */
+#capabilities .replay-cell { width: 1%; text-align: center; position: relative; white-space: nowrap; }
+/* The transient result is positioned out of flow: it must not shove the icon off centre
+   for the few seconds it is on screen. */
+#capabilities .replay-cell .result-line {
+  position: absolute;
+  left: calc(100% - 4px);
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+  white-space: nowrap;
+}
+#capabilities th.replay-head { text-align: center; }
+#capabilities .icon.replay {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  vertical-align: middle;
+}
+#capabilities .icon.replay svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#capabilities .icon.replay:hover { background: var(--accent-soft); border-color: var(--accent-soft); }
+#capabilities .icon.replay:focus-visible { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+#capabilities .icon.replay:disabled { color: var(--ink-3); cursor: default; background: transparent; }
+
+/* Delete sits beside replay in the same column, in the danger colour the run list uses
+   for the same act, so one icon means one thing across the console. */
+#capabilities .icon.del {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0 0 0 2px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--danger);
+  cursor: pointer;
+  vertical-align: middle;
+}
+#capabilities .icon.del svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#capabilities .icon.del:hover { background: var(--danger-soft, var(--brand-wash)); border-color: var(--line); }
+#capabilities .icon.del:focus-visible { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+
 .result-line { margin-left: 9px; font-size: 12px; }
 .result-line pre {
   background: var(--brand-wash);

@@ -99,10 +99,13 @@ export async function mount(root) {
     const button = event.target.closest('[data-delete]');
     if (!button) return;
     const runId = button.dataset.delete;
-    if (!confirm(`Delete run ${runId}? Its screenshots, transcript and recording go with it.`)) return;
+    // The recording lives inside the run folder, so deleting a run can take a capability
+    // with it. Say so; the server refuses outright if that capability is approved.
+    if (!confirm(`Delete run ${runId}?\n\nIts screenshots and transcript go with it, and so does any capability it recorded.`)) return;
     button.disabled = true;
     try {
-      await deleteJson(`/api/runs/${encodeURIComponent(runId)}`);
+      const { capability_deleted } = await deleteJson(`/api/runs/${encodeURIComponent(runId)}`);
+      if (capability_deleted) alert(`Run deleted, along with the capability "${capability_deleted}".`);
       lastKey = ''; // force a re-render rather than wait for the poll to notice
       await refresh();
       window.dispatchEvent(new CustomEvent('replay-finished')); // capability list may have lost one

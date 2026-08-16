@@ -14,7 +14,7 @@
  * Hands off to: engine/replay.js, api/artifacts.js, agent/artifact-writer.js, cli/*.
  */
 
-import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { EVIDENCE_DIR } from '../evidence/logger.js';
 import { parseCapability } from './capability.js';
@@ -141,6 +141,22 @@ export function updateCapability(id, version, patch) {
   const merged = parseCapability({ ...record.capability, ...patch });
   writeFileSync(record.file, `${JSON.stringify(merged, null, 2)}\n`, 'utf8');
   return { path: record.file, capability: merged };
+}
+
+/**
+ * Delete a capability by removing its goal.json — and nothing else.
+ *
+ * The run folder around it stays. A run is evidence of something that actually happened,
+ * and a later decision to stop offering the capability it produced is not a reason to
+ * destroy the proof: the folder simply reverts to being a discovery that yielded no
+ * capability, which is a state the store already understands.
+ *
+ * @returns {{run_id: string}} the run that keeps its evidence
+ */
+export function deleteCapability(id, version) {
+  const record = findRecording(id, version);
+  rmSync(record.file, { force: true });
+  return { run_id: record.runId };
 }
 
 /**

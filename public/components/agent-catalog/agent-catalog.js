@@ -3,19 +3,26 @@
  *
  * Reads /api/capabilities — a strictly narrower view than the Capabilities tab beside it,
  * because that one is the operator's and shows drafts. Approving a capability there makes
- * it appear here; demoting it makes it vanish. That visible move is the point of the tab.
+ * it appear here; revoking it makes it vanish. That visible move is the point of the tab.
  *
- * Each row carries the declared arguments as inputs and an Invoke button that POSTs to
- * /api/capabilities/:id/invoke, so this is not a description of the agent path — it is
- * the agent path, driven by hand.
+ * One row per capability, callable in place: the declared arguments are the form, and
+ * Invoke POSTs to /api/capabilities/:id/invoke. So this is not a description of the agent
+ * path — it is the agent path, driven by hand.
  *
  * API: GET /api/capabilities, POST /api/capabilities/:id/invoke.
  */
 
 import { hasSelection, onSelectedApp, selectedAppId } from '/global/selected-app.js';
-import { esc, getJson, postJson } from '/global/ui.js';
+import { esc, getJson, postJson, reliabilityBadge } from '/global/ui.js';
 
-/** One input per declared parameter — the recorded contract IS the form. */
+/**
+ * One control per declared parameter — the recorded contract IS the form.
+ *
+ * The parameter name is a prefix inside the control rather than a label stacked above it.
+ * Stacking made every row two lines tall and ragged against the badges beside it, and a
+ * placeholder-as-label vanishes the moment you type, which is precisely when a capability
+ * with several arguments still needs it.
+ */
 function argsCell(entry) {
   const props = Object.entries(entry.input_schema?.properties ?? {});
   if (!props.length) return '<span class="muted dash">none</span>';
@@ -24,19 +31,13 @@ function argsCell(entry) {
   return props
     .map(
       ([name, spec]) => `
-      <label class="arg">
-        <span class="arg-name mono">${esc(name)}${required.has(name) ? '' : ' · optional'}</span>
-        <input data-arg="${esc(name)}" placeholder="${esc(spec?.description ?? spec?.type ?? 'string')}"
-               title="${esc(spec?.description ?? name)}" />
+      <label class="arg${required.has(name) ? ' required' : ''}"
+             title="${esc(spec?.description ?? name)}${required.has(name) ? '' : ' (optional)'}">
+        <span class="arg-name mono">${esc(name)}</span>
+        <input data-arg="${esc(name)}" placeholder="${esc(spec?.type ?? 'string')}" />
       </label>`,
     )
     .join('');
-}
-
-/** Rolling reliability, written back by every invocation. */
-function reliabilityText(entry) {
-  const { runs = 0, successes = 0 } = entry.reliability ?? {};
-  return runs ? `${successes}/${runs} replays ok` : 'no replays yet';
 }
 
 function render(root, entries) {
@@ -52,7 +53,7 @@ function render(root, entries) {
         <td class="state-cell">
           <span class="state">
             <span class="badge ${esc(entry.risk_level)}">${esc(entry.risk_level)}</span>
-            <span class="muted replays">${esc(reliabilityText(entry))}</span>
+            ${reliabilityBadge(entry.reliability)}
           </span>
         </td>
         <td class="args-cell">${argsCell(entry)}</td>
@@ -64,7 +65,7 @@ function render(root, entries) {
       )
       .join('') ||
     // The explainer lives in the empty state and nowhere else: it is what a first-time
-    // reader needs, and it would be noise above a table that already shows the answer.
+    // reader needs, and it would be noise above a table that already has rows.
     `<tr><td colspan="4" class="muted empty">
        What an outside AI agent sees when it asks this system what it can do, showing only
        the capabilities a human has approved. Nothing is approved yet, so an agent would
@@ -75,7 +76,8 @@ function render(root, entries) {
 /** The four-way result, said plainly. A business outcome is an answer, not a failure. */
 function resultHtml(result) {
   if (result.outcome === 'SUCCESS') {
-    const outputs = result.outputs && Object.keys(result.outputs).length ? JSON.stringify(result.outputs) : 'no outputs declared';
+    const outputs =
+      result.outputs && Object.keys(result.outputs).length ? JSON.stringify(result.outputs) : 'no outputs declared';
     return `<span class="badge SUCCESS">SUCCESS</span> <span class="mono">${esc(outputs)}</span>`;
   }
   if (result.outcome === 'BUSINESS_OUTCOME') {

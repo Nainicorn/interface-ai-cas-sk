@@ -7,11 +7,13 @@
 #agent-catalog table { min-width: 760px; }
 #agent-catalog td { padding: 12px 10px; vertical-align: middle; }
 #agent-catalog th { white-space: nowrap; }
+#agent-catalog tbody tr[data-entry] td { white-space: nowrap; }
 
 /* --- name ------------------------------------------------------------------- */
 /* Truncation lives on the element, not the cell: a td only honours max-width under
    table-layout:fixed, which would make these columns collide. */
-#agent-catalog .cap-name {
+#agent-catalog .cap-name,
+#agent-catalog .cap-id {
   display: block;
   max-width: 30ch;
   overflow: hidden;
@@ -19,36 +21,54 @@
   white-space: nowrap;
 }
 /* The id is what a caller actually passes, so it is shown rather than implied. */
-#agent-catalog .cap-id {
-  display: block;
-  max-width: 30ch;
-  margin-top: 2px;
-  font-size: 11.5px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+#agent-catalog .cap-id { margin-top: 2px; font-size: 11.5px; }
 
 /* --- state ------------------------------------------------------------------ */
 /* Flex on a wrapper, never on the <td>: a table cell set to display:flex stops being a
    table cell, and the column alignment goes with it. */
 #agent-catalog .state-cell { width: 1%; }
-#agent-catalog .state-cell .state { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
-#agent-catalog .state-cell .replays { font-size: 11.5px; }
+#agent-catalog .state-cell .state { display: flex; align-items: center; gap: 7px; }
 
 /* --- arguments --------------------------------------------------------------- */
-/* The declared contract is the form, so this cell has to hold none, one, or six inputs
-   without dragging the row's height around. */
-#agent-catalog .args-cell { display: table-cell; }
+/* Each argument is ONE control with its name as an inline prefix, not a label stacked
+   above a box: stacking made every row two lines tall and ragged against the badges in
+   the column beside it. */
 #agent-catalog .arg {
   display: inline-flex;
-  flex-direction: column;
-  gap: 3px;
-  margin: 0 10px 0 0;
+  align-items: stretch;
+  margin: 0 8px 0 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--card);
+  overflow: hidden;
   vertical-align: middle;
 }
-#agent-catalog .arg-name { font-size: 11.5px; color: var(--ink-3); }
-#agent-catalog .arg input { width: 20ch; margin: 0; font-size: 12.5px; padding: 5px 8px; }
+#agent-catalog .arg:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+#agent-catalog .arg-name {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  border-right: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink-3);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+/* Required arguments are marked on the name, where the eye already is. */
+#agent-catalog .arg.required .arg-name::after { content: '*'; margin-left: 2px; color: var(--accent); }
+
+/* The input gives up its own chrome to the group around it. */
+#agent-catalog .arg input {
+  width: 17ch;
+  margin: 0;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 12.5px;
+}
+#agent-catalog .arg input:focus { outline: none; box-shadow: none; }
 #agent-catalog .args-cell .dash { font-size: 12.5px; }
 
 /* --- invoke ------------------------------------------------------------------ */
@@ -75,6 +95,7 @@
     width: auto;
     padding: 0;
     border: none;
+    white-space: normal;
   }
 
   #agent-catalog .cap-name,
@@ -82,7 +103,7 @@
   #agent-catalog .name-cell { margin-bottom: 9px; }
   #agent-catalog .state-cell { margin-bottom: 11px; }
   #agent-catalog .state-cell .state { flex-wrap: wrap; }
-  #agent-catalog .args-cell { display: block; margin-bottom: 12px; }
+  #agent-catalog .args-cell { margin-bottom: 12px; }
   #agent-catalog .arg { margin-bottom: 8px; }
   #agent-catalog .result-line { display: block; margin: 8px 0 0; }
 }

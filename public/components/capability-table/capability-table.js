@@ -11,6 +11,15 @@
  */
 
 import { hasSelection, onSelectedApp, selectedAppId } from '/global/selected-app.js';
+import { deleteJson, reliabilityBadge } from '/global/ui.js';
+
+/** Inline icons, so the table needs no icon font or network fetch. Matches run-list. */
+const ICON = {
+  replay:
+    '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.61-3.89"/><path d="M13.5 2v3.5H10"/></svg>',
+  trash:
+    '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11M6.5 4V2.75A.75.75 0 0 1 7.25 2h1.5a.75.75 0 0 1 .75.75V4"/><path d="M4 4.5v8A1.5 1.5 0 0 0 5.5 14h5a1.5 1.5 0 0 0 1.5-1.5v-8"/><path d="M6.75 7v4M9.25 7v4"/></svg>',
+};
 
 const fetchArtifacts = () => fetch('/api/artifacts').then((r) => r.json());
 const fetchArtifact = (id) => fetch(`/api/artifacts/${id}`).then((r) => r.json());
@@ -52,11 +61,6 @@ function schemaList(schema) {
     .join('')}</ul>`;
 }
 
-/** Rolling reliability, written back by every replay. */
-function confidenceText(artifact) {
-  const c = artifact.confidence ?? {};
-  return c.runs ? `${c.successes}/${c.runs} replays ok` : 'no replays yet';
-}
 
 /** Readable summary for the expansion row: description, steps as intents, outcomes. */
 function detailsHtml(capability) {
@@ -94,18 +98,27 @@ function render(root, artifacts) {
           <span class="state">
             <span class="badge ${a.status}">${a.status}</span>
             <span class="badge ${a.risk_level}">${a.risk_level}</span>
-            <span class="muted replays">${confidenceText(a)}</span>
+            ${reliabilityBadge(a.confidence)}
           </span>
         </td>
         <td class="approve-cell">
           ${
             a.status === 'draft'
-              ? `<button class="small secondary" data-approve="${a.id}" title="Admit to the agent-facing catalog">Approve</button>`
-              : '<span class="muted dash">—</span>'
+              ? `<button class="small secondary" data-status="${a.id}" data-to="approved"
+                         title="Admit to the agent-facing catalog">Approve</button>`
+              : `<button class="small secondary revoke" data-status="${a.id}" data-to="draft"
+                         title="Withdraw from the agent-facing catalog; the recording and its history are kept">Revoke</button>`
           }
         </td>
         <td class="replay-cell">
-          <button class="small" data-replay="${a.id}">Replay</button>
+          <button class="icon replay" data-replay="${a.id}" type="button"
+                  title="Replay this capability exactly as recorded — no LLM">
+            ${ICON.replay}<span class="sr">Replay</span>
+          </button>
+          <button class="icon del" data-delete="${a.id}" type="button"
+                  title="Delete this recording. The run that produced it keeps its evidence.">
+            ${ICON.trash}<span class="sr">Delete</span>
+          </button>
           <span class="result-line" data-result="${a.id}"></span>
         </td>
         <td class="expand-cell">
@@ -120,7 +133,7 @@ function render(root, artifacts) {
       )
       .join('') ||
     // The explainer lives in the empty state and nowhere else: it is what a first-time
-    // reader needs, and it would be noise above a table that already shows the answer.
+    // reader needs, and it would be noise above a table that already has rows.
     `<tr><td colspan="5" class="muted empty">
        The flows an AI has already worked out and recorded, replayable exactly as recorded
        with no AI involved. Record one with a run above.
@@ -169,16 +182,37 @@ export async function mount(root) {
       return;
     }
 
-    const approve = event.target.closest('[data-approve]');
-    if (approve) {
-      approve.disabled = true;
+    // Approve and Revoke are one control in two states. Demotion is deliberately as easy
+    // as promotion: a capability whose replays start failing should be pullable from the
+    // agent catalog immediately, without deleting the recording or its history.
+    const promote = event.target.closest('[data-status]');
+    if (promote) {
+      promote.disabled = true;
       try {
-        await setStatus(approve.dataset.approve, 'approved');
+        await setStatus(promote.dataset.status, promote.dataset.to);
         lastKey = ''; // force a re-render on the next poll
         refresh();
       } catch (err) {
-        approve.disabled = false;
-        approve.textContent = err.message;
+        promote.disabled = false;
+        promote.textContent = err.message;
+      }
+      return;
+    }
+
+    // Delete removes the recording only; api/artifacts.js keeps the run's evidence and
+    // refuses outright while the capability is still approved.
+    const remove = event.target.closest('[data-delete]');
+    if (remove) {
+      const id = remove.dataset.delete;
+      if (!confirm(`Delete the recording "${id}"?\n\nThe run that produced it keeps its screenshots and transcript.`)) return;
+      remove.disabled = true;
+      try {
+        await deleteJson(`/api/artifacts/${encodeURIComponent(id)}`);
+        lastKey = '';
+        await refresh();
+      } catch (err) {
+        remove.disabled = false;
+        alert(err.message);
       }
       return;
     }
@@ -191,14 +225,14 @@ export async function mount(root) {
     result.innerHTML = `<span class="muted">Replaying…</span>`;
     try {
       await replay(id, {}); // recorded capabilities replay as recorded
-      // A replay IS a run: its result lives in the Test runs tab; here only the
-      // replays count in State moves. Refresh now so the count ticks immediately.
+      // A replay IS a run: its result lives in the Runs tab; here only the replay
+      // count in State moves. Refresh now so the count ticks immediately.
       window.dispatchEvent(new CustomEvent('replay-finished'));
       lastKey = '';
       await refresh();
       const note = root.querySelector(`[data-result="${id}"]`);
       if (note) {
-        note.innerHTML = `<span class="muted">Done — result is in Test runs</span>`;
+        note.innerHTML = '<span class="muted">Done — result is in Runs</span>';
         setTimeout(() => { if (note.isConnected) note.innerHTML = ''; }, 4000);
       }
     } catch (err) {

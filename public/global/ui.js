@@ -32,6 +32,24 @@ export const postJson = (url, body) => sendJson('POST', url, body);
 export const putJson = (url, body) => sendJson('PUT', url, body);
 export const deleteJson = (url) => sendJson('DELETE', url);
 
+/**
+ * The rolling replay record, as a chip rather than a sentence.
+ *
+ * It sits beside the status and risk badges, so it has to read as one of them: a number
+ * you can scan down a column, not prose that restates the column header. The tint carries
+ * the meaning — untested, clean, or something failed — and the tooltip carries the words.
+ *
+ * @param {{runs?: number, successes?: number, last_outcome?: string|null}} [confidence]
+ */
+export function reliabilityBadge(confidence) {
+  const { runs = 0, successes = 0, last_outcome = null } = confidence ?? {};
+  if (!runs) return '<span class="badge untested" title="Never replayed">untested</span>';
+
+  const tone = successes === runs ? 'clean' : 'flaky';
+  const title = `${successes} of ${runs} replays succeeded${last_outcome ? ` · last: ${last_outcome}` : ''}`;
+  return `<span class="badge ${tone}" title="${esc(title)}">${successes}/${runs}</span>`;
+}
+
 /** "member_id=10001 branch=riverside" → { member_id: '10001', branch: 'riverside' } */
 export function parseParams(text) {
   const params = {};

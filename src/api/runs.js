@@ -18,6 +18,7 @@ import { deleteRun, getRun, listRuns, updateRun } from '../evidence/runs.js';
 import { EVIDENCE_DIR, newRunId } from '../evidence/logger.js';
 import { buildRunReport, isSafeRunId, isSafeScreenshotName } from '../evidence/report.js';
 import { getTarget, loadTargets } from '../config/app-config.js';
+import { listRecordings } from '../schema/store.js';
 
 const router = Router();
 
@@ -74,6 +75,11 @@ router.post('/:id/stop', async (req, res, next) => {
  *
  * A live run is refused rather than force-deleted: stopping it is the operation that
  * discards a run in flight, and it has a browser to close first.
+ *
+ * A run holding an APPROVED capability is refused too. The recording lives inside the run
+ * folder, so deleting the run would delete the capability with it — and something an agent
+ * may be calling right now must not vanish as a side effect of tidying up a run list.
+ * Revoke it first, which is the same gate that admitted it.
  */
 router.delete('/:id', (req, res) => {
   const row = getRun(req.params.id);
@@ -81,8 +87,24 @@ router.delete('/:id', (req, res) => {
   if (getSession(req.params.id)) {
     return res.status(409).json({ error: 'Run is still live — stop it first' });
   }
+
+  const recording = listRecordings().find((r) => r.runId === req.params.id);
+  if (recording?.capability.status === 'approved') {
+    return res.status(409).json({
+      error:
+        `This run holds "${recording.capability.id}", which is approved and callable by ` +
+        'agents. Revoke it in Capabilities first, then delete the run.',
+    });
+  }
+
   if (!deleteRun(req.params.id)) return res.status(400).json({ error: 'Not a deletable run id' });
-  res.json({ app_id: row.app_id, id: req.params.id, deleted: true });
+  res.json({
+    app_id: row.app_id,
+    id: req.params.id,
+    deleted: true,
+    // Named so the console can say what else went, rather than reporting a bare success.
+    capability_deleted: recording?.capability.id ?? null,
+  });
 });
 
 router.get('/:id', (req, res) => {

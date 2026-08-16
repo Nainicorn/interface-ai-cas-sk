@@ -294,6 +294,59 @@ tbody tr:last-child td { border-bottom: none; }
 .badge.safe { background: var(--st-safe-bg); color: var(--st-safe-fg); }
 .badge.risky { background: var(--st-risky-bg); color: var(--st-risky-fg); }
 
+/* The replay record. `untested` is deliberately the same neutral as `draft` — both mean
+   "nothing has happened yet", and giving them different greys would imply a distinction
+   that isn't there. A ratio is tabular so the column stays scannable. */
+/* --- the row expander, shared by the Capabilities and Agent catalog tables ------
+   A row that opens to show its detail is now the idiom in two tables, so the control
+   and the row it opens are defined once here rather than copied into each component.
+   The chevron rotates to point down while its row is open. */
+.chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.chevron svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.15s ease;
+}
+.chevron[aria-expanded='true'] svg { transform: rotate(90deg); }
+.chevron:hover { color: var(--accent); background: var(--brand-wash); border-color: var(--line); }
+.chevron:focus-visible { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+@media (prefers-reduced-motion: reduce) {
+  .chevron svg { transition: none; }
+}
+
+/* Visually hidden, but read aloud: every icon-only control carries one of these. */
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.badge.untested { background: var(--st-neutral-bg); color: var(--st-neutral-fg); }
+.badge.clean { background: var(--st-good-bg); color: var(--st-good-fg); }
+.badge.flaky { background: var(--st-partial-bg); color: var(--st-partial-fg); }
+.badge.clean, .badge.flaky { font-variant-numeric: tabular-nums; }
+
 /* Transcript EVENT badges in the run report. Same rule as the statuses above — an
    event that means something different must not look the same. They deliberately
    echo the run statuses: an `escalation` event is the violet of a `paused` run, a
