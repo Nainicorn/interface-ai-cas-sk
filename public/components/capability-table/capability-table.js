@@ -91,9 +91,11 @@ function render(root, artifacts) {
       <tr data-id="${a.id}">
         <td class="name-cell"><b class="cap-name" title="${a.name}">${a.name}</b></td>
         <td class="state-cell">
-          <span class="badge ${a.status}">${a.status}</span>
-          <span class="badge ${a.risk_level}">${a.risk_level}</span>
-          <span class="muted replays">${confidenceText(a)}</span>
+          <span class="state">
+            <span class="badge ${a.status}">${a.status}</span>
+            <span class="badge ${a.risk_level}">${a.risk_level}</span>
+            <span class="muted replays">${confidenceText(a)}</span>
+          </span>
         </td>
         <td class="approve-cell">
           ${

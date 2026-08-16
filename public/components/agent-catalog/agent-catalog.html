@@ -1,7 +1,10 @@
-<!-- agent-catalog.html — shell only; agent-catalog.js renders the entries from
+<!-- agent-catalog.html — table shell only; agent-catalog.js renders the rows from
      /api/capabilities, which lists approved capabilities and nothing else -->
-<p class="pane-lede muted">
-  Exactly what an AI agent sees when it asks this system what it can do. Approved
-  capabilities only — a draft is not listed here, whatever its risk level.
-</p>
-<div class="catalog-entries"></div>
+<div class="scroll">
+  <table>
+    <thead>
+      <tr><th>Capability</th><th>State</th><th>Arguments</th><th>Invoke (no LLM)</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>

@@ -25,5 +25,8 @@ export async function mount(root) {
     if (!tab) return;
     for (const button of root.querySelectorAll('[data-tab]')) button.classList.toggle('active', button === tab);
     for (const pane of root.querySelectorAll('[data-pane]')) pane.hidden = pane.dataset.pane !== tab.dataset.tab;
+    // One sentence per tab, swapped with it: three tabs of tables need saying what
+    // each one IS, and saying it once at the top beats a tooltip nobody opens.
+    for (const lede of root.querySelectorAll('[data-lede]')) lede.hidden = lede.dataset.lede !== tab.dataset.tab;
   });
 }

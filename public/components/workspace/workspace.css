@@ -1,4 +1,5 @@
-/* workspace.css — the pill tab bar; table styling lives with each pane's component. */
+/* workspace.css — the pill tab bar and the one-line explainer under it; table styling
+   lives with each pane's own component. */
 
 #workspace .tabbar { display: flex; gap: 6px; margin-bottom: 12px; }
 #workspace .tab {
@@ -12,3 +13,12 @@
 }
 #workspace .tab:hover { background: var(--bg); color: var(--ink); }
 #workspace .tab.active { background: var(--accent-soft); color: var(--accent-strong); }
+
+/* One sentence per tab, swapped with it. Three tabs of tables need saying what each one
+   IS; the measure is capped so it reads as a caption rather than as body copy. */
+#workspace .pane-lede {
+  margin: 0 0 14px;
+  max-width: 78ch;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
