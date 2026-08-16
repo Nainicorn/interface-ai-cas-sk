@@ -44,6 +44,137 @@
   --shadow: rgba(9, 62, 176, 0.09);
   --radius: 14px;
   --serif: ui-serif, Georgia, 'Times New Roman', serif;
+
+  /* Status palette. One pair per MEANING, not per status name — the badge rules below
+     map names onto these, and a theme only has to restate these twelve. */
+  --st-live-bg: #fdf0cf;       --st-live-fg: #8a6410;
+  --st-human-bg: #efe6fb;      --st-human-fg: #6b3ba4;
+  --st-gone-bg: #e4e8ef;       --st-gone-fg: #56607a;
+  --st-ended-bg: #eceae6;      --st-ended-fg: #6a6459;
+  --st-good-bg: #dcf0e4;       --st-good-fg: #1c6b41;
+  --st-answer-bg: #cce3ff;     --st-answer-fg: #06328e;
+  --st-recovered-bg: #fce7cd;  --st-recovered-fg: #94530c;
+  --st-broken-bg: #fbdada;     --st-broken-fg: #a92626;
+  --st-partial-bg: #f2dfd2;    --st-partial-fg: #8a5230;
+  --st-neutral-bg: #e8edf6;    --st-neutral-fg: #475569;
+  --st-safe-bg: #e7f2ea;       --st-safe-fg: #3f6b4d;
+  --st-risky-bg: #fdeedb;      --st-risky-fg: #96560f;
+
+  --on-accent: #ffffff;        /* text that sits ON the accent fill */
+}
+
+
+/* ── dark theme ──────────────────────────────────────────────────────────────
+   Only tokens are restated; no component stylesheet knows a theme exists.
+   An explicit choice wins in both directions; with none stored, the OS decides. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* Neutral greys, not blued steel: the ground is greyscale and only the accents
+     carry hue, so the brand blue and the status colours actually stand out on it. */
+  --bg: #0e0e10;
+  --card: #17171a;
+  --sidebar: #121214;
+  --line: #2a2a2e;
+  --line-strong: #3b3b41;
+  --ink: #ededef;
+  --ink-2: #a8a8ae;
+  --ink-3: #76767d;
+
+  /* #093EB0 is far too dark to carry an accent here, so the brand blue is lifted. */
+  --brand: #6ea8ff;
+  --brand-dark: #9cc4ff;      /* hover goes LIGHTER on a dark ground, not darker */
+  --brand-tint: #1f2a3a;
+  --brand-wash: #1b1b1f;
+  --brand-yellow: #fdcd48;
+
+  --accent: var(--brand);
+  --accent-strong: var(--brand-dark);
+  --accent-soft: var(--brand-tint);
+  --on-accent: #0a1626;       /* dark text on the lifted blue */
+
+  --attention: var(--brand-yellow);
+  --attention-line: #5c4a1a;
+  --attention-wash: #201d14;
+
+  --needs-human: #a985e8;
+  --needs-human-line: #443464;
+  --needs-human-wash: #1d1a26;
+
+  --danger: #ff8b8b;
+  --danger-line: #5e3232;
+  --danger-wash: #221718;
+
+  --shadow: rgba(0, 0, 0, 0.55);
+
+  --st-live-bg: #3a3111;       --st-live-fg: #f5d67e;
+  --st-human-bg: #2e2545;      --st-human-fg: #c9b0f2;
+  --st-gone-bg: #2a2a2e;       --st-gone-fg: #a8a8ae;
+  --st-ended-bg: #2b2925;      --st-ended-fg: #bdb5a6;
+  --st-good-bg: #14361f;       --st-good-fg: #86dcac;
+  --st-answer-bg: #1c2c44;     --st-answer-fg: #a8ccff;
+  --st-recovered-bg: #40300f;  --st-recovered-fg: #f4c07f;
+  --st-broken-bg: #431c1c;     --st-broken-fg: #ffa9a9;
+  --st-partial-bg: #3a2a1d;    --st-partial-fg: #e0ab86;
+  --st-neutral-bg: #26262b;    --st-neutral-fg: #a8a8ae;
+  --st-safe-bg: #1a3320;       --st-safe-fg: #9ad3a8;
+  --st-risky-bg: #3d2f12;      --st-risky-fg: #eab777;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    /* Neutral greys, not blued steel: the ground is greyscale and only the accents
+       carry hue, so the brand blue and the status colours actually stand out on it. */
+    --bg: #0e0e10;
+    --card: #17171a;
+    --sidebar: #121214;
+    --line: #2a2a2e;
+    --line-strong: #3b3b41;
+    --ink: #ededef;
+    --ink-2: #a8a8ae;
+    --ink-3: #76767d;
+
+    /* #093EB0 is far too dark to carry an accent here, so the brand blue is lifted. */
+    --brand: #6ea8ff;
+    --brand-dark: #9cc4ff;      /* hover goes LIGHTER on a dark ground, not darker */
+    --brand-tint: #1f2a3a;
+    --brand-wash: #1b1b1f;
+    --brand-yellow: #fdcd48;
+
+    --accent: var(--brand);
+    --accent-strong: var(--brand-dark);
+    --accent-soft: var(--brand-tint);
+    --on-accent: #0a1626;       /* dark text on the lifted blue */
+
+    --attention: var(--brand-yellow);
+    --attention-line: #5c4a1a;
+    --attention-wash: #201d14;
+
+    --needs-human: #a985e8;
+    --needs-human-line: #443464;
+    --needs-human-wash: #1d1a26;
+
+    --danger: #ff8b8b;
+    --danger-line: #5e3232;
+    --danger-wash: #221718;
+
+    --shadow: rgba(0, 0, 0, 0.55);
+
+    --st-live-bg: #3a3111;       --st-live-fg: #f5d67e;
+    --st-human-bg: #2e2545;      --st-human-fg: #c9b0f2;
+    --st-gone-bg: #2a2a2e;       --st-gone-fg: #a8a8ae;
+    --st-ended-bg: #2b2925;      --st-ended-fg: #bdb5a6;
+    --st-good-bg: #14361f;       --st-good-fg: #86dcac;
+    --st-answer-bg: #1c2c44;     --st-answer-fg: #a8ccff;
+    --st-recovered-bg: #40300f;  --st-recovered-fg: #f4c07f;
+    --st-broken-bg: #431c1c;     --st-broken-fg: #ffa9a9;
+    --st-partial-bg: #3a2a1d;    --st-partial-fg: #e0ab86;
+    --st-neutral-bg: #26262b;    --st-neutral-fg: #a8a8ae;
+    --st-safe-bg: #1a3320;       --st-safe-fg: #9ad3a8;
+    --st-risky-bg: #3d2f12;      --st-risky-fg: #eab777;
+  }
 }
 
 * { box-sizing: border-box; }
@@ -102,7 +233,7 @@ input, select, textarea {
   border: 1px solid var(--line-strong);
   border-radius: 9px;
   width: 100%;
-  background: #fff;
+  background: var(--card);
   color: var(--ink);
 }
 input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
@@ -113,7 +244,7 @@ button {
   border-radius: 9px;
   border: 1px solid var(--accent);
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   cursor: pointer;
   margin-top: 12px;
 }
@@ -135,8 +266,8 @@ tbody tr:last-child td { border-bottom: none; }
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
-  background: #e8edf6;
-  color: var(--ink-2);
+  background: var(--st-neutral-bg);
+  color: var(--st-neutral-fg);
   white-space: nowrap;
 }
 /* One hue per state, so two statuses never read as the same thing:
@@ -148,37 +279,79 @@ tbody tr:last-child td { border-bottom: none; }
      blue    business       — a legitimate answer that is not the happy path
      amber   recoverable    — wobbled, recovered on a declared rule
      red     failed         — genuinely broken */
-.badge.running { background: #fdf0cf; color: #8a6410; }
-.badge.paused, .badge.escalated { background: #efe6fb; color: #6b3ba4; }
-.badge.interrupted { background: #e4e8ef; color: #56607a; }
-.badge.stopped { background: #eceae6; color: #6a6459; }
+.badge.running { background: var(--st-live-bg); color: var(--st-live-fg); }
+.badge.paused, .badge.escalated { background: var(--st-human-bg); color: var(--st-human-fg); }
+.badge.interrupted { background: var(--st-gone-bg); color: var(--st-gone-fg); }
+.badge.stopped { background: var(--st-ended-bg); color: var(--st-ended-fg); }
 
-.badge.SUCCESS, .badge.recorded, .badge.approved { background: #dcf0e4; color: #1c6b41; }
-.badge.BUSINESS_OUTCOME { background: var(--brand-tint); color: var(--brand-dark); }
-.badge.RECOVERABLE { background: #fce7cd; color: #94530c; }
-.badge.HARD_FAILURE, .badge.failed { background: #fbdada; color: #a92626; }
-.badge.ended_without_artifact { background: #f2dfd2; color: #8a5230; }
+.badge.SUCCESS, .badge.recorded, .badge.approved { background: var(--st-good-bg); color: var(--st-good-fg); }
+.badge.BUSINESS_OUTCOME { background: var(--st-answer-bg); color: var(--st-answer-fg); }
+.badge.RECOVERABLE { background: var(--st-recovered-bg); color: var(--st-recovered-fg); }
+.badge.HARD_FAILURE, .badge.failed { background: var(--st-broken-bg); color: var(--st-broken-fg); }
+.badge.ended_without_artifact { background: var(--st-partial-bg); color: var(--st-partial-fg); }
 
-.badge.draft { background: #e8edf6; color: var(--ink-2); }
-.badge.safe { background: #e7f2ea; color: #3f6b4d; }
-.badge.risky { background: #fdeedb; color: #96560f; }
+.badge.draft { background: var(--st-neutral-bg); color: var(--st-neutral-fg); }
+.badge.safe { background: var(--st-safe-bg); color: var(--st-safe-fg); }
+.badge.risky { background: var(--st-risky-bg); color: var(--st-risky-fg); }
 
 /* Transcript EVENT badges in the run report. Same rule as the statuses above — an
    event that means something different must not look the same. They deliberately
    echo the run statuses: an `escalation` event is the violet of a `paused` run, a
    `resumed` event the yellow of a `running` one. */
-.badge.run_start { background: var(--brand-tint); color: var(--brand-dark); }
-.badge.escalation { background: #efe6fb; color: #6b3ba4; }
-.badge.resumed { background: #fdf0cf; color: #8a6410; }
-.badge.artifact_recorded { background: #dcf0e4; color: #1c6b41; }
-.badge.risk_refusal { background: #fbdada; color: #a92626; }
-.badge.observation, .badge.model_turn { background: #e8edf6; color: var(--ink-2); }
+.badge.run_start { background: var(--st-answer-bg); color: var(--st-answer-fg); }
+.badge.escalation { background: var(--st-human-bg); color: var(--st-human-fg); }
+.badge.resumed { background: var(--st-live-bg); color: var(--st-live-fg); }
+.badge.artifact_recorded { background: var(--st-good-bg); color: var(--st-good-fg); }
+.badge.risk_refusal { background: var(--st-broken-bg); color: var(--st-broken-fg); }
+.badge.observation, .badge.model_turn { background: var(--st-neutral-bg); color: var(--st-neutral-fg); }
 
 .row { display: flex; gap: 10px; }
 .row > * { flex: 1; }
 
 .muted { color: var(--ink-3); }
 .error { color: var(--danger); }
+
+/* Theme toggle: pinned to the top-right of the screen, above everything, so it is in
+   the same place on the console and on a standalone report. The icon shows the
+   DESTINATION rather than the current state — it is an action, not a status. */
+.theme-toggle {
+  position: fixed;
+  top: 14px;
+  right: 16px;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink-2);
+  cursor: pointer;
+  box-shadow: 0 1px 3px var(--shadow);
+}
+.theme-toggle svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.theme-toggle:hover { color: var(--accent); border-color: var(--accent); background: var(--card); }
+.theme-toggle:focus-visible { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+.theme-toggle .sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 
 /* ── responsive ──
    Two shapes, not a squeeze: above 980px the sidebar is a column beside the work;

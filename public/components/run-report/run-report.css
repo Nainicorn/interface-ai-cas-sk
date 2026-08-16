@@ -37,7 +37,7 @@
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 7px;
-  background: #fff;
+  background: var(--card);
 }
 
 .report .center { text-align: center; }
