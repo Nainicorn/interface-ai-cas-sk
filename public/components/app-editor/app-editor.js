@@ -130,7 +130,25 @@ export async function mount(root) {
 
   deleteButton.addEventListener('click', async () => {
     if (appId === null) return;
-    if (!confirm(`Delete "${field('name').value}"? Its recorded runs stay in evidence/.`)) return;
+
+    // Deleting an app cascades to everything it produced, so the confirm names the
+    // count rather than describing the policy — "3 runs and 1 capability" is the fact
+    // an operator needs, and it is the last chance to see it.
+    let scope = '';
+    try {
+      const runs = await getJson('/api/runs');
+      const mine = runs.filter((r) => r.app_id === appId);
+      const caps = mine.filter((r) => r.detail?.artifact).length;
+      if (mine.length) {
+        scope = `\n\nThis also deletes ${mine.length} run${mine.length === 1 ? '' : 's'}`
+          + (caps ? ` and ${caps} recorded capabilit${caps === 1 ? 'y' : 'ies'}` : '')
+          + ', with their transcripts and screenshots.';
+      }
+    } catch {
+      scope = '\n\nThis also deletes its runs and recorded capabilities.';
+    }
+
+    if (!confirm(`Delete "${field('name').value}"?${scope}`)) return;
     try {
       await deleteJson(`/api/targets/${encodeURIComponent(appId)}`);
       done(null);

@@ -17,6 +17,10 @@ import {
   loadTargets,
   slugify,
 } from '../config/app-config.js';
+import { getSession } from '../agent/escalation.js';
+import { EVIDENCE_DIR } from '../evidence/logger.js';
+import { listRuns } from '../evidence/runs.js';
+import { listRecordings } from '../schema/store.js';
 
 const router = Router();
 
@@ -160,15 +164,40 @@ router.put('/:appId', (req, res) => {
 });
 
 /**
- * Delete an app: its whole artifacts/<app>/ folder. The evidence folders are left alone
- * deliberately — recorded runs are the deliverable, and removing an app is not a reason
- * to destroy the proof that it once ran.
+ * Delete an app and everything it produced: its `artifacts/<app>/` config AND its
+ * `evidence/<app>/` runs, capabilities included.
+ *
+ * The cascade is deliberate. Deleting an app used to leave its evidence behind on the
+ * argument that recorded runs are the deliverable — but that left orphan folders no
+ * surface could reach: the console scopes every view to a registered app, so those runs
+ * were unreachable and un-deletable, visible only on disk. An app you removed should
+ * leave nothing behind. Git history is where deleted evidence is recovered from, and the
+ * console names what will go before it asks.
+ *
+ * A live run blocks the delete rather than being force-killed — its browser needs closing
+ * first, which is what Stop is for.
  */
 router.delete('/:appId', (req, res) => {
   const file = configPathFor(req.params.appId);
   if (!file || !existsSync(file)) return res.status(404).json({ error: 'No such app' });
-  rmSync(path.dirname(file), { recursive: true });
-  res.json({ app_id: req.params.appId, deleted: true });
+
+  const live = listRuns().find((r) => r.app_id === req.params.appId && getSession(r.id));
+  if (live) {
+    return res.status(409).json({ error: `Run ${live.id} is still live — stop it first.` });
+  }
+  // Count before deleting, so the response can say what actually went.
+  const runs = listRuns().filter((r) => r.app_id === req.params.appId);
+  const capabilities = listRecordings().filter((r) => r.runId.startsWith(`${req.params.appId}/`)).length;
+
+  rmSync(path.dirname(file), { recursive: true, force: true });
+  rmSync(path.join(EVIDENCE_DIR, req.params.appId), { recursive: true, force: true });
+
+  res.json({
+    app_id: req.params.appId,
+    deleted: true,
+    runs_deleted: runs.length,
+    capabilities_deleted: capabilities,
+  });
 });
 
 export default router;

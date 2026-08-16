@@ -28,9 +28,12 @@ and record against it live. Use a sandbox or demo application you are permitted 
 automate, and never real credentials or real PII (this is the assignment's ground rule and
 ours).
 
-**Running without live services:** replay and the console need no LLM key —
-`ANTHROPIC_API_KEY` is used only by discovery. Schema, policy, and boundary tests run with
-nothing else up.
+**What needs an API key:** only discovery — it is the one path that calls a model, and the
+brief requires it to be real. Everything downstream runs without one: replaying a committed
+capability, the agent catalog, invoking by name, the operator console, and every run report.
+So a reviewer with no key can still see the whole production path work against the committed
+evidence (see *Replay the committed evidence* below); a key is needed only to record a new
+capability of your own.
 
 ---
 

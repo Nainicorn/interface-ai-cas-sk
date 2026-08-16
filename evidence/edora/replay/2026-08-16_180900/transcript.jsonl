@@ -1,2 +1,0 @@
-{"ts":"2026-08-16T18:09:01.064Z","type":"action","actor":"replay","action":"navigate","detail":{"url":"/login"},"result":"ok","landedOn":"https://app.edoara.com/login/"}
-{"ts":"2026-08-16T18:09:01.086Z","type":"action","actor":"replay","action":"type","detail":{"description":"Email address input","field":"email","value":"demo@example.com","redacted":false},"locatorUsed":{"kind":"placeholder","value":"you@example.com","exact":true,"confidence":0.9},"candidatesTried":1,"result":"ok"}
