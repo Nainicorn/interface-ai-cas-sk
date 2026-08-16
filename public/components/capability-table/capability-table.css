@@ -1,17 +1,32 @@
 /* capability-table.css — the rows, the chevron-expanded detail, and the replay line. */
 
 #capabilities .scroll { overflow-x: auto; }
-#capabilities table { min-width: 560px; }
-#capabilities td { padding: 13px 10px; }
+#capabilities table { min-width: 720px; }
+#capabilities td { padding: 12px 10px; }
+#capabilities th { white-space: nowrap; }
+#capabilities th.right { text-align: right; }
 
-/* --- name + expander ------------------------------------------------------- */
-#capabilities td:first-child { min-width: 210px; }
-#capabilities .name-cell { display: flex; align-items: baseline; gap: 8px; }
+/* Every cell sits on one line: a capability is one row, and anything that stacked
+   inside a cell made the whole table ragged. The detail row opts back out below —
+   nowrap there is what was clipping the contract. */
+#capabilities tbody tr[data-id] td { white-space: nowrap; vertical-align: middle; }
 
-/* The chevron is the expander, so the control is a control rather than a link that
+/* --- name ------------------------------------------------------------------ */
+/* Truncation lives on the element, not the cell: a td only honours max-width under
+   table-layout:fixed, and fixed layout is what made these columns collide. */
+#capabilities .cap-name {
+  display: block;
+  max-width: 30ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- expander -------------------------------------------------------------- */
+/* Its own column on the right, so the control is a control rather than a link that
    happens to be the title. It rotates to point down while the row is open. */
+#capabilities .expand-cell { width: 1%; text-align: right; }
 #capabilities .chevron {
-  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -24,7 +39,6 @@
   background: transparent;
   color: var(--ink-3);
   cursor: pointer;
-  transform: translateY(2px);
 }
 #capabilities .chevron svg {
   width: 17px;
@@ -51,15 +65,17 @@
   #capabilities .chevron svg { transition: none; }
 }
 
-/* --- state ----------------------------------------------------------------- */
-#capabilities .state-cell { min-width: 150px; }
-#capabilities .state-cell .badges { display: flex; flex-wrap: wrap; gap: 5px; }
-#capabilities .state-cell .replays { margin-top: 6px; font-size: 11px; }
-#capabilities .state-cell [data-approve] { margin-top: 9px; }
+/* --- state: badges and reliability on the one line -------------------------- */
+#capabilities .state-cell { display: flex; align-items: center; gap: 7px; }
+#capabilities .state-cell .replays { font-size: 11.5px; padding-right: 4px; }
+
+/* --- approval: its own column, so the control never shifts with badge width --- */
+#capabilities .approve-cell { width: 1%; }
+#capabilities .approve-cell [data-approve] { margin: 0; }
 
 /* --- replay ---------------------------------------------------------------- */
-#capabilities .replay-cell { min-width: 130px; }
-.result-line { margin-top: 8px; font-size: 12px; }
+#capabilities .replay-cell { width: 1%; }
+.result-line { margin-left: 9px; font-size: 12px; }
 .result-line pre {
   background: var(--brand-wash);
   border: 1px solid var(--line);
@@ -71,7 +87,12 @@
 }
 
 /* --- the expanded detail --------------------------------------------------- */
-tr.expand td { background: var(--brand-wash); padding: 14px 18px 16px; }
+tr.expand td {
+  background: var(--brand-wash);
+  padding: 14px 18px 16px;
+  white-space: normal;      /* prose wraps; only the summary row is single-line */
+  vertical-align: top;
+}
 tr.expand .lede { margin: 0 0 12px; }
 tr.expand h4 {
   margin: 0 0 6px;

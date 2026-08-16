@@ -1,8 +1,10 @@
 /**
  * Capabilities tab: each recorded capability with a per-row Replay action,
  * replay-reliability (confidence), the Approve control that admits a draft to the
- * agent-facing catalog, and a chevron that expands the full detail — contract,
- * recorded steps, and the outcomes it can answer without failing.
+ * agent-facing catalog, and a chevron in the last column that expands the full detail
+ * — contract, recorded steps, and the outcomes it can answer without failing.
+ *
+ * Each capability occupies exactly one row; everything that would stack lives inline.
  * Scoped to the sidebar's selected app, like the runs table beside it.
  * API: GET /api/artifacts, GET /api/artifacts/:id, POST /api/artifacts/:id/replay,
  *      PATCH /api/artifacts/:id/status.
@@ -87,30 +89,34 @@ function render(root, artifacts) {
       .map(
         (a) => `
       <tr data-id="${a.id}">
-        <td class="name-cell">
+        <td class="name-cell"><b class="cap-name" title="${a.name}">${a.name}</b></td>
+        <td class="state-cell">
+          <span class="badge ${a.status}">${a.status}</span>
+          <span class="badge ${a.risk_level}">${a.risk_level}</span>
+          <span class="muted replays">${confidenceText(a)}</span>
+        </td>
+        <td class="approve-cell">
+          ${
+            a.status === 'draft'
+              ? `<button class="small secondary" data-approve="${a.id}" title="Admit to the agent-facing catalog">Approve</button>`
+              : '<span class="muted">—</span>'
+          }
+        </td>
+        <td class="replay-cell">
+          <button class="small" data-replay="${a.id}">Replay</button>
+          <span class="result-line" data-result="${a.id}"></span>
+        </td>
+        <td class="expand-cell">
           <button class="chevron" data-expand="${a.id}" type="button"
                   aria-expanded="false" title="Show what this capability takes and does">
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg>
             <span class="sr">Expand</span>
           </button>
-          <b>${a.name}</b>
-        </td>
-        <td class="state-cell">
-          <div class="badges">
-            <span class="badge ${a.status}">${a.status}</span>
-            <span class="badge ${a.risk_level}">${a.risk_level}</span>
-          </div>
-          <div class="muted mono replays">${confidenceText(a)}</div>
-          ${a.status === 'draft' ? `<button class="small secondary" data-approve="${a.id}" title="Admit to the agent-facing catalog">Approve</button>` : ''}
-        </td>
-        <td class="replay-cell">
-          <button class="small" data-replay="${a.id}">Replay</button>
-          <div class="result-line" data-result="${a.id}"></div>
         </td>
       </tr>
-      <tr class="expand" data-details="${a.id}" hidden><td colspan="3"></td></tr>`,
+      <tr class="expand" data-details="${a.id}" hidden><td colspan="5"></td></tr>`,
       )
-      .join('') || `<tr><td colspan="3" class="muted">No capabilities for this app yet — record one with a run above.</td></tr>`;
+      .join('') || `<tr><td colspan="5" class="muted">No capabilities for this app yet — record one with a run above.</td></tr>`;
 }
 
 export async function mount(root) {
