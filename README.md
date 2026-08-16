@@ -141,6 +141,28 @@ npm run agent-demo -- "log in and read the secure-area message"
 #    open localhost:3000/report.html?run=<run-id> — or read the run folder's result.json
 ```
 
+## Replay the committed evidence
+
+The recordings in `/evidence/` are committed; the app config they point at is not (it holds
+credentials — `artifacts/*/config.json` is gitignored). Register the practice app once and
+they replay as recorded:
+
+```bash
+npm start
+curl -X POST localhost:3000/api/targets -H 'content-type: application/json' -d '{
+  "name": "Heroku App",
+  "url": "https://the-internet.herokuapp.com/login",
+  "goal": "Log in with the supplied username and password, then read the confirmation message in the secure area",
+  "username": "tomsmith", "password": "SuperSecretPassword!"
+}'
+
+npm run replay -- --id heroku-app-login --param username=tomsmith      # SUCCESS
+npm run replay -- --id heroku-app-login --param username=no-such-user  # BUSINESS_OUTCOME
+```
+
+Those are the practice site's own publicly documented test credentials.
+[/evidence/README.md](evidence/README.md) says which five runs tell the story.
+
 ### Proof of work
 
 `artifacts/` and `evidence/` ship empty and fill as you use the system — every run writes
