@@ -9,8 +9,13 @@
  */
 
 import { onSelectedApp, selectedAppId } from '/global/selected-app.js';
+import { esc, getJson, postJson } from '/global/ui.js';
 
-const fetchRuns = () => fetch('/api/runs').then((r) => r.json());
+const fetchRuns = () => getJson('/api/runs');
+
+/** Who currently holds the page. The owner flag is the answer, not an inference. */
+const ownerLabel = (owner) =>
+  owner === 'agent' ? 'agent driving' : owner === 'human' ? 'human driving' : 'awaiting operator';
 
 export async function mount(root) {
   root.classList.add('idle');
@@ -32,9 +37,9 @@ export async function mount(root) {
       liveId = live?.id ?? null;
       if (!live) return;
       meta.innerHTML = `
-        <span class="badge ${live.status}">${live.status}</span>
-        <span class="badge">${live.owner === 'agent' ? 'agent driving' : live.owner === 'human' ? 'human driving' : 'awaiting operator'}</span>
-        <span class="mono muted">${live.id}</span>`;
+        <span class="badge ${esc(live.status)}">${esc(live.status)}</span>
+        <span class="badge">${esc(ownerLabel(live.owner))}</span>
+        <span class="mono muted">${esc(live.id)}</span>`;
       img.src = `/api/runs/${encodeURIComponent(live.id)}/screenshot?t=${Date.now()}`;
     } catch {
       /* transient poll failure — next tick retries */
@@ -44,11 +49,7 @@ export async function mount(root) {
     if (!liveId || !confirm('Stop this run? Its browser closes and the run is marked stopped.')) return;
     stopButton.disabled = true;
     try {
-      await fetch(`/api/runs/${encodeURIComponent(liveId)}/stop`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ reason: 'Stopped from the console' }),
-      });
+      await postJson(`/api/runs/${encodeURIComponent(liveId)}/stop`, { reason: 'Stopped from the console' });
       await refresh();
     } finally {
       stopButton.disabled = false;

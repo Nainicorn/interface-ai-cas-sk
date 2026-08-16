@@ -25,9 +25,9 @@
  */
 
 import { onSelectedApp, selectedAppId } from '/global/selected-app.js';
-import { postJson } from '/global/ui.js';
+import { getJson, postJson } from '/global/ui.js';
 
-const fetchPending = () => fetch('/api/escalations?status=pending').then((r) => r.json());
+const fetchPending = () => getJson('/api/escalations?status=pending');
 
 function render(root, pending) {
   const panel = root.querySelector('[data-panel]');

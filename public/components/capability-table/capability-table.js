@@ -11,7 +11,7 @@
  */
 
 import { hasSelection, onSelectedApp, selectedAppId } from '/global/selected-app.js';
-import { deleteJson, reliabilityBadge } from '/global/ui.js';
+import { deleteJson, esc, getJson, postJson, reliabilityBadge, sendJson } from '/global/ui.js';
 
 /** Inline icons, so the table needs no icon font or network fetch. Matches run-list. */
 const ICON = {
@@ -21,30 +21,10 @@ const ICON = {
     '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11M6.5 4V2.75A.75.75 0 0 1 7.25 2h1.5a.75.75 0 0 1 .75.75V4"/><path d="M4 4.5v8A1.5 1.5 0 0 0 5.5 14h5a1.5 1.5 0 0 0 1.5-1.5v-8"/><path d="M6.75 7v4M9.25 7v4"/></svg>',
 };
 
-const fetchArtifacts = () => fetch('/api/artifacts').then((r) => r.json());
-const fetchArtifact = (id) => fetch(`/api/artifacts/${id}`).then((r) => r.json());
-
-async function setStatus(id, status) {
-  const res = await fetch(`/api/artifacts/${id}/status`, {
-    method: 'PATCH',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ status }),
-  });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.error ?? res.statusText);
-  return json;
-}
-
-async function replay(id, params) {
-  const res = await fetch(`/api/artifacts/${id}/replay`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ params }),
-  });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.error ?? res.statusText);
-  return json;
-}
+const fetchArtifacts = () => getJson('/api/artifacts');
+const fetchArtifact = (id) => getJson(`/api/artifacts/${encodeURIComponent(id)}`);
+const setStatus = (id, status) => sendJson('PATCH', `/api/artifacts/${encodeURIComponent(id)}/status`, { status });
+const replay = (id, params) => postJson(`/api/artifacts/${encodeURIComponent(id)}/replay`, { params });
 
 /** One side of the contract as a definition list; "none" reads better than an em dash. */
 function schemaList(schema) {
@@ -54,25 +34,30 @@ function schemaList(schema) {
   return `<ul class="contract-list">${props
     .map(([name, spec]) => `
       <li>
-        <span class="mono">${name}</span>
-        <span class="muted">${spec?.type ?? 'string'}${required.has(name) ? '' : ' · optional'}</span>
-        ${spec?.description ? `<div class="muted desc">${spec.description}</div>` : ''}
+        <span class="mono">${esc(name)}</span>
+        <span class="muted">${esc(spec?.type ?? 'string')}${required.has(name) ? '' : ' · optional'}</span>
+        ${spec?.description ? `<div class="muted desc">${esc(spec.description)}</div>` : ''}
       </li>`)
     .join('')}</ul>`;
 }
 
-
-/** Readable summary for the expansion row: description, steps as intents, outcomes. */
+/**
+ * Readable summary for the expansion row: description, steps as intents, outcomes.
+ *
+ * Everything here is escaped because everything here is untrusted: names, intents,
+ * and outcome messages were written by a model reading somebody else's web page, so
+ * they are exactly as safe to interpolate as the page was.
+ */
 function detailsHtml(capability) {
   const steps = capability.steps
-    .map((s) => `<li><span class="mono">${s.action}</span> — ${s.intent}</li>`)
+    .map((s) => `<li><span class="mono">${esc(s.action)}</span> — ${esc(s.intent)}</li>`)
     .join('');
   const outcomes = capability.steps
     .flatMap((s) => s.business_outcomes ?? [])
-    .map((b) => `<li><b>${b.code}</b> — ${b.message}</li>`)
+    .map((b) => `<li><b>${esc(b.code)}</b> — ${esc(b.message)}</li>`)
     .join('');
   return `
-    <p class="lede">${capability.description}</p>
+    <p class="lede">${esc(capability.description)}</p>
 
     <div class="contract">
       <div><h4>Takes</h4>${schemaList(capability.input_schema)}</div>
@@ -82,7 +67,7 @@ function detailsHtml(capability) {
     <h4>Recorded steps</h4>
     <ol class="steps">${steps}</ol>
     ${outcomes ? `<h4>Also answers, without failing</h4><ol class="steps">${outcomes}</ol>` : ''}
-    <p class="muted provenance">Recorded by ${capability.created_from.model ?? 'hand'} · run <span class="mono">${capability.created_from.run_id}</span></p>
+    <p class="muted provenance">Recorded by ${esc(capability.created_from.model ?? 'hand')} · run <span class="mono">${esc(capability.created_from.run_id)}</span></p>
   `;
 }
 
@@ -92,46 +77,46 @@ function render(root, artifacts) {
     artifacts
       .map(
         (a) => `
-      <tr data-id="${a.id}">
-        <td class="name-cell"><b class="cap-name" title="${a.name}">${a.name}</b></td>
+      <tr data-id="${esc(a.id)}">
+        <td class="name-cell"><b class="cap-name" title="${esc(a.name)}">${esc(a.name)}</b></td>
         <td class="state-cell">
           <span class="state">
-            <span class="badge ${a.status}">${a.status}</span>
-            <span class="badge ${a.risk_level}">${a.risk_level}</span>
+            <span class="badge ${esc(a.status)}">${esc(a.status)}</span>
+            <span class="badge ${esc(a.risk_level)}">${esc(a.risk_level)}</span>
             ${reliabilityBadge(a.confidence)}
           </span>
         </td>
         <td class="approve-cell">
           ${
             a.status === 'draft'
-              ? `<button class="small secondary" data-status="${a.id}" data-to="approved"
+              ? `<button class="small secondary" data-status="${esc(a.id)}" data-to="approved"
                          title="Admit to the agent-facing catalog">Approve</button>`
-              : `<button class="small secondary revoke" data-status="${a.id}" data-to="draft"
+              : `<button class="small secondary revoke" data-status="${esc(a.id)}" data-to="draft"
                          title="Withdraw from the agent-facing catalog; the recording and its history are kept">Revoke</button>`
           }
         </td>
         <td class="replay-cell">
-          <button class="icon replay" data-replay="${a.id}" type="button"
+          <button class="icon replay" data-replay="${esc(a.id)}" type="button"
                   title="Replay this capability exactly as recorded — no LLM">
             ${ICON.replay}<span class="sr">Replay</span>
           </button>
-          <span class="result-line" data-result="${a.id}"></span>
+          <span class="result-line" data-result="${esc(a.id)}"></span>
         </td>
         <td class="del-cell">
-          <button class="icon del" data-delete="${a.id}" type="button"
+          <button class="icon del" data-delete="${esc(a.id)}" type="button"
                   title="Delete this recording. The run that produced it keeps its evidence.">
             ${ICON.trash}<span class="sr">Delete</span>
           </button>
         </td>
         <td class="expand-cell">
-          <button class="chevron" data-expand="${a.id}" type="button"
+          <button class="chevron" data-expand="${esc(a.id)}" type="button"
                   aria-expanded="false" title="Show what this capability takes and does">
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg>
             <span class="sr">Expand</span>
           </button>
         </td>
       </tr>
-      <tr class="expand" data-details="${a.id}" hidden><td colspan="6"></td></tr>`,
+      <tr class="expand" data-details="${esc(a.id)}" hidden><td colspan="6"></td></tr>`,
       )
       .join('') ||
     // The explainer lives in the empty state and nowhere else: it is what a first-time
@@ -242,7 +227,7 @@ export async function mount(root) {
         setTimeout(() => { if (note.isConnected) note.innerHTML = ''; }, 4000);
       }
     } catch (err) {
-      result.innerHTML = `<span class="error">${err.message}</span>`;
+      result.innerHTML = `<span class="error">${esc(err.message)}</span>`;
       button.disabled = false;
     }
   });
