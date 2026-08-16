@@ -1,0 +1,249 @@
+{
+  "schema_version": 1,
+  "id": "login-and-open-study-space",
+  "name": "Login with Email and Open Study Space",
+  "version": 1,
+  "status": "draft",
+  "description": "Logs into Edoara using an email address (passwordless code flow) and opens a course's study space (e.g. the SAT course) from the Courses list.",
+  "target": {
+    "app_id": "edora",
+    "entry_route": "/login",
+    "tenant_overrides": []
+  },
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "email": {
+        "type": "string",
+        "description": "Email address to sign in with"
+      }
+    },
+    "required": [
+      "email"
+    ],
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "study_space_units": {
+        "type": "string",
+        "description": "Units/lessons summary text of the opened study space, confirming it loaded"
+      }
+    },
+    "required": [
+      "study_space_units"
+    ],
+    "additionalProperties": false
+  },
+  "risk_level": "safe",
+  "steps": [
+    {
+      "index": 0,
+      "intent": "Go to the login page",
+      "action": "navigate",
+      "url": "/login",
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Sign in or create an account",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 1,
+      "intent": "Enter the email address to sign in with",
+      "action": "type",
+      "locator": {
+        "description": "Email address input",
+        "candidates": [
+          {
+            "kind": "placeholder",
+            "value": "you@example.com",
+            "exact": true,
+            "confidence": 0.9
+          },
+          {
+            "kind": "label",
+            "value": "Email address",
+            "exact": true,
+            "confidence": 0.8
+          }
+        ]
+      },
+      "value_from": "email",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[value]",
+        "timeout_ms": 3000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 2,
+      "intent": "Accept the age confirmation required before continuing",
+      "action": "click",
+      "locator": {
+        "description": "13 or older checkbox",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "I'm 13 or older.",
+            "role": "checkbox",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[type=checkbox]:checked",
+        "timeout_ms": 3000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 3,
+      "intent": "Request a one-time login code sent to the email address",
+      "action": "click",
+      "locator": {
+        "description": "Send Code button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Send Code",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Enter code",
+        "timeout_ms": 8000
+      },
+      "business_outcomes": [
+        {
+          "code": "INVALID_EMAIL",
+          "detect": {
+            "type": "text_visible",
+            "value": "valid email",
+            "timeout_ms": 3000
+          },
+          "message": "The email address supplied was rejected as invalid by the login form."
+        }
+      ],
+      "risk": "safe"
+    },
+    {
+      "index": 4,
+      "intent": "Navigate to the Courses list once authenticated (session established after code verification)",
+      "action": "navigate",
+      "url": "/courses",
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Courses",
+        "timeout_ms": 8000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 5,
+      "intent": "Open a course's study space by clicking its card",
+      "action": "click",
+      "locator": {
+        "description": "Course card heading (e.g. SAT) in the Courses grid",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "SAT",
+            "role": "heading",
+            "exact": true,
+            "confidence": 0.7,
+            "note": "Course name varies per account; scope to the article card"
+          },
+          {
+            "kind": "text",
+            "value": "SAT",
+            "exact": true,
+            "confidence": 0.6
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "url_contains",
+        "value": "/courses/",
+        "timeout_ms": 8000
+      },
+      "business_outcomes": [
+        {
+          "code": "NO_COURSES",
+          "detect": {
+            "type": "text_visible",
+            "value": "No new courses yet",
+            "timeout_ms": 3000
+          },
+          "message": "The account has no courses enrolled, so no study space can be opened."
+        }
+      ],
+      "risk": "safe"
+    },
+    {
+      "index": 6,
+      "intent": "Confirm the study space loaded by reading its units/lessons summary in the sidebar",
+      "action": "read",
+      "locator": {
+        "description": "Study space units/lessons summary text in sidebar",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "aside p",
+            "exact": false,
+            "confidence": 0.5,
+            "note": "First paragraph in the study-space sidebar shows 'NAME: X units, Y lessons'"
+          },
+          {
+            "kind": "text",
+            "value": "units,",
+            "exact": false,
+            "confidence": 0.4
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "units",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "study_space_units",
+      "risk": "safe"
+    }
+  ],
+  "success_checkpoint": {
+    "type": "url_contains",
+    "value": "/courses/",
+    "timeout_ms": 5000
+  },
+  "created_from": {
+    "run_id": "edora/discovery/2026-08-16_040233",
+    "model": "claude-sonnet-5",
+    "recorded_at": "2026-08-16T04:06:47.029Z"
+  },
+  "redaction_policy": {
+    "redact_fields": [
+      "EDORA_USERNAME"
+    ]
+  },
+  "confidence": {
+    "runs": 2,
+    "successes": 0,
+    "last_outcome": "HARD_FAILURE",
+    "updated_at": "2026-08-16T18:09:05.132Z"
+  }
+}

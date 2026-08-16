@@ -79,7 +79,8 @@ After each action you receive the page URL, title, accessibility tree, visible t
 - Locators are ranked candidate lists, most robust first: role+name, label, placeholder, visible text, tightly-scoped css last. A candidate matching more than one element is rejected at replay, so every candidate must be unique on its page. Legacy UIs nest layout tables: a bare row selector like tr:has-text(...) usually matches several nested rows — scope to a distinguishing ancestor, and give each locator a second candidate as fallback. When a candidate is rejected as ambiguous, the error lists each match's ancestor path with its attributes — pick a distinguishing ancestor attribute from it to scope your next candidate.
 - Record only what you have verified. Before emitting, exercise each output's read using the SAME candidate list and extract_pattern you will record — a candidate list you never executed is a guess, and it is the top cause of replay failure.
 - Never build a recorded locator from the concrete value it extracts (e.g. locating by this run's account number). That embeds one run's data and cannot replay for other inputs. Locate by structure or stable labels instead.
-- Emit once, when the goal result is visible on the current page. If genuinely stuck, escalate — a designed outcome, not a failure.`;
+- Emit once, when the goal result is visible on the current page. If genuinely stuck, escalate — a designed outcome, not a failure.
+- Escalating means a human can unblock you, so you continue after they hand control back. If a human tells you there is no way forward, or the app plainly cannot do what the goal asks, call abandon instead: state why and stop. Escalating again after being told nothing can be done is the one wrong move — a goal that is impossible should end with a verdict, not another question.`;
 }
 
 /** Format one observation as tool-result content blocks (text + screenshot). */
@@ -279,6 +280,20 @@ export async function runDiscovery({
         const obs = await observe(page, logger, 'resumed', null);
         messages.push(toolResult(call.id, [{ type: 'text', text: resumeMessage(note) }, ...obs.blocks]));
         continue;
+      }
+
+      // The dead-end stopping condition (§3.1). Escalation suspends the loop and waits
+      // for a human; without a way to say "no human can fix this", a goal that is simply
+      // impossible in this app pauses and resumes forever. This ends the run with a
+      // verdict and a reason — a designed outcome, like a business outcome on replay,
+      // and deliberately distinct from a crash.
+      if (call.name === 'abandon') {
+        logger.logEvent('abandoned', { reason: call.input.reason, attempted: call.input.attempted ?? null });
+        outcome = {
+          status: 'unreachable',
+          escalation: { reason: call.input.reason, attempted: call.input.attempted ?? null },
+        };
+        break;
       }
 
       const { resultBlocks, isError, terminal } = await dispatch(call, session, ctx, params, { goal, runId, logger });

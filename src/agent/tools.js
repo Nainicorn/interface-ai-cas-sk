@@ -134,13 +134,31 @@ export const TOOLS = [
   {
     name: 'escalate',
     description:
-      'Hand control to a human operator. Use when stuck (a control cannot be found, the ' +
-      'page is in an unexpected state, credentials are rejected) or when a risky, ' +
-      'state-changing action needs confirmation. Not a failure — a designed outcome.',
+      'Hand control to a human operator, then CONTINUE once they hand it back. Use when ' +
+      'a human can unblock you — a control cannot be found, the page is in an unexpected ' +
+      'state, credentials are rejected, or a risky state-changing action needs ' +
+      'confirmation. Not a failure — a designed outcome. If a human has already told you ' +
+      'the goal cannot be done, call abandon instead of escalating again.',
     input_schema: toJson(
       z.object({
         reason: z.string().min(1).describe('What is blocking, specifically'),
         attempted: z.string().optional().describe('What you already tried'),
+      }),
+    ),
+  },
+  {
+    name: 'abandon',
+    description:
+      'Declare the goal unreachable and END the run. Use when no human can unblock you ' +
+      'and further attempts would be pointless: the operator has said there is no way ' +
+      'forward, the feature does not exist in this app, or the goal contradicts what the ' +
+      'app can do. This is a verdict, not a crash — the run records why, and no ' +
+      'capability is written. Prefer escalate whenever a human could still help; use this ' +
+      'when they cannot.',
+    input_schema: toJson(
+      z.object({
+        reason: z.string().min(1).describe('Why the goal cannot be accomplished in this app'),
+        attempted: z.string().optional().describe('What you tried before concluding this'),
       }),
     ),
   },

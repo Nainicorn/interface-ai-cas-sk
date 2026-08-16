@@ -1,0 +1,23 @@
+{
+  "id": "edora/replay/2026-08-16_180900",
+  "kind": "replay",
+  "app_id": "edora",
+  "goal": null,
+  "status": "HARD_FAILURE",
+  "detail": {
+    "caller": "agent",
+    "capability": "login-and-open-study-space",
+    "version": 1,
+    "outcome": "HARD_FAILURE",
+    "outputs": null,
+    "business_outcome": null,
+    "failed_step": {
+      "step": 1,
+      "intent": "Enter the email address to sign in with",
+      "message": "expected {\"type\":\"element_exists\",\"value\":\"input[value]\",\"timeout_ms\":3000}, observed \"selector \\\"input[value]\\\" matched nothing within 3000ms\"",
+      "url": "https://app.edoara.com/login/"
+    }
+  },
+  "started_at": "2026-08-16T18:09:00.580Z",
+  "updated_at": "2026-08-16T18:09:05.149Z"
+}

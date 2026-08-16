@@ -292,6 +292,10 @@ tbody tr:last-child td { border-bottom: none; }
 .badge.RECOVERABLE { background: var(--st-recovered-bg); color: var(--st-recovered-fg); }
 .badge.HARD_FAILURE, .badge.failed { background: var(--st-broken-bg); color: var(--st-broken-fg); }
 .badge.ended_without_artifact { background: var(--st-partial-bg); color: var(--st-partial-fg); }
+/* A verdict, not a crash: the goal cannot be done in this app. Shares the partial tint
+   because nothing broke — the run simply has no capability to show for itself. */
+.badge.unreachable { background: var(--st-partial-bg); color: var(--st-partial-fg); }
+.badge.abandoned { background: var(--st-partial-bg); color: var(--st-partial-fg); }
 
 .badge.draft { background: var(--st-neutral-bg); color: var(--st-neutral-fg); }
 .badge.safe { background: var(--st-safe-bg); color: var(--st-safe-fg); }
