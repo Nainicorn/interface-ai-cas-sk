@@ -4,18 +4,23 @@
 #run-list table { min-width: 440px; }
 #run-list .date { white-space: nowrap; font-weight: 500; }
 #run-list .time { white-space: nowrap; color: var(--ink-2); }
-#run-list th.right, #run-list td.actions { text-align: right; }
+/* Report and Delete get a column each rather than sharing one. Two different acts under
+   one "Actions" heading made the reader work out which icon was which; a heading per
+   control says it once. Both are narrow, so the row costs nothing for the clarity. */
+#run-list th.report-head,
+#run-list th.del-head,
+#run-list td.report-cell,
+#run-list td.del-cell { width: 1%; text-align: center; white-space: nowrap; }
 
 /* Icon actions: always visible, so a row's controls never have to be discovered by
    hovering. Colour carries the meaning — brand for report, danger for delete. */
-#run-list td.actions { white-space: nowrap; }
 #run-list .icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 32px;
   height: 32px;
-  margin: 0 0 0 4px;
+  margin: 0;
   padding: 0;
   border: 1px solid transparent;
   border-radius: 8px;
@@ -31,15 +36,6 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-#run-list .icon .sr {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 #run-list .report-link { color: var(--accent); }
 #run-list .report-link:hover { background: var(--accent-soft); border-color: var(--accent-soft); }
 
@@ -54,5 +50,5 @@
 @media (max-width: 620px) {
   #run-list table { min-width: 0; }
   #run-list th:nth-child(3), #run-list td:nth-child(3) { display: none; }
-  #run-list .icon { width: 30px; height: 30px; margin-left: 2px; }
+  #run-list .icon { width: 30px; height: 30px; }
 }

@@ -4,7 +4,7 @@
    not look like two products. */
 
 #agent-catalog .scroll { overflow-x: auto; }
-#agent-catalog table { min-width: 760px; }
+#agent-catalog table { min-width: 820px; }
 #agent-catalog td { padding: 12px 10px; vertical-align: middle; }
 #agent-catalog th { white-space: nowrap; }
 #agent-catalog tbody tr[data-entry] td { white-space: nowrap; }
@@ -15,7 +15,7 @@
 #agent-catalog .cap-name,
 #agent-catalog .cap-id {
   display: block;
-  max-width: 30ch;
+  max-width: 42ch;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -205,8 +205,11 @@ header .sub { margin: 4px 0 0; color: var(--ink-2); font-size: 13px; }
   overflow-y: auto;
 }
 .main { flex: 1; min-width: 0; }
+/* Wide enough for the tables to give each row action its own column without truncating
+   capability names. The goal form above them still reads fine at this measure because it
+   is a single field, and the cap keeps the column from sprawling on a very wide display. */
 .column {
-  max-width: 880px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 30px 28px 64px;
   display: flex;

@@ -115,11 +115,13 @@ function render(root, artifacts) {
                   title="Replay this capability exactly as recorded — no LLM">
             ${ICON.replay}<span class="sr">Replay</span>
           </button>
+          <span class="result-line" data-result="${a.id}"></span>
+        </td>
+        <td class="del-cell">
           <button class="icon del" data-delete="${a.id}" type="button"
                   title="Delete this recording. The run that produced it keeps its evidence.">
             ${ICON.trash}<span class="sr">Delete</span>
           </button>
-          <span class="result-line" data-result="${a.id}"></span>
         </td>
         <td class="expand-cell">
           <button class="chevron" data-expand="${a.id}" type="button"
@@ -129,12 +131,12 @@ function render(root, artifacts) {
           </button>
         </td>
       </tr>
-      <tr class="expand" data-details="${a.id}" hidden><td colspan="5"></td></tr>`,
+      <tr class="expand" data-details="${a.id}" hidden><td colspan="6"></td></tr>`,
       )
       .join('') ||
     // The explainer lives in the empty state and nowhere else: it is what a first-time
     // reader needs, and it would be noise above a table that already has rows.
-    `<tr><td colspan="5" class="muted empty">
+    `<tr><td colspan="6" class="muted empty">
        The flows an AI has already worked out and recorded, replayable exactly as recorded
        with no AI involved. Record one with a run above.
      </td></tr>`;
@@ -165,12 +167,17 @@ export async function mount(root) {
       /* transient poll failure */
     }
   };
+  /** Re-read now rather than waiting out the poll. */
+  const refreshNow = () => {
+    lastKey = '';
+    return refresh();
+  };
+
   refresh();
   setInterval(refresh, 5000);
-  onSelectedApp(() => {
-    lastKey = '';
-    refresh();
-  });
+  onSelectedApp(refreshNow);
+  // Approving, revoking, deleting, and invoking from the catalog all land here at once.
+  window.addEventListener('capabilities-changed', refreshNow);
 
   root.addEventListener('click', async (event) => {
     const expand = event.target.closest('[data-expand]');
@@ -190,8 +197,9 @@ export async function mount(root) {
       promote.disabled = true;
       try {
         await setStatus(promote.dataset.status, promote.dataset.to);
-        lastKey = ''; // force a re-render on the next poll
-        refresh();
+        // Broadcast rather than refresh directly: this row changing is also the Agent
+        // catalog gaining or losing an entry, and both should land in the same tick.
+        window.dispatchEvent(new CustomEvent('capabilities-changed'));
       } catch (err) {
         promote.disabled = false;
         promote.textContent = err.message;
@@ -208,8 +216,7 @@ export async function mount(root) {
       remove.disabled = true;
       try {
         await deleteJson(`/api/artifacts/${encodeURIComponent(id)}`);
-        lastKey = '';
-        await refresh();
+        window.dispatchEvent(new CustomEvent('capabilities-changed'));
       } catch (err) {
         remove.disabled = false;
         alert(err.message);
@@ -228,8 +235,7 @@ export async function mount(root) {
       // A replay IS a run: its result lives in the Runs tab; here only the replay
       // count in State moves. Refresh now so the count ticks immediately.
       window.dispatchEvent(new CustomEvent('replay-finished'));
-      lastKey = '';
-      await refresh();
+      await refreshNow();
       const note = root.querySelector(`[data-result="${id}"]`);
       if (note) {
         note.innerHTML = '<span class="muted">Done — result is in Runs</span>';

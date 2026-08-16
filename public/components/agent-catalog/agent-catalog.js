@@ -40,6 +40,10 @@ function argsCell(entry) {
     .join('');
 }
 
+/** Risk and replay record. Its own function because invoking updates it in place. */
+const stateHtml = (entry) =>
+  `<span class="badge ${esc(entry.risk_level)}">${esc(entry.risk_level)}</span>${reliabilityBadge(entry.reliability)}`;
+
 function render(root, entries) {
   root.querySelector('tbody').innerHTML =
     entries
@@ -51,10 +55,7 @@ function render(root, entries) {
           <span class="muted cap-id mono">${esc(entry.id)}</span>
         </td>
         <td class="state-cell">
-          <span class="state">
-            <span class="badge ${esc(entry.risk_level)}">${esc(entry.risk_level)}</span>
-            ${reliabilityBadge(entry.reliability)}
-          </span>
+          <span class="state">${stateHtml(entry)}</span>
         </td>
         <td class="args-cell">${argsCell(entry)}</td>
         <td class="invoke-cell">
@@ -66,11 +67,7 @@ function render(root, entries) {
       .join('') ||
     // The explainer lives in the empty state and nowhere else: it is what a first-time
     // reader needs, and it would be noise above a table that already has rows.
-    `<tr><td colspan="4" class="muted empty">
-       What an outside AI agent sees when it asks this system what it can do, showing only
-       the capabilities a human has approved. Nothing is approved yet, so an agent would
-       see an empty list: approve one in the Capabilities tab and it appears here.
-     </td></tr>`;
+    '<tr><td colspan="4" class="muted empty">Approve a capability to allow an outside AI agent to invoke it.</td></tr>';
 }
 
 /** The four-way result, said plainly. A business outcome is an answer, not a failure. */
@@ -111,12 +108,18 @@ export async function mount(root) {
       /* transient poll failure */
     }
   };
+  /** Re-read now rather than waiting out the poll. */
+  const refreshNow = () => {
+    lastKey = '';
+    return refresh();
+  };
+
   refresh();
   setInterval(refresh, 5000);
-  onSelectedApp(() => {
-    lastKey = '';
-    refresh();
-  });
+  onSelectedApp(refreshNow);
+  // Approving or revoking happens in the Capabilities tab, and this table is the thing
+  // it visibly changes — so it must land here at once, not up to a poll later.
+  window.addEventListener('capabilities-changed', refreshNow);
 
   root.addEventListener('click', async (event) => {
     const button = event.target.closest('[data-invoke]');
@@ -138,8 +141,16 @@ export async function mount(root) {
     try {
       const outcome = await postJson(`/api/capabilities/${id}/invoke`, { params });
       result.innerHTML = resultHtml(outcome);
-      window.dispatchEvent(new CustomEvent('replay-finished'));
-      lastKey = ''; // the reliability counter just moved
+
+      // The replay record just moved, so update that one cell in place. A full re-render
+      // would be simpler and wrong: it would wipe the result the caller is reading and
+      // the arguments they typed to get it.
+      const fresh = await getJson(`/api/capabilities/${id}`).catch(() => null);
+      if (fresh) row.querySelector('.state').innerHTML = stateHtml(fresh);
+      lastKey = ''; // and let the next poll re-sync the rest
+
+      window.dispatchEvent(new CustomEvent('replay-finished')); // an invocation IS a run
+      window.dispatchEvent(new CustomEvent('capabilities-changed'));
     } catch (err) {
       result.innerHTML = `<span class="error">${esc(err.message)}</span>`;
     } finally {

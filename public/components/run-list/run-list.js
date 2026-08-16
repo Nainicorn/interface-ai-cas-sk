@@ -43,12 +43,16 @@ function render(root, runs) {
           <td class="time mono">${at.time}</td>
           <td>${esc(run.kind)}</td>
           <td><span class="badge ${esc(run.status)}">${esc(run.status)}</span>${run.live ? ` <span class="muted">${esc(ownerLabel(run.owner))}</span>` : ''}</td>
-          <td class="actions">
+          <td class="report-cell">
             <a class="icon report-link" target="_blank" rel="noopener" title="Open the full report"
                href="/report.html?run=${encodeURIComponent(run.id)}">${ICON.report}<span class="sr">Report</span></a>
+          </td>
+          <td class="del-cell">
             ${
+              // A live run has no delete: stopping it is the operation that discards one
+              // in flight, and it has a browser to close first.
               run.live
-                ? ''
+                ? '<span class="muted dash">—</span>'
                 : `<button class="icon del" data-delete="${esc(run.id)}" type="button" title="Delete this run and its evidence">${ICON.trash}<span class="sr">Delete</span></button>`
             }
           </td>
@@ -60,7 +64,7 @@ function render(root, runs) {
     // The explainer lives in the empty state and nowhere else: it is what a first-time
     // reader needs, and it would be noise above a table that already shows the answer.
     rows ||
-    `<tr><td colspan="5" class="muted empty">
+    `<tr><td colspan="6" class="muted empty">
        Every attempt this app has made, live or finished, with a full report behind each one.
        Start one above.
      </td></tr>`;

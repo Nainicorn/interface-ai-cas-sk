@@ -1,10 +1,17 @@
 /* capability-table.css — the rows, the chevron-expanded detail, and the replay line. */
 
 #capabilities .scroll { overflow-x: auto; }
-#capabilities table { min-width: 720px; }
+#capabilities table { min-width: 820px; }
 #capabilities td { padding: 12px 10px; }
 #capabilities th { white-space: nowrap; }
 #capabilities th.right { text-align: right; }
+
+/* Replay and Delete get a column each rather than sharing one. Two different acts under
+   one heading made the reader work out which icon was which; a heading per control says
+   it once, and both columns are narrow enough to cost nothing. */
+#capabilities th.replay-head,
+#capabilities th.del-head,
+#capabilities .del-cell { width: 1%; text-align: center; }
 
 /* Every cell sits on one line: a capability is one row, and anything that stacked
    inside a cell made the whole table ragged. The detail row opts back out below —
@@ -16,7 +23,7 @@
    table-layout:fixed, and fixed layout is what made these columns collide. */
 #capabilities .cap-name {
   display: block;
-  max-width: 30ch;
+  max-width: 42ch;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -93,7 +100,7 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  margin: 0 0 0 2px;
+  margin: 0;
   padding: 0;
   border: 1px solid transparent;
   border-radius: 8px;
@@ -111,7 +118,8 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-#capabilities .icon.del:hover { background: var(--danger-soft, var(--brand-wash)); border-color: var(--line); }
+#capabilities .icon.del:hover { background: var(--danger-wash); border-color: var(--danger-line); }
+#capabilities .icon.del:disabled { opacity: 0.4; cursor: default; }
 #capabilities .icon.del:focus-visible { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
 
 .result-line { margin-left: 9px; font-size: 12px; }
@@ -203,7 +211,8 @@ tr.expand .provenance { margin: 14px 0 0; font-size: 11.5px; }
   /* The two actions sit side by side on their own line. Selectors are qualified to
      out-specify the blanket `td { display: block }` above them. */
   #capabilities tbody tr[data-id] td.approve-cell,
-  #capabilities tbody tr[data-id] td.replay-cell {
+  #capabilities tbody tr[data-id] td.replay-cell,
+  #capabilities tbody tr[data-id] td.del-cell {
     display: inline-block;
     width: auto;
     margin-right: 8px;
