@@ -7,14 +7,14 @@
   width: min(560px, 92vw);
   color: var(--ink);
 }
-#app-editor dialog::backdrop { background: rgba(20, 28, 45, 0.4); }
+#app-editor dialog::backdrop { background: rgba(0, 9, 29, 0.45); }
 #app-editor h2 { margin: 0 0 6px; font-size: 16px; }
 #app-editor .intro { margin: 0 0 14px; font-size: 12.5px; }
 #app-editor .hint { color: var(--ink-3); font-weight: 400; }
 #app-editor textarea { width: 100%; resize: vertical; }
-#app-editor .err { color: #a53c20; margin: 10px 0 0; font-size: 12.5px; }
+#app-editor .err { color: var(--danger); margin: 10px 0 0; font-size: 12.5px; }
 
 #app-editor .actions { display: flex; align-items: center; gap: 10px; }
 #app-editor .actions .spacer { flex: 1; }
-#app-editor .danger { color: #a53c20; border-color: #e4c4b8; }
+#app-editor .danger { color: var(--danger); border-color: var(--danger-line); }
 #app-editor .actions button { margin-top: 16px; }

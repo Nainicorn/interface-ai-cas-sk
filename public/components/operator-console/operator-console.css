@@ -6,7 +6,7 @@
    which control does what. */
 
 .card.operator {
-  border-left: 4px solid #7a3fd1;
+  border-left: 4px solid var(--attention);
   padding: 18px 20px 20px;
 }
 
@@ -14,8 +14,8 @@
 
 /* --- why you're here ------------------------------------------------------- */
 .operator .ask-box {
-  background: rgba(122, 63, 209, 0.05);
-  border: 1px solid rgba(122, 63, 209, 0.16);
+  background: var(--attention-wash);
+  border: 1px solid var(--attention-line);
   border-radius: 12px;
   padding: 12px 14px;
   margin-bottom: 18px;

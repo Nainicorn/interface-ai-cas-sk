@@ -11,7 +11,7 @@
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #f7f8fa;
+  background: var(--brand-wash);
 }
 
 #live-viewer h2 { color: var(--accent-strong); }
@@ -22,9 +22,9 @@
   padding: 5px 14px;
   border-radius: 999px;
   font-size: 12px;
-  color: #a53c20;
+  color: var(--danger);
   background: transparent;
-  border: 1px solid #e4c4b8;
+  border: 1px solid var(--danger-line);
 }
-#live-viewer .stop:hover { background: #fbeee9; }
+#live-viewer .stop:hover { background: var(--danger-wash); }
 #live-viewer.idle .stop { display: none; }

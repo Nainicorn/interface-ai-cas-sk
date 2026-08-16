@@ -24,7 +24,7 @@
   flex-direction: column;
   gap: 1px;
 }
-#app-sidebar .apps li:hover { background: rgba(31, 30, 29, 0.05); }
+#app-sidebar .apps li:hover { background: rgba(9, 62, 176, 0.06); }
 #app-sidebar .apps li.selected { background: var(--accent-soft); }
 #app-sidebar .apps li.selected .name { color: var(--accent-strong); }
 #app-sidebar .apps .name { font-weight: 600; overflow-wrap: anywhere; }
