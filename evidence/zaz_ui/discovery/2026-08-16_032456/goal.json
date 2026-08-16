@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "id": "login-open-cars-gadget",
+  "name": "Login with Sample Login and Open Cars Gadget",
+  "version": 1,
+  "status": "draft",
+  "description": "Logs into Zaz UI using a sample admin login, opens the gadgets menu, opens the Cars gadget, and verifies it renders a table of car data.",
+  "target": {
+    "app_id": "zaz_ui",
+    "entry_route": "/",
+    "tenant_overrides": []
+  },
+  "input_schema": {
+    "type": "object",
+    "properties": {},
+    "required": [],
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "cars_grid_text": {
+        "type": "string",
+        "description": "Text content of the Cars gadget data grid confirming tabular car data is displayed"
+      }
+    },
+    "required": [
+      "cars_grid_text"
+    ],
+    "additionalProperties": false
+  },
+  "risk_level": "safe",
+  "steps": [
+    {
+      "index": 0,
+      "intent": "Start at entry route which redirects to an error/interstitial page prompting login",
+      "action": "navigate",
+      "url": "/",
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "LOGIN",
+        "timeout_ms": 8000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 1,
+      "intent": "Follow the LOGIN link to reach the sample logins list",
+      "action": "click",
+      "locator": {
+        "description": "LOGIN link",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "LOGIN",
+            "role": "link",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Sample Logins",
+        "timeout_ms": 8000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 2,
+      "intent": "Select the sample Admin user (id 100) to log in",
+      "action": "click",
+      "locator": {
+        "description": "Admin User 100 sample login entry",
+        "candidates": [
+          {
+            "kind": "text",
+            "value": "100",
+            "exact": true,
+            "confidence": 0.5
+          },
+          {
+            "kind": "text",
+            "value": "Admin, User",
+            "exact": false,
+            "confidence": 0.4
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Hello USER, Admin",
+        "timeout_ms": 8000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 3,
+      "intent": "Open the gadgets toolbar entry that opens/reveals the Cars gadget",
+      "action": "click",
+      "locator": {
+        "description": "Cars gadget launcher button in toolbar",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "view_day",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.6
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Cars",
+        "timeout_ms": 8000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 4,
+      "intent": "Verify the Cars gadget grid displays tabular data rows and extract the grid content",
+      "action": "read",
+      "locator": {
+        "description": "Cars grid data table",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Zaz Grid",
+            "role": "grid",
+            "exact": true,
+            "confidence": 0.7
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Chevrolet",
+        "timeout_ms": 8000
+      },
+      "business_outcomes": [
+        {
+          "code": "NO_CARS_DATA",
+          "detect": {
+            "type": "text_visible",
+            "value": "Displaying 0 to 0 of 0 items",
+            "timeout_ms": 5000
+          },
+          "message": "The Cars gadget opened but returned no rows of data."
+        }
+      ],
+      "extract_as": "cars_grid_text",
+      "risk": "safe"
+    }
+  ],
+  "success_checkpoint": {
+    "type": "text_visible",
+    "value": "Chevrolet",
+    "timeout_ms": 8000
+  },
+  "created_from": {
+    "run_id": "zaz_ui/discovery/2026-08-16_032456",
+    "model": "claude-sonnet-5",
+    "recorded_at": "2026-08-16T03:27:50.896Z"
+  },
+  "redaction_policy": {
+    "redact_fields": []
+  },
+  "confidence": {
+    "runs": 0,
+    "successes": 0,
+    "last_outcome": null,
+    "updated_at": null
+  }
+}

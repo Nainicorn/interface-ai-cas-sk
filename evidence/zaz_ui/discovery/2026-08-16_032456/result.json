@@ -1,0 +1,27 @@
+{
+  "id": "zaz_ui/discovery/2026-08-16_032456",
+  "kind": "discovery",
+  "app_id": "zaz_ui",
+  "goal": "Login using sample logins, find open gadgets and open cars gadget, ensure cars gadget shows table of data",
+  "status": "recorded",
+  "detail": {
+    "artifact": {
+      "id": "login-open-cars-gadget",
+      "version": 1,
+      "path": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/zaz_ui/discovery/2026-08-16_032456/goal.json"
+    },
+    "turns": 8,
+    "usage": {
+      "input_tokens": 16,
+      "output_tokens": 2989,
+      "cache_read_input_tokens": 79234,
+      "cache_creation_input_tokens": 20405
+    },
+    "model": "claude-sonnet-5",
+    "evidence_dir": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/zaz_ui/discovery/2026-08-16_032456",
+    "escalation": null,
+    "finished_at": "2026-08-16T03:27:50.946Z"
+  },
+  "started_at": "2026-08-16T03:24:56.194Z",
+  "updated_at": "2026-08-16T03:27:50.946Z"
+}
