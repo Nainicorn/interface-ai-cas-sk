@@ -14,7 +14,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { runDiscovery } from '../agent/discovery.js';
 import { getSession, stopRun } from '../agent/escalation.js';
-import { getRun, listRuns, updateRun } from '../evidence/runs.js';
+import { deleteRun, getRun, listRuns, updateRun } from '../evidence/runs.js';
 import { EVIDENCE_DIR, newRunId } from '../evidence/logger.js';
 import { buildRunReport, isSafeRunId, isSafeScreenshotName } from '../evidence/report.js';
 import { getTarget, loadTargets } from '../config/app-config.js';
@@ -34,6 +34,9 @@ router.post('/', (req, res) => {
   // human can take the live session and hand it back.
   runDiscovery({ goal, appId, params, maxTurns, headless, runId, onEscalation: 'pause' }).catch((err) => {
     console.error(`run ${runId} failed:`, err);
+    // A stopped run has had its folder deleted on purpose. Writing a failure record here
+    // would resurrect it as a half-run in the history, so only update what still exists.
+    if (!getRun(runId)) return;
     try {
       updateRun(runId, { status: 'failed', detail: { error: err.message } });
     } catch {
@@ -64,6 +67,22 @@ router.post('/:id/stop', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+/**
+ * Delete a finished run and its evidence.
+ *
+ * A live run is refused rather than force-deleted: stopping it is the operation that
+ * discards a run in flight, and it has a browser to close first.
+ */
+router.delete('/:id', (req, res) => {
+  const row = getRun(req.params.id);
+  if (!row) return res.status(404).json({ error: 'No such run' });
+  if (getSession(req.params.id)) {
+    return res.status(409).json({ error: 'Run is still live — stop it first' });
+  }
+  if (!deleteRun(req.params.id)) return res.status(400).json({ error: 'Not a deletable run id' });
+  res.json({ app_id: row.app_id, id: req.params.id, deleted: true });
 });
 
 router.get('/:id', (req, res) => {

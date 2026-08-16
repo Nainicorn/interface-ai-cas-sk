@@ -307,9 +307,11 @@ export async function runDiscovery({
       });
     }
   } catch (err) {
-    // An operator stop unwinds the loop through here. It is a decision, not a fault, so
-    // it does not become a hard_failure — and stopRun() already wrote the run's status.
-    if (!(err instanceof RunStopped)) throw err;
+    // An operator stop unwinds the loop through here — either as RunStopped (the run was
+    // parked and woke to a stop) or as whatever the closing browser threw mid-action.
+    // Either way it is a decision, not a fault, and stopRun() has already deleted the
+    // folder, so nothing below may write to it.
+    if (!(err instanceof RunStopped) && !session.stopped) throw err;
     outcome = { status: 'stopped', stop_reason: err.message };
   } finally {
     unregisterSession(runId);

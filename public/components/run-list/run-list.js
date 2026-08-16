@@ -1,11 +1,12 @@
 /**
  * Test runs table: every discovery and replay, newest first, each with a Report link
- * that opens the full evidence view in a new tab. Re-renders only when the data
- * actually changes, so the table never flickers.
- * API: GET /api/runs.
+ * that opens the full evidence view in a new tab, and a Delete that removes the run and
+ * its evidence. Re-renders only when the data actually changes, so the table never
+ * flickers.
+ * API: GET /api/runs, DELETE /api/runs/:id.
  */
 
-import { esc, getJson } from '/lib/ui.js';
+import { deleteJson, esc, getJson } from '/lib/ui.js';
 
 /** What a replay run produced, in one readable line. */
 function replaySummary(detail) {
@@ -36,7 +37,10 @@ function render(root, runs) {
           <td>${esc(run.kind)}</td>
           <td><span class="badge ${esc(run.status)}">${esc(run.status)}</span>${run.live ? ` <span class="muted">${esc(ownerLabel(run.owner))}</span>` : ''}</td>
           <td>${what}</td>
-          <td><a class="report-link" target="_blank" rel="noopener" href="/report.html?run=${encodeURIComponent(run.id)}">Report</a></td>
+          <td class="actions">
+            <a class="report-link" target="_blank" rel="noopener" href="/report.html?run=${encodeURIComponent(run.id)}">Report</a>
+            ${run.live ? '' : `<button class="del" data-delete="${esc(run.id)}" type="button" title="Delete this run and its evidence">Delete</button>`}
+          </td>
         </tr>`;
     })
     .join('');
@@ -67,6 +71,23 @@ export async function mount(root) {
       /* transient poll failure */
     }
   };
+  root.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-delete]');
+    if (!button) return;
+    const runId = button.dataset.delete;
+    if (!confirm(`Delete run ${runId}? Its screenshots, transcript and recording go with it.`)) return;
+    button.disabled = true;
+    try {
+      await deleteJson(`/api/runs/${encodeURIComponent(runId)}`);
+      lastKey = ''; // force a re-render rather than wait for the poll to notice
+      await refresh();
+      window.dispatchEvent(new CustomEvent('replay-finished')); // capability list may have lost one
+    } catch (err) {
+      button.disabled = false;
+      alert(err.message);
+    }
+  });
+
   refresh();
   setInterval(refresh, 2000);
   window.addEventListener('run-started', refresh);

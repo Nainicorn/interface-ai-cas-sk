@@ -18,7 +18,7 @@
 
 import { performAction } from '../engine/actions.js';
 import { captureState } from '../engine/perception.js';
-import { createIntervention, getIntervention, resolveIntervention, updateRun } from '../evidence/runs.js';
+import { createIntervention, deleteRun, resolveIntervention, updateRun } from '../evidence/runs.js';
 
 /** Per-run mutex: a promise chain. Each withLock() call runs strictly after the last. */
 export class RunLock {
@@ -190,12 +190,16 @@ export function resumeRun(runId, { note = null } = {}) {
 }
 
 /**
- * Stop a run for good: close its browser and mark it stopped.
+ * Stop a run and discard it: close the browser, then delete its evidence folder.
+ *
+ * A stopped run is an abandoned attempt, not a result. Keeping half a transcript would
+ * put a run in the history that never reached an outcome and a folder that can never
+ * produce a capability, so the whole folder goes.
  *
  * A paused run is parked on a promise that only resume() settles, so stopping has to
  * release that promise too — otherwise the discovery loop waits forever for a human who
- * has already walked away. The loop checks `session.stopped` when it wakes and exits
- * instead of continuing.
+ * has already walked away. The loop checks the stop when it wakes and unwinds without
+ * writing anything further, which is what makes deleting the folder safe.
  *
  * Works on a run with no live session too (a leftover "running" row after a restart),
  * because that is exactly the row an operator most wants to clear.
@@ -203,24 +207,21 @@ export function resumeRun(runId, { note = null } = {}) {
 export async function stopRun(runId, { reason = 'Stopped by operator' } = {}) {
   const session = getSession(runId);
 
-  if (getIntervention(runId)?.status === 'pending') {
-    resolveIntervention(runId, { note: reason, stopped: true });
+  if (session) {
+    session.stopped = true;
+    session.owner = 'stopped';
+
+    // Release the parked loop BEFORE closing the browser, so it wakes to a clean exit
+    // rather than to a torn-down page.
+    const signal = session.resumeSignal;
+    session.resumeSignal = null;
+    signal?.resolve({ note: reason, stopped: true });
+
+    await session.browser?.close().catch(() => {});
+    unregisterSession(runId);
   }
-  updateRun(runId, { status: 'stopped', detail: { stop_reason: reason, stopped_at: new Date().toISOString() } });
 
-  if (!session) return { stopped: true, was_live: false };
-
-  session.stopped = true;
-  session.owner = 'stopped';
-  session.logger.logEvent('stopped', { reason });
-
-  // Release the parked loop BEFORE closing the browser, so it wakes to a clean exit
-  // rather than to a torn-down page.
-  const signal = session.resumeSignal;
-  session.resumeSignal = null;
-  signal?.resolve({ note: reason, stopped: true });
-
-  await session.browser?.close().catch(() => {});
-  unregisterSession(runId);
-  return { stopped: true, was_live: true };
+  // Last, once nothing is left that could write into it.
+  deleteRun(runId);
+  return { stopped: true, deleted: true, was_live: Boolean(session) };
 }

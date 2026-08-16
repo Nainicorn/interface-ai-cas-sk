@@ -11,9 +11,10 @@
  * Hands off to: api/runs.js, api/escalation.js, agent/discovery.js, agent/escalation.js.
  */
 
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { EVIDENCE_DIR } from './logger.js';
+import { isSafeRunId } from './report.js';
 
 const now = () => new Date().toISOString();
 
@@ -66,6 +67,22 @@ export function updateRun(id, { status, detail }) {
 
 export function getRun(id) {
   return readJson(resultPath(id));
+}
+
+/**
+ * Delete a run's whole folder. Used when a run is stopped (an abandoned attempt is not a
+ * result) and when an operator clears an old run.
+ *
+ * This is a recursive delete driven by an id that arrives from a URL, so the id is
+ * re-validated here rather than trusted from the caller — the guard belongs next to the
+ * rm, not only at the routes that happen to use it today.
+ */
+export function deleteRun(id) {
+  if (!isSafeRunId(id)) return false;
+  const dir = runDir(id);
+  if (!existsSync(dir)) return false;
+  rmSync(dir, { recursive: true, force: true });
+  return true;
 }
 
 /**
