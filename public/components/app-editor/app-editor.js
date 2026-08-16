@@ -7,7 +7,7 @@
  * API: GET/POST/PUT/DELETE /api/targets.
  */
 
-import { deleteJson, getJson, postJson, putJson } from '/ui.js';
+import { deleteJson, getJson, postJson, putJson } from '/global/ui.js';
 
 export async function mount(root) {
   root.innerHTML = await (await fetch('/components/app-editor/app-editor.html')).text();

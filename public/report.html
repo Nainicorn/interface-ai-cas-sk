@@ -8,14 +8,14 @@
     // Inline and first: applying the theme from a module would paint light, then flip.
     try { var t = localStorage.getItem('cas-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
   </script>
-  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/global/styles.css" />
   <link rel="stylesheet" href="/components/run-report/run-report.css" />
 </head>
 <body>
   <button class="theme-toggle" data-theme-toggle type="button"></button>
   <div id="run-report"></div>
   <script type="module">
-    import { mountThemeToggle } from '/theme.js';
+    import { mountThemeToggle } from '/global/theme.js';
     mountThemeToggle(document.querySelector('[data-theme-toggle]'));
     import { mount } from '/components/run-report/run-report.js';
     mount(document.getElementById('run-report'));

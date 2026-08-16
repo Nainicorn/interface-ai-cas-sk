@@ -10,8 +10,8 @@
  * API: GET /api/runs, DELETE /api/runs/:id.
  */
 
-import { hasSelection, onSelectedApp, selectedAppId } from '/selected-app.js';
-import { deleteJson, esc, getJson } from '/ui.js';
+import { hasSelection, onSelectedApp, selectedAppId } from '/global/selected-app.js';
+import { deleteJson, esc, getJson } from '/global/ui.js';
 
 /** Inline icons, so the table needs no icon font or network fetch. */
 const ICON = {

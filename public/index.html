@@ -8,7 +8,7 @@
     // Inline and first: applying the theme from a module would paint light, then flip.
     try { var t = localStorage.getItem('cas-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
   </script>
-  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/global/styles.css" />
   <link rel="stylesheet" href="/components/app-sidebar/app-sidebar.css" />
   <link rel="stylesheet" href="/components/app-editor/app-editor.css" />
   <link rel="stylesheet" href="/components/goal-form/goal-form.css" />
@@ -36,7 +36,7 @@
   <div id="app-editor"></div>
 
   <script type="module">
-    import { mountThemeToggle } from '/theme.js';
+    import { mountThemeToggle } from '/global/theme.js';
     import { mount as appSidebar } from '/components/app-sidebar/app-sidebar.js';
     import { mount as appEditor } from '/components/app-editor/app-editor.js';
     import { mount as goalForm } from '/components/goal-form/goal-form.js';

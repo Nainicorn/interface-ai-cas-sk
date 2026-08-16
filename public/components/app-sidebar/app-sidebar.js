@@ -9,8 +9,8 @@
  * API: GET /api/targets.
  */
 
-import { setSelectedApp, storedAppId } from '/selected-app.js';
-import { esc, getJson } from '/ui.js';
+import { setSelectedApp, storedAppId } from '/global/selected-app.js';
+import { esc, getJson } from '/global/ui.js';
 
 export async function mount(root) {
   root.innerHTML = await (await fetch('/components/app-sidebar/app-sidebar.html')).text();
