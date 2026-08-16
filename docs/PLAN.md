@@ -1,15 +1,6 @@
 # PLAN.md — Remaining Work
 
-1. **Update the README.** It is the most out-of-date file in the repo and describes a
-   system that no longer exists: `npm test` and "81 tests" (the suite was removed),
-   `src/db/` and SQLite (replaced by the filesystem — a run IS its folder), `config/` and
-   `targets.json` (apps live in `artifacts/<app>/config.json`), `data/creds/` and personas
-   (removed). It must match what the code actually does now: register an app, record a
-   run, replay it, approve it, invoke it from the catalog or from an agent
-   (`npm run agent-demo`), open the report. Also document the caller badge and the
-   Permissions section on the app form.
-
-2. **Re-record the evidence set.** Record fresh with the current code so /evidence/ shows
+1. **Re-record the evidence set.** Record fresh with the current code so /evidence/ shows
    the safety layer active (`redacted: true` lines) and the approval gate in the loop.
    Needs, each readable standalone: a discovery run, a replay SUCCESS, a replay
    BUSINESS_OUTCOME, and an escalation run (paused → human → resumed). Never hand-edit
@@ -21,7 +12,7 @@
    HARD_FAILURE. The engine caught it and now reports the reason — but the recording
    itself is the demo, so it has to be a good one.
 
-3. **Write REPORT.md last, after everything above is built and tested.** One to three
+2. **Write REPORT.md last, after everything above is built and tested.** One to three
    pages under these exact seven headings: Architecture, Artifact schema, Determinism &
    error handling, Heterogeneity & multi-tenant, Escalation & handoff, Safety, Cuts.
 
