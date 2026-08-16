@@ -4,10 +4,27 @@
    The brand's yellow marks a session that is actually live, which is the same thing it
    marks on the HITL panel below: attention is here, right now. Idle, the card is plain. */
 
-#live-viewer.idle .meta, #live-viewer.idle img { display: none; }
+#live-viewer.idle .session-bar, #live-viewer.idle img { display: none; }
 #live-viewer .empty { display: none; color: var(--ink-3); margin: 2px 0; }
 #live-viewer.idle .empty { display: block; }
-#live-viewer .meta { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+
+/* One bar above the screenshot: what the run is on the left, Stop hard right, so the
+   destructive control sits away from the badges you read rather than beneath them. */
+#live-viewer .session-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+#live-viewer .meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+#live-viewer .meta .mono { overflow-wrap: anywhere; }
 
 #live-viewer .shot {
   display: block;
@@ -39,7 +56,8 @@
 
 /* Stop is destructive but must be reachable at a glance while a run is live. */
 #live-viewer .stop {
-  margin: 10px 0 0;
+  flex: 0 0 auto;
+  margin: 0 0 0 auto;
   padding: 5px 14px;
   border-radius: 999px;
   font-size: 12px;
@@ -49,3 +67,10 @@
 }
 #live-viewer .stop:hover { background: var(--danger-wash); }
 #live-viewer.idle .stop { display: none; }
+
+@media (max-width: 560px) {
+  /* Stop drops below the badges but stays hard right, so it never sits mid-line. */
+  #live-viewer .session-bar { flex-wrap: wrap; }
+  #live-viewer .meta { flex: 1 1 100%; }
+  #live-viewer .stop { margin-left: auto; }
+}
