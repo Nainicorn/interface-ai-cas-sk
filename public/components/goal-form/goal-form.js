@@ -28,7 +28,7 @@ export async function mount(root) {
     status.textContent = '';
 
     const goal = selected.goal?.trim();
-    goalText.textContent = goal || 'No goal set yet — hover this app in the sidebar and choose Edit.';
+    goalText.textContent = goal || 'No goal set yet — use the Edit icon beside this app in the sidebar.';
     goalText.classList.toggle('none', !goal);
     runButton.disabled = !goal;
   };
