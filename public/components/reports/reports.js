@@ -5,7 +5,7 @@
  * API: GET /api/runs/:id/report, GET /api/runs/:id/screenshots/:name.
  */
 
-import { esc, getJson } from '/global/ui.js';
+import { esc, getJson } from '/global/helpers.js';
 
 const dt = (value) => (value ? new Date(value).toLocaleString() : '');
 
@@ -115,7 +115,7 @@ function render(root, runId, report) {
 }
 
 export async function mount(root) {
-  root.innerHTML = await (await fetch('/components/run-report/run-report.html')).text();
+  root.innerHTML = await (await fetch('/components/reports/reports.html')).text();
 
   const status = root.querySelector('[data-status]');
   const runId = new URLSearchParams(location.search).get('run');

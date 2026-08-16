@@ -7,7 +7,7 @@
  * API: GET/POST/PUT/DELETE /api/targets.
  */
 
-import { deleteJson, esc, getJson, postJson, putJson } from '/global/ui.js';
+import { deleteJson, esc, getJson, postJson, putJson } from '/global/helpers.js';
 
 /** The five action primitives. Mirrors ACTION_TYPES in src/schema/enums.js. */
 const ACTION_TYPES = ['navigate', 'click', 'type', 'read', 'wait_for'];
@@ -21,7 +21,7 @@ const linesToList = (value) =>
     .filter(Boolean);
 
 export async function mount(root) {
-  root.innerHTML = await (await fetch('/components/app-editor/app-editor.html')).text();
+  root.innerHTML = await (await fetch('/components/app-modal/app-modal.html')).text();
 
   const dialog = root.querySelector('[data-dialog]');
   const error = root.querySelector('[data-error]');

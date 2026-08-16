@@ -1,4 +1,4 @@
-/* workspace.css — the pill tab bar; table styling lives with each pane's own component,
+/* tabs.css — the pill tab bar; table styling lives with each pane's own component,
    and each pane's explanation lives in its own empty state. */
 
 #workspace .tabbar { display: flex; gap: 6px; margin-bottom: 12px; }

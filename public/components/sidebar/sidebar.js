@@ -5,15 +5,15 @@
  * The store rather than an event, because this component resolves its fetch before the
  * workspace has mounted its tables: an event fired here would reach nobody.
  *
- * + Add app and each row's Edit icon hand off to app-editor.
+ * + Add app and each row's Edit icon hand off to app-modal.
  * API: GET /api/targets.
  */
 
 import { setSelectedApp, storedAppId } from '/global/selected-app.js';
-import { esc, getJson } from '/global/ui.js';
+import { esc, getJson } from '/global/helpers.js';
 
 export async function mount(root) {
-  root.innerHTML = await (await fetch('/components/app-sidebar/app-sidebar.html')).text();
+  root.innerHTML = await (await fetch('/components/sidebar/sidebar.html')).text();
 
   const list = root.querySelector('[data-apps]');
   const empty = root.querySelector('[data-empty]');

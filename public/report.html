@@ -9,7 +9,7 @@
     try { var t = localStorage.getItem('cas-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
   </script>
   <link rel="stylesheet" href="/global/styles.css" />
-  <link rel="stylesheet" href="/components/run-report/run-report.css" />
+  <link rel="stylesheet" href="/components/reports/reports.css" />
 </head>
 <body>
   <button class="theme-toggle" data-theme-toggle type="button"></button>
@@ -17,7 +17,7 @@
   <script type="module">
     import { mountThemeToggle } from '/global/theme.js';
     mountThemeToggle(document.querySelector('[data-theme-toggle]'));
-    import { mount } from '/components/run-report/run-report.js';
+    import { mount } from '/components/reports/reports.js';
     mount(document.getElementById('run-report'));
   </script>
 </body>

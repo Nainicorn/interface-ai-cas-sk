@@ -9,14 +9,14 @@
     try { var t = localStorage.getItem('cas-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
   </script>
   <link rel="stylesheet" href="/global/styles.css" />
-  <link rel="stylesheet" href="/components/app-sidebar/app-sidebar.css" />
-  <link rel="stylesheet" href="/components/app-editor/app-editor.css" />
+  <link rel="stylesheet" href="/components/sidebar/sidebar.css" />
+  <link rel="stylesheet" href="/components/app-modal/app-modal.css" />
   <link rel="stylesheet" href="/components/goal-form/goal-form.css" />
   <link rel="stylesheet" href="/components/live-viewer/live-viewer.css" />
-  <link rel="stylesheet" href="/components/operator-console/operator-console.css" />
-  <link rel="stylesheet" href="/components/workspace/workspace.css" />
-  <link rel="stylesheet" href="/components/run-list/run-list.css" />
-  <link rel="stylesheet" href="/components/capability-table/capability-table.css" />
+  <link rel="stylesheet" href="/components/human-in-the-loop/human-in-the-loop.css" />
+  <link rel="stylesheet" href="/components/tabs/tabs.css" />
+  <link rel="stylesheet" href="/components/discoveries/discoveries.css" />
+  <link rel="stylesheet" href="/components/capabilities/capabilities.css" />
   <link rel="stylesheet" href="/components/agent-catalog/agent-catalog.css" />
 </head>
 <body>
@@ -38,12 +38,12 @@
 
   <script type="module">
     import { mountThemeToggle } from '/global/theme.js';
-    import { mount as appSidebar } from '/components/app-sidebar/app-sidebar.js';
-    import { mount as appEditor } from '/components/app-editor/app-editor.js';
+    import { mount as appSidebar } from '/components/sidebar/sidebar.js';
+    import { mount as appEditor } from '/components/app-modal/app-modal.js';
     import { mount as goalForm } from '/components/goal-form/goal-form.js';
     import { mount as liveViewer } from '/components/live-viewer/live-viewer.js';
-    import { mount as operatorConsole } from '/components/operator-console/operator-console.js';
-    import { mount as workspace } from '/components/workspace/workspace.js';
+    import { mount as operatorConsole } from '/components/human-in-the-loop/human-in-the-loop.js';
+    import { mount as workspace } from '/components/tabs/tabs.js';
 
     mountThemeToggle(document.querySelector('[data-theme-toggle]'));
     appSidebar(document.getElementById('app-sidebar'));

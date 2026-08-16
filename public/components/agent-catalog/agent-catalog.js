@@ -13,7 +13,7 @@
  */
 
 import { hasSelection, onSelectedApp, selectedAppId } from '/global/selected-app.js';
-import { esc, getJson, postJson, reliabilityBadge } from '/global/ui.js';
+import { esc, getJson, postJson, reliabilityBadge } from '/global/helpers.js';
 
 /**
  * One control per declared parameter — the recorded contract IS the form.

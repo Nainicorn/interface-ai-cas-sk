@@ -6,7 +6,7 @@
  */
 
 import { onSelectedApp } from '/global/selected-app.js';
-import { postJson } from '/global/ui.js';
+import { postJson } from '/global/helpers.js';
 
 export async function mount(root) {
   root.innerHTML = await (await fetch('/components/goal-form/goal-form.html')).text();

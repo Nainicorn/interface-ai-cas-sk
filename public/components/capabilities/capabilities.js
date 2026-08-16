@@ -11,9 +11,9 @@
  */
 
 import { hasSelection, onSelectedApp, selectedAppId } from '/global/selected-app.js';
-import { deleteJson, esc, getJson, postJson, reliabilityBadge, sendJson } from '/global/ui.js';
+import { deleteJson, esc, getJson, postJson, reliabilityBadge, sendJson } from '/global/helpers.js';
 
-/** Inline icons, so the table needs no icon font or network fetch. Matches run-list. */
+/** Inline icons, so the table needs no icon font or network fetch. Matches discoveries. */
 const ICON = {
   replay:
     '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.61-3.89"/><path d="M13.5 2v3.5H10"/></svg>',
@@ -128,7 +128,7 @@ function render(root, artifacts) {
 }
 
 export async function mount(root) {
-  root.innerHTML = await (await fetch('/components/capability-table/capability-table.html')).text();
+  root.innerHTML = await (await fetch('/components/capabilities/capabilities.html')).text();
 
   let lastKey = '';
 

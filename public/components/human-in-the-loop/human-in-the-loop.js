@@ -25,7 +25,7 @@
  */
 
 import { onSelectedApp, selectedAppId } from '/global/selected-app.js';
-import { getJson, postJson } from '/global/ui.js';
+import { getJson, postJson } from '/global/helpers.js';
 
 const fetchPending = () => getJson('/api/escalations?status=pending');
 
@@ -60,7 +60,7 @@ function render(root, pending) {
 }
 
 export async function mount(root) {
-  root.innerHTML = await (await fetch('/components/operator-console/operator-console.html')).text();
+  root.innerHTML = await (await fetch('/components/human-in-the-loop/human-in-the-loop.html')).text();
 
   const refresh = async () => {
     try {

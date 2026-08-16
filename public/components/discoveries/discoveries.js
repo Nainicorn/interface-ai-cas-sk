@@ -11,7 +11,7 @@
  */
 
 import { hasSelection, onSelectedApp, selectedAppId } from '/global/selected-app.js';
-import { deleteJson, esc, getJson } from '/global/ui.js';
+import { deleteJson, esc, getJson } from '/global/helpers.js';
 
 /** Inline icons, so the table needs no icon font or network fetch. */
 const ICON = {
@@ -86,7 +86,7 @@ const ownerLabel = (owner) =>
   ({ agent: 'agent driving', human: 'human driving', paused: 'awaiting operator' })[owner] ?? owner ?? '';
 
 export async function mount(root) {
-  root.innerHTML = await (await fetch('/components/run-list/run-list.html')).text();
+  root.innerHTML = await (await fetch('/components/discoveries/discoveries.html')).text();
 
   let lastKey = '';
   const refresh = async () => {

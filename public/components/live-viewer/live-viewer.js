@@ -9,7 +9,7 @@
  */
 
 import { onSelectedApp, selectedAppId } from '/global/selected-app.js';
-import { esc, getJson, postJson } from '/global/ui.js';
+import { esc, getJson, postJson } from '/global/helpers.js';
 
 const fetchRuns = () => getJson('/api/runs');
 

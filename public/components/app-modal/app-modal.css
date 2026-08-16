@@ -1,4 +1,4 @@
-/* app-editor.css — the edit-app dialog; form primitives come from /styles.css */
+/* app-modal.css — the edit-app dialog; form primitives come from /styles.css */
 
 #app-editor dialog {
   border: 1px solid var(--line);

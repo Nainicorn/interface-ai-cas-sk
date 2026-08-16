@@ -1,4 +1,4 @@
-/* run-list.css — the runs table; table/badge primitives come from /styles.css */
+/* discoveries.css — the runs table; table/badge primitives come from /styles.css */
 
 #run-list .scroll { overflow-x: auto; }
 #run-list table { min-width: 440px; }

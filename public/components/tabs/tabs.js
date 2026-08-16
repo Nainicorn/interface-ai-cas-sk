@@ -7,20 +7,20 @@
  * Each pane says what it is in its own empty state rather than in a standing line here,
  * so the explanation appears exactly when a reader has nothing else to go on.
  *
- * Mounts run-list, capability-table, and agent-catalog into its panes; the panes keep
+ * Mounts discoveries, capabilities, and agent-catalog into its panes; the panes keep
  * their ids so each component's own CSS keeps applying.
  * API: none of its own — the panes poll their endpoints.
  */
 
 import { mount as agentCatalog } from '/components/agent-catalog/agent-catalog.js';
-import { mount as capabilityTable } from '/components/capability-table/capability-table.js';
-import { mount as runList } from '/components/run-list/run-list.js';
+import { mount as capabilities } from '/components/capabilities/capabilities.js';
+import { mount as discoveries } from '/components/discoveries/discoveries.js';
 
 export async function mount(root) {
-  root.innerHTML = await (await fetch('/components/workspace/workspace.html')).text();
+  root.innerHTML = await (await fetch('/components/tabs/tabs.html')).text();
 
-  runList(root.querySelector('[data-pane=runs]'));
-  capabilityTable(root.querySelector('[data-pane=caps]'));
+  discoveries(root.querySelector('[data-pane=runs]'));
+  capabilities(root.querySelector('[data-pane=caps]'));
   agentCatalog(root.querySelector('[data-pane=catalog]'));
 
   root.querySelector('.tabbar').addEventListener('click', (event) => {

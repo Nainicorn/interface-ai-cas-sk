@@ -1,4 +1,4 @@
-/* capability-table.css — the rows, the chevron-expanded detail, and the replay line. */
+/* capabilities.css — the rows, the chevron-expanded detail, and the replay line. */
 
 #capabilities .scroll { overflow-x: auto; }
 #capabilities table { min-width: 820px; }
@@ -49,7 +49,7 @@
 #capabilities .approve-cell .revoke:hover { color: var(--ink); }
 
 /* --- replay ---------------------------------------------------------------- */
-/* An icon button, same size and grammar as the run-list row actions, centred under its
+/* An icon button, same size and grammar as the discoveries row actions, centred under its
    heading so the column reads as a control rather than as a label that shifts with the
    result text appearing beside it. */
 #capabilities .replay-cell { width: 1%; text-align: center; position: relative; white-space: nowrap; }
