@@ -8,3 +8,16 @@
     <tbody></tbody>
   </table>
 </div>
+
+<!-- Asks for a capability's required inputs before replaying it — same steps, new values. -->
+<dialog data-params-dialog>
+  <h2>Replay parameters</h2>
+  <p class="muted intro" data-params-intro></p>
+  <div data-params-fields></div>
+  <p class="muted err" data-params-error hidden></p>
+  <div class="actions">
+    <span class="spacer"></span>
+    <button class="secondary" data-params-cancel type="button">Cancel</button>
+    <button data-params-run type="button">Replay</button>
+  </div>
+</dialog>

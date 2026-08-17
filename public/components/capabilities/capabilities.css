@@ -1,5 +1,23 @@
 /* capabilities.css — the rows, the chevron-expanded detail, and the replay line. */
 
+/* --- replay params dialog ---------------------------------------------------- */
+/* Same chrome as app-modal's dialog — this file just doesn't share it. */
+#capabilities dialog {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px;
+  width: min(420px, 94vw);
+  color: var(--ink);
+}
+#capabilities dialog::backdrop { background: rgba(0, 9, 29, 0.45); }
+#capabilities dialog h2 { margin: 0 0 6px; font-size: 16px; }
+#capabilities dialog .intro { margin: 0 0 14px; font-size: 12.5px; }
+#capabilities dialog .hint { color: var(--ink-3); font-weight: 400; }
+#capabilities dialog .err { color: var(--danger); margin: 10px 0 0; font-size: 12.5px; }
+#capabilities dialog input { width: 100%; margin-bottom: 12px; }
+#capabilities dialog .actions { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+#capabilities dialog .actions .spacer { flex: 1; }
+
 #capabilities .scroll { overflow-x: auto; }
 #capabilities table { min-width: 820px; }
 #capabilities td { padding: 12px 10px; }

@@ -130,6 +130,54 @@ function render(root, artifacts) {
 export async function mount(root) {
   root.innerHTML = await (await fetch('/components/capabilities/capabilities.html')).text();
 
+  const paramsDialog = root.querySelector('[data-params-dialog]');
+  const paramsFields = root.querySelector('[data-params-fields]');
+  const paramsIntro = root.querySelector('[data-params-intro]');
+  const paramsRun = root.querySelector('[data-params-run]');
+
+  /**
+   * Collect a capability's required inputs before replaying it. Resolves to a params
+   * object, or null if the operator cancels. No dialog at all when nothing is required —
+   * a capability with an empty input_schema should replay in one click, same as before.
+   */
+  function askForParams(capability) {
+    const required = capability.input_schema?.required ?? [];
+    if (!required.length) return Promise.resolve({});
+
+    paramsIntro.textContent = `${capability.name} needs these to replay:`;
+    paramsFields.innerHTML = required
+      .map((name) => {
+        const desc = capability.input_schema.properties?.[name]?.description;
+        return `
+          <label>${esc(name)}${desc ? ` <span class="hint">${esc(desc)}</span>` : ''}</label>
+          <input name="param:${esc(name)}" autocomplete="off" />`;
+      })
+      .join('');
+
+    return new Promise((resolve) => {
+      let confirmed = false;
+      const onRun = () => {
+        confirmed = true;
+        paramsDialog.close();
+      };
+      // The 'close' event is the single source of truth: it fires the same way whether
+      // Run, Cancel, or Escape closed the dialog, so there is exactly one resolve path.
+      const onClose = () => {
+        paramsRun.removeEventListener('click', onRun);
+        paramsDialog.removeEventListener('close', onClose);
+        if (!confirmed) return resolve(null);
+        const params = {};
+        for (const name of required) params[name] = paramsFields.querySelector(`[name="param:${name}"]`).value;
+        resolve(params);
+      };
+      paramsRun.addEventListener('click', onRun);
+      paramsDialog.addEventListener('close', onClose);
+      paramsDialog.showModal();
+    });
+  }
+
+  root.querySelector('[data-params-cancel]').addEventListener('click', () => paramsDialog.close());
+
   let lastKey = '';
 
   const refresh = async () => {
@@ -213,19 +261,20 @@ export async function mount(root) {
     if (!button) return;
     const id = button.dataset.replay;
     const result = root.querySelector(`[data-result="${id}"]`);
+
+    // Required inputs need a value per replay — the recording has no memory of what
+    // it was tried with. Optional ones stay unset unless the caller wants to override.
+    const capability = await fetchArtifact(id);
+    const params = await askForParams(capability);
+    if (params === null) return; // cancelled
+
     button.disabled = true;
-    result.innerHTML = `<span class="muted">Replaying…</span>`;
     try {
-      await replay(id, {}); // recorded capabilities replay as recorded
+      await replay(id, params);
       // A replay IS a run: its result lives in the Runs tab; here only the replay
       // count in State moves. Refresh now so the count ticks immediately.
       window.dispatchEvent(new CustomEvent('replay-finished'));
       await refreshNow();
-      const note = root.querySelector(`[data-result="${id}"]`);
-      if (note) {
-        note.innerHTML = '<span class="muted">Done — result is in Runs</span>';
-        setTimeout(() => { if (note.isConnected) note.innerHTML = ''; }, 4000);
-      }
     } catch (err) {
       result.innerHTML = `<span class="error">${esc(err.message)}</span>`;
       button.disabled = false;
