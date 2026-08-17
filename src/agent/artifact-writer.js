@@ -1,17 +1,14 @@
 /**
  * Turns a validated emission from the model into a saved, versioned capability.
  *
- * The model declares inputs/outputs as simple typed lists; THIS file builds the JSON
- * Schemas from them. That split is deliberate: schema/validate-params.js handles a
- * narrow, flat subset of JSON Schema, and generating the schema here — rather than
- * letting the model write raw JSON Schema — guarantees every recorded artifact stays
- * inside that subset. The model supplies judgment; the system supplies invariants.
+ * The model gives simple typed input/output lists, not raw JSON Schema — this file
+ * builds the schema from them, so every capability stays inside the subset
+ * schema/validate-params.js can check.
  *
- * Cross-checks the Zod schema cannot express (a step referencing an undeclared
- * parameter, an output no step extracts) are enforced here and returned as readable
- * errors, so the model can fix its emission and try again.
+ * Also catches what that validator can't (e.g. a step using an undeclared parameter)
+ * and returns readable errors so the model can fix its emission and retry.
  *
- * Hands off to: agent/discovery.js (its only caller), schema/store.js (persistence).
+ * Called only by agent/discovery.js; saves via schema/store.js.
  */
 
 import { safeParseCapability } from '../schema/capability.js';
