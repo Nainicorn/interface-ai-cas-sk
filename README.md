@@ -10,6 +10,20 @@ Diagrams of the entire flow of the application are in [docs/DESIGN.md](docs/DESI
 
 ---
 
+## Test fixtures
+
+This system is exercised against
+[`test-bank`](https://github.com/Nainicorn/test-bank) (local sibling folder:
+[`../mock-bank`](../mock-bank)) — a repo of **mock bank apps for testing only**. No
+real product, no real data, no real credentials. It holds two differentiated test
+cases so the same capability model can be proven across two very different DOM shapes:
+
+- **legacy app** (repo root) — hostile, server-rendered, no ids or `data-testid`
+- **[`mock-bank-spa`](https://github.com/Nainicorn/test-bank/tree/main/mock-bank-spa)**
+  — clean, modern SPA counterpart
+
+---
+
 ## Setup
 
 Needs Node 20.12 or newer.
