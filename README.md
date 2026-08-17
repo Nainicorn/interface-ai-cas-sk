@@ -10,18 +10,13 @@ Diagrams of the entire flow of the application are in [docs/DESIGN.md](docs/DESI
 
 ---
 
-## Test fixtures
+## Test Bank
 
-This system is exercised against
-[`test-bank`](https://github.com/Nainicorn/test-bank) (local sibling folder:
-[`../mock-bank`](../mock-bank)) — a repo of **mock bank apps for testing only**. No
-real product, no real data, no real credentials. It holds two differentiated test
-cases so the same capability model can be proven across two very different DOM shapes:
-
-- **[`legacy`](https://github.com/Nainicorn/test-bank/tree/main/legacy)** — hostile,
-  server-rendered, no ids or `data-testid`
-- **[`spa`](https://github.com/Nainicorn/test-bank/tree/main/spa)** — clean, modern
-  SPA counterpart
+This system was tested against legacy bank app (recorded) & bank app SPA (not recorded)
+and both are included for testing in [`test-bank`](https://github.com/Nainicorn/test-bank)
+This repo is **for testing only**. No real product, no real data, no real credentials. 
+It holds two differentiated test cases so the same capability model can be 
+proven across two very different DOM shapes.
 
 ---
 
