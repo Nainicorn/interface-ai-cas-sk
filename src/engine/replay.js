@@ -162,7 +162,7 @@ export async function executeSteps(ctx, capability, params) {
             expected: step.expected_outcome,
             observed: check.observed,
             url: state.url,
-            screenshot_base64: state.screenshotBase64,
+            screenshot: ctx.logger?.saveScreenshot(state.screenshotBase64, 'hard-failure') ?? null,
           },
         };
       }
@@ -227,7 +227,7 @@ export async function executeSteps(ctx, capability, params) {
           expected: step.expected_outcome,
           observed: err instanceof LocatorResolutionError ? err.attempts : (err.detail ?? null),
           url: state.url ?? null,
-          screenshot_base64: state.screenshotBase64 ?? null,
+          screenshot: ctx.logger?.saveScreenshot(state.screenshotBase64, 'hard-failure') ?? null,
         },
       };
     }
@@ -249,7 +249,7 @@ export async function executeSteps(ctx, capability, params) {
         expected: capability.success_checkpoint,
         observed: finalCheck.observed,
         url: state.url,
-        screenshot_base64: state.screenshotBase64,
+        screenshot: ctx.logger?.saveScreenshot(state.screenshotBase64, 'hard-failure') ?? null,
       },
     };
   }

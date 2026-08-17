@@ -35,6 +35,7 @@ function describeFailure(failure) {
     intent: failure.intent ?? null,
     message: said,
     url: failure.url ?? null,
+    screenshot: failure.screenshot ?? null,
   };
 }
 
