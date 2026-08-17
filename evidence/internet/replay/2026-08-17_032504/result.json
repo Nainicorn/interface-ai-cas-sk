@@ -1,0 +1,18 @@
+{
+  "id": "internet/replay/2026-08-17_032504",
+  "kind": "replay",
+  "app_id": "internet",
+  "goal": null,
+  "status": "SUCCESS",
+  "detail": {
+    "caller": "operator",
+    "capability": "add-remove-elements-cycle",
+    "version": 1,
+    "outcome": "SUCCESS",
+    "outputs": null,
+    "business_outcome": null,
+    "failed_step": null
+  },
+  "started_at": "2026-08-17T03:25:04.182Z",
+  "updated_at": "2026-08-17T03:25:04.616Z"
+}

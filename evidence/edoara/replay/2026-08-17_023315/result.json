@@ -1,0 +1,23 @@
+{
+  "id": "edoara/replay/2026-08-17_023315",
+  "kind": "replay",
+  "app_id": "edoara",
+  "goal": null,
+  "status": "HARD_FAILURE",
+  "detail": {
+    "caller": "agent",
+    "capability": "get-total-signups",
+    "version": 1,
+    "outcome": "HARD_FAILURE",
+    "outputs": null,
+    "business_outcome": null,
+    "failed_step": {
+      "step": 3,
+      "intent": "Request a one-time login code",
+      "message": "expected {\"type\":\"text_visible\",\"value\":\"Enter code\",\"timeout_ms\":8000}, observed \"\\\"Enter code\\\" not visible within 8000ms\"",
+      "url": "https://app.edoara.com/login"
+    }
+  },
+  "started_at": "2026-08-17T02:33:15.349Z",
+  "updated_at": "2026-08-17T02:33:25.066Z"
+}

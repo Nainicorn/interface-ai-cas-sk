@@ -1,0 +1,347 @@
+{
+  "schema_version": 1,
+  "id": "get-total-signups",
+  "name": "Get Total Signups from App Analytics",
+  "version": 1,
+  "status": "draft",
+  "description": "Logs into edoara via email one-time-code, navigates to Settings, opens the Live user analytics (creator tools) panel, and extracts the total number of users that have signed up.",
+  "target": {
+    "app_id": "edoara",
+    "entry_route": "/",
+    "tenant_overrides": []
+  },
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "login_email": {
+        "type": "string",
+        "description": "Email address used to sign in (owner/creator account required to see analytics)"
+      },
+      "otp_code": {
+        "type": "string",
+        "description": "6-digit one-time verification code sent to the email address"
+      }
+    },
+    "required": [
+      "login_email",
+      "otp_code"
+    ],
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "total_signups": {
+        "type": "string",
+        "description": "Total number of users that have signed up, as shown in the Live user analytics panel"
+      }
+    },
+    "required": [
+      "total_signups"
+    ],
+    "additionalProperties": false
+  },
+  "risk_level": "safe",
+  "steps": [
+    {
+      "index": 0,
+      "intent": "Go to the app entry route",
+      "action": "navigate",
+      "url": "/",
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Sign in or create an account",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 1,
+      "intent": "Accept the age confirmation checkbox",
+      "action": "click",
+      "locator": {
+        "description": "13 or older checkbox",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "I'm 13 or older.",
+            "role": "checkbox",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input:checked",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 2,
+      "intent": "Enter the login email",
+      "action": "type",
+      "locator": {
+        "description": "Email address field",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Email address",
+            "role": "textbox",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "value_from": "login_email",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 3,
+      "intent": "Request a one-time login code",
+      "action": "click",
+      "locator": {
+        "description": "Send Code button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Send Code",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Enter code",
+        "timeout_ms": 8000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 4,
+      "intent": "Enter digit 1 of the OTP code",
+      "action": "type",
+      "locator": {
+        "description": "Digit 1 of 6",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Digit 1 of 6",
+            "role": "textbox",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "value_from": "otp_code",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 5,
+      "intent": "Submit the OTP code to verify and log in",
+      "action": "click",
+      "locator": {
+        "description": "Verify button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Verify",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "url_contains",
+        "value": "app.edoara.com/",
+        "timeout_ms": 8000
+      },
+      "business_outcomes": [
+        {
+          "code": "INVALID_CODE",
+          "detect": {
+            "type": "text_visible",
+            "value": "Invalid code",
+            "timeout_ms": 5000
+          },
+          "message": "The OTP code entered was invalid or expired; login did not succeed."
+        }
+      ],
+      "risk": "safe"
+    },
+    {
+      "index": 6,
+      "intent": "Open the account/profile menu",
+      "action": "click",
+      "locator": {
+        "description": "User profile button showing signed-in name",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Naina Koujala Free plan",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.7
+          },
+          {
+            "kind": "css",
+            "value": "button:has-text('Free plan')",
+            "exact": false,
+            "confidence": 0.5
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Settings",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 7,
+      "intent": "Navigate to Settings",
+      "action": "click",
+      "locator": {
+        "description": "Settings menu item",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Settings",
+            "role": "menuitem",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Creator tools",
+        "timeout_ms": 8000
+      },
+      "business_outcomes": [
+        {
+          "code": "NOT_OWNER",
+          "detect": {
+            "type": "text_absent",
+            "value": "Creator tools",
+            "timeout_ms": 5000
+          },
+          "message": "The signed-in account is not the edoara creator/owner, so the Creator tools / Live user analytics section is not visible."
+        }
+      ],
+      "risk": "safe"
+    },
+    {
+      "index": 8,
+      "intent": "Open the Live user analytics dialog (app analytics)",
+      "action": "click",
+      "locator": {
+        "description": "Open button for Live user analytics",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Open",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.85
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Live user analytics",
+        "timeout_ms": 8000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 9,
+      "intent": "Wait for the analytics data to finish loading",
+      "action": "wait_for",
+      "expected_outcome": {
+        "type": "text_absent",
+        "value": "Loading…",
+        "timeout_ms": 8000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 10,
+      "intent": "Read the total signups count displayed in the analytics panel",
+      "action": "read",
+      "locator": {
+        "description": "Total signups count",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "35 Total signups",
+            "role": "button",
+            "exact": false,
+            "confidence": 0.6,
+            "note": "Value 35 will change; matching by role text is fragile - use css fallback"
+          },
+          {
+            "kind": "css",
+            "value": "div[role='dialog'] >> text=TOTAL SIGNUPS",
+            "exact": false,
+            "confidence": 0.5
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "TOTAL SIGNUPS",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "total_signups",
+      "extract_pattern": "(\\d+)",
+      "risk": "safe"
+    }
+  ],
+  "success_checkpoint": {
+    "type": "text_visible",
+    "value": "TOTAL SIGNUPS",
+    "timeout_ms": 5000
+  },
+  "created_from": {
+    "run_id": "edoara/discovery/2026-08-17_023030",
+    "model": "claude-sonnet-5",
+    "recorded_at": "2026-08-17T02:31:54.899Z"
+  },
+  "redaction_policy": {
+    "redact_fields": [
+      "EDOARA_USERNAME",
+      "username"
+    ]
+  },
+  "confidence": {
+    "runs": 1,
+    "successes": 0,
+    "last_outcome": "HARD_FAILURE",
+    "updated_at": "2026-08-17T02:33:25.050Z"
+  }
+}

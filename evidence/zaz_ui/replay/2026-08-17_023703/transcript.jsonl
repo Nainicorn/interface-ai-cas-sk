@@ -1,0 +1,2 @@
+{"ts":"2026-08-17T02:37:04.366Z","type":"action","actor":"replay","action":"navigate","detail":{"url":"/login.html"},"result":"ok","landedOn":"https://ui.zazvata.com/login.html"}
+{"ts":"2026-08-17T02:37:05.340Z","type":"action","actor":"replay","action":"click","detail":{"description":"Admin User 100 login card"},"locatorUsed":{"kind":"css","value":"text=100","exact":false,"confidence":0.4},"candidatesTried":2,"result":"ok"}

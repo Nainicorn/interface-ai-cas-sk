@@ -1,0 +1,20 @@
+{
+  "id": "edoara/discovery/2026-08-17_021736",
+  "run_id": "edoara/discovery/2026-08-17_021736",
+  "reason": "Even after your go-ahead, every action (typing) on https://app.edoara.com is being rejected by the automation tool itself with \"Off-origin navigation blocked: https://app.edoara.com is not https://www.edoara.com\". This appears to be a hard technical restriction enforced by the system, not something an operator instruction can bypass. Can you confirm whether app.edoara.com is truly the correct/intended login app, or if there is a login path that stays on www.edoara.com? If app.edoara.com is correct, the origin allowlist for this task may need to be updated on the harness side before I can proceed.",
+  "context": {
+    "goal": "log in, navigate to settings and open app analytics. record the number of users that signed up",
+    "app_id": "edoara",
+    "url": "https://app.edoara.com/login",
+    "title": "Sign in · edoara",
+    "screenshot": "005-escalation.png",
+    "source": "model"
+  },
+  "status": "resolved",
+  "created_at": "2026-08-17T02:18:59.467Z",
+  "resolved_at": "2026-08-17T02:19:20.964Z",
+  "resolution": {
+    "note": "type in nkoujala@gmail.com in the field",
+    "manual_actions": 0
+  }
+}

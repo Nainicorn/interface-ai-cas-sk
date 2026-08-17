@@ -1,0 +1,26 @@
+{
+  "id": "edoara/discovery/2026-08-17_021736",
+  "kind": "discovery",
+  "app_id": "edoara",
+  "goal": "log in, navigate to settings and open app analytics. record the number of users that signed up",
+  "status": "unreachable",
+  "detail": {
+    "artifact": null,
+    "turns": 9,
+    "usage": {
+      "input_tokens": 18,
+      "output_tokens": 2821,
+      "cache_read_input_tokens": 115085,
+      "cache_creation_input_tokens": 18512
+    },
+    "model": "claude-sonnet-5",
+    "evidence_dir": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/edoara/discovery/2026-08-17_021736",
+    "escalation": {
+      "reason": "The login functionality for edoara only exists on https://app.edoara.com (a different origin/subdomain than the permitted https://www.edoara.com). The automation tooling enforces a hard origin restriction that blocks all actions (including typing) on app.edoara.com, and this block persists even after human operator approval to proceed — it is a system-level guardrail, not something the operator can waive. Since www.edoara.com is purely a marketing site with no functional login, settings, or analytics pages, the goal of logging in and reaching Settings > App Analytics cannot be completed while respecting the origin restriction placed on this task.",
+      "attempted": "Checked www.edoara.com/login (redirects to marketing homepage, no login form). Clicked 'Get started' which navigates to app.edoara.com/login showing a real sign-in form. Attempted to type the username into the email field three times (including after two rounds of explicit human operator approval), and every attempt was rejected by the tool with 'Off-origin navigation blocked: https://app.edoara.com is not https://www.edoara.com'."
+    },
+    "finished_at": "2026-08-17T02:19:33.821Z"
+  },
+  "started_at": "2026-08-17T02:17:36.742Z",
+  "updated_at": "2026-08-17T02:19:33.821Z"
+}

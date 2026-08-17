@@ -1,0 +1,24 @@
+{
+  "id": "zaz_ui/replay/2026-08-17_171141",
+  "kind": "replay",
+  "app_id": "zaz_ui",
+  "goal": null,
+  "status": "HARD_FAILURE",
+  "detail": {
+    "caller": "agent",
+    "capability": "login-and-view-dashboard",
+    "version": 1,
+    "outcome": "HARD_FAILURE",
+    "outputs": null,
+    "business_outcome": null,
+    "failed_step": {
+      "step": 2,
+      "intent": "Read the dashboard welcome message confirming successful login",
+      "message": "Could not resolve \"Dashboard welcome/greeting text\" — all 1 candidate(s) failed",
+      "url": "https://ui.zazvata.com/index.html",
+      "screenshot": "000-hard-failure.png"
+    }
+  },
+  "started_at": "2026-08-17T17:11:41.106Z",
+  "updated_at": "2026-08-17T17:11:44.858Z"
+}

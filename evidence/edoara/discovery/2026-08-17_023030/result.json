@@ -1,0 +1,27 @@
+{
+  "id": "edoara/discovery/2026-08-17_023030",
+  "kind": "discovery",
+  "app_id": "edoara",
+  "goal": "log in, navigate to settings and open app analytics. record the number of users that signed up",
+  "status": "recorded",
+  "detail": {
+    "artifact": {
+      "id": "get-total-signups",
+      "version": 1,
+      "path": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/edoara/discovery/2026-08-17_023030/goal.json"
+    },
+    "turns": 20,
+    "usage": {
+      "input_tokens": 40,
+      "output_tokens": 4722,
+      "cache_read_input_tokens": 446439,
+      "cache_creation_input_tokens": 56324
+    },
+    "model": "claude-sonnet-5",
+    "evidence_dir": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/edoara/discovery/2026-08-17_023030",
+    "escalation": null,
+    "finished_at": "2026-08-17T02:31:54.958Z"
+  },
+  "started_at": "2026-08-17T02:30:30.353Z",
+  "updated_at": "2026-08-17T02:31:54.958Z"
+}

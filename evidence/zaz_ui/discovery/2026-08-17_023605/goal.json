@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "id": "login-and-view-dashboard",
+  "name": "Login and view dashboard",
+  "version": 1,
+  "status": "approved",
+  "description": "Logs into Zaz UI using a sample login account, arrives at the dashboard (Cars grid), and clicks the Grid view toggle to confirm interactivity.",
+  "target": {
+    "app_id": "zaz_ui",
+    "entry_route": "/",
+    "tenant_overrides": []
+  },
+  "input_schema": {
+    "type": "object",
+    "properties": {},
+    "required": [],
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "welcome_message": {
+        "type": "string",
+        "description": "The greeting text shown on the dashboard confirming the logged-in user"
+      }
+    },
+    "required": [
+      "welcome_message"
+    ],
+    "additionalProperties": false
+  },
+  "risk_level": "safe",
+  "steps": [
+    {
+      "index": 0,
+      "intent": "Navigate to the login/sample-logins page",
+      "action": "navigate",
+      "url": "/login.html",
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Sample Logins",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 1,
+      "intent": "Select the Admin, User (100) sample login to authenticate",
+      "action": "click",
+      "locator": {
+        "description": "Admin User 100 login card",
+        "candidates": [
+          {
+            "kind": "text",
+            "value": "Admin, User",
+            "exact": false,
+            "confidence": 0.6
+          },
+          {
+            "kind": "css",
+            "value": "text=100",
+            "exact": false,
+            "confidence": 0.4
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Hello USER, Admin",
+        "timeout_ms": 8000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 2,
+      "intent": "Read the dashboard welcome message confirming successful login",
+      "action": "read",
+      "locator": {
+        "description": "Dashboard welcome/greeting text",
+        "candidates": [
+          {
+            "kind": "text",
+            "value": "Hello USER, Admin",
+            "exact": false,
+            "confidence": 0.7
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Hello USER, Admin",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "welcome_message",
+      "risk": "safe"
+    },
+    {
+      "index": 3,
+      "intent": "Click the Grid view toggle on the dashboard's default Cars widget to interact with the dashboard",
+      "action": "click",
+      "locator": {
+        "description": "Grid view button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Grid",
+            "role": "button",
+            "exact": false,
+            "confidence": 0.7
+          },
+          {
+            "kind": "text",
+            "value": "Grid",
+            "exact": true,
+            "confidence": 0.5
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Displaying 1 to 11 of 10 items",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    }
+  ],
+  "success_checkpoint": {
+    "type": "text_visible",
+    "value": "Hello USER, Admin",
+    "timeout_ms": 5000
+  },
+  "created_from": {
+    "run_id": "zaz_ui/discovery/2026-08-17_023605",
+    "model": "claude-sonnet-5",
+    "recorded_at": "2026-08-17T02:36:51.470Z"
+  },
+  "redaction_policy": {
+    "redact_fields": []
+  },
+  "confidence": {
+    "runs": 5,
+    "successes": 0,
+    "last_outcome": "HARD_FAILURE",
+    "updated_at": "2026-08-17T17:11:44.844Z"
+  }
+}

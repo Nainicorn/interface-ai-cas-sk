@@ -1,0 +1,27 @@
+{
+  "id": "zaz_ui/discovery/2026-08-17_023605",
+  "kind": "discovery",
+  "app_id": "zaz_ui",
+  "goal": "log in and open to see the dashboard and click one thing",
+  "status": "recorded",
+  "detail": {
+    "artifact": {
+      "id": "login-and-view-dashboard",
+      "version": 1,
+      "path": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/zaz_ui/discovery/2026-08-17_023605/goal.json"
+    },
+    "turns": 8,
+    "usage": {
+      "input_tokens": 16,
+      "output_tokens": 1917,
+      "cache_read_input_tokens": 77540,
+      "cache_creation_input_tokens": 19286
+    },
+    "model": "claude-sonnet-5",
+    "evidence_dir": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/zaz_ui/discovery/2026-08-17_023605",
+    "escalation": null,
+    "finished_at": "2026-08-17T02:36:51.523Z"
+  },
+  "started_at": "2026-08-17T02:36:05.145Z",
+  "updated_at": "2026-08-17T02:36:51.523Z"
+}

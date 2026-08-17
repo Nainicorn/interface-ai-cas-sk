@@ -1,0 +1,242 @@
+{
+  "schema_version": 1,
+  "id": "get-member-account-count",
+  "name": "Get Member Account Count",
+  "version": 1,
+  "status": "approved",
+  "description": "Logs into the Corevance Core Banking Admin, searches for a member by numeric member ID, and reports the number of accounts held by that member (as shown in the Accounts table on the Member Detail page).",
+  "target": {
+    "app_id": "legacy_bank",
+    "entry_route": "/",
+    "tenant_overrides": []
+  },
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "member_id": {
+        "type": "string",
+        "description": "Numeric member identifier to search for",
+        "pattern": "^[0-9]+$"
+      }
+    },
+    "required": [
+      "member_id"
+    ],
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "accounts_table_text": {
+        "type": "string",
+        "description": "Raw tab-separated text of the member's Accounts table (header + one row per account). Caller can count rows/lines to get the number of accounts, or parse account details."
+      }
+    },
+    "required": [
+      "accounts_table_text"
+    ],
+    "additionalProperties": false
+  },
+  "risk_level": "safe",
+  "steps": [
+    {
+      "index": 0,
+      "intent": "Enter username on login page",
+      "action": "type",
+      "locator": {
+        "description": "Username field",
+        "candidates": [
+          {
+            "kind": "placeholder",
+            "value": "Username",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "value_from_env": "LEGACY_BANK_USERNAME",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[value='teller01'], input",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 1,
+      "intent": "Enter password on login page",
+      "action": "type",
+      "locator": {
+        "description": "Password field",
+        "candidates": [
+          {
+            "kind": "placeholder",
+            "value": "Password",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "value_from_env": "LEGACY_BANK_PASSWORD",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[type='password']",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 2,
+      "intent": "Submit login form",
+      "action": "click",
+      "locator": {
+        "description": "Sign In button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Sign In",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Member Search",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [
+        {
+          "code": "LOGIN_FAILED",
+          "detect": {
+            "type": "text_visible",
+            "value": "Invalid",
+            "timeout_ms": 3000
+          },
+          "message": "Login was rejected due to invalid credentials."
+        }
+      ],
+      "risk": "safe"
+    },
+    {
+      "index": 3,
+      "intent": "Enter the member ID to search for",
+      "action": "type",
+      "locator": {
+        "description": "Member ID input",
+        "candidates": [
+          {
+            "kind": "placeholder",
+            "value": "Member ID",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "value_from": "member_id",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 4,
+      "intent": "Submit the member search",
+      "action": "click",
+      "locator": {
+        "description": "Search button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Search",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Member Detail",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [
+        {
+          "code": "MEMBER_NOT_FOUND",
+          "detect": {
+            "type": "text_visible",
+            "value": "No member found",
+            "timeout_ms": 3000
+          },
+          "message": "No member exists with the given member ID."
+        }
+      ],
+      "risk": "safe"
+    },
+    {
+      "index": 5,
+      "intent": "Read the Accounts table to determine number/details of accounts held by the member",
+      "action": "read",
+      "locator": {
+        "description": "Accounts table on member detail page",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "table[border=\"1\"]",
+            "exact": false,
+            "confidence": 0.6,
+            "note": "The bordered inner table listing Account Number/Type/Opened/Balance columns"
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Account Number",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [
+        {
+          "code": "NO_ACCOUNTS",
+          "detect": {
+            "type": "text_absent",
+            "value": "Account Number",
+            "timeout_ms": 3000
+          },
+          "message": "The member holds no accounts; the Accounts table is empty or absent."
+        }
+      ],
+      "extract_as": "accounts_table_text",
+      "risk": "safe"
+    }
+  ],
+  "success_checkpoint": {
+    "type": "text_visible",
+    "value": "Account Number",
+    "timeout_ms": 5000
+  },
+  "created_from": {
+    "run_id": "legacy_bank/discovery/2026-08-17_163857",
+    "model": "claude-sonnet-5",
+    "recorded_at": "2026-08-17T16:39:47.480Z"
+  },
+  "redaction_policy": {
+    "redact_fields": [
+      "LEGACY_BANK_USERNAME",
+      "username",
+      "LEGACY_BANK_PASSWORD",
+      "password"
+    ]
+  },
+  "confidence": {
+    "runs": 0,
+    "successes": 0,
+    "last_outcome": null,
+    "updated_at": null
+  }
+}

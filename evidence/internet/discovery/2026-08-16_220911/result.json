@@ -1,0 +1,27 @@
+{
+  "id": "internet/discovery/2026-08-16_220911",
+  "kind": "discovery",
+  "app_id": "internet",
+  "goal": "navigate to add/remove elements, and add element once and remove it once",
+  "status": "recorded",
+  "detail": {
+    "artifact": {
+      "id": "add-remove-elements-cycle",
+      "version": 1,
+      "path": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/internet/discovery/2026-08-16_220911/goal.json"
+    },
+    "turns": 4,
+    "usage": {
+      "input_tokens": 8,
+      "output_tokens": 1202,
+      "cache_read_input_tokens": 33142,
+      "cache_creation_input_tokens": 13946
+    },
+    "model": "claude-sonnet-5",
+    "evidence_dir": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/internet/discovery/2026-08-16_220911",
+    "escalation": null,
+    "finished_at": "2026-08-16T22:09:26.001Z"
+  },
+  "started_at": "2026-08-16T22:09:11.060Z",
+  "updated_at": "2026-08-16T22:09:26.001Z"
+}

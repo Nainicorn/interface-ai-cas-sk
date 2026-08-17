@@ -1,0 +1,27 @@
+{
+  "id": "legacy_bank/discovery/2026-08-17_163857",
+  "kind": "discovery",
+  "app_id": "legacy_bank",
+  "goal": "login and search up member 10001 and record the number of accounts the member has",
+  "status": "recorded",
+  "detail": {
+    "artifact": {
+      "id": "get-member-account-count",
+      "version": 1,
+      "path": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/legacy_bank/discovery/2026-08-17_163857/goal.json"
+    },
+    "turns": 10,
+    "usage": {
+      "input_tokens": 20,
+      "output_tokens": 3014,
+      "cache_read_input_tokens": 136737,
+      "cache_creation_input_tokens": 23898
+    },
+    "model": "claude-sonnet-5",
+    "evidence_dir": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/legacy_bank/discovery/2026-08-17_163857",
+    "escalation": null,
+    "finished_at": "2026-08-17T16:39:47.529Z"
+  },
+  "started_at": "2026-08-17T16:38:57.695Z",
+  "updated_at": "2026-08-17T16:39:47.529Z"
+}

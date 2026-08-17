@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "id": "add-remove-elements-cycle",
+  "name": "Add and Remove Element on Add/Remove Elements page",
+  "version": 1,
+  "status": "approved",
+  "description": "Navigates to the Add/Remove Elements demo page, clicks Add Element to create a new Delete button, then clicks that Delete button to remove it, verifying both states.",
+  "target": {
+    "app_id": "internet",
+    "entry_route": "/",
+    "tenant_overrides": []
+  },
+  "input_schema": {
+    "type": "object",
+    "properties": {},
+    "required": [],
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {},
+    "required": [],
+    "additionalProperties": false
+  },
+  "risk_level": "safe",
+  "steps": [
+    {
+      "index": 0,
+      "intent": "Navigate to the Add/Remove Elements page",
+      "action": "navigate",
+      "url": "/add_remove_elements/",
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Add/Remove Elements",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 1,
+      "intent": "Click Add Element to create a new deletable element",
+      "action": "click",
+      "locator": {
+        "description": "Add Element button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Add Element",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "button:has-text('Delete')",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 2,
+      "intent": "Click the newly appeared Delete button to remove the element",
+      "action": "click",
+      "locator": {
+        "description": "Delete button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Delete",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_absent",
+        "value": "Delete",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    }
+  ],
+  "success_checkpoint": {
+    "type": "text_absent",
+    "value": "Delete",
+    "timeout_ms": 5000
+  },
+  "created_from": {
+    "run_id": "internet/discovery/2026-08-16_220911",
+    "model": "claude-sonnet-5",
+    "recorded_at": "2026-08-16T22:09:25.952Z"
+  },
+  "redaction_policy": {
+    "redact_fields": []
+  },
+  "confidence": {
+    "runs": 4,
+    "successes": 4,
+    "last_outcome": "SUCCESS",
+    "updated_at": "2026-08-17T03:25:04.604Z"
+  }
+}

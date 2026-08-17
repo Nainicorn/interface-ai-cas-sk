@@ -1,0 +1,12 @@
+{
+  "id": "edoara/discovery/2026-08-17_022053",
+  "kind": "discovery",
+  "app_id": "edoara",
+  "goal": "log in, navigate to settings and open app analytics. record the number of users that signed up",
+  "status": "failed",
+  "detail": {
+    "error": "Route \"/\" is outside the allowlist for app \"edoara\"."
+  },
+  "started_at": "2026-08-17T02:20:53.623Z",
+  "updated_at": "2026-08-17T02:20:54.124Z"
+}
