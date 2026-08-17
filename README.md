@@ -20,8 +20,8 @@ cases so the same capability model can be proven across two very different DOM s
 
 - **[`legacy`](https://github.com/Nainicorn/test-bank/tree/main/legacy)** — hostile,
   server-rendered, no ids or `data-testid`
-- **[`mock-bank-spa`](https://github.com/Nainicorn/test-bank/tree/main/mock-bank-spa)**
-  — clean, modern SPA counterpart
+- **[`spa`](https://github.com/Nainicorn/test-bank/tree/main/spa)** — clean, modern
+  SPA counterpart
 
 ---
 
