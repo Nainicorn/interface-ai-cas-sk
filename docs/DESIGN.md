@@ -231,14 +231,14 @@ sequenceDiagram
     participant D as tests/agent-demo.js
     participant C as api/capabilities.js
     participant M as Claude
-    participant R as api/run-replay.js → engine/replay.js
+    participant R as "api/run-replay.js → engine/replay.js"
 
     D->>C: GET /api/capabilities
     C-->>D: approved entries<br/>{ name, description, input_schema }
     Note over D: three renames, no adapter —<br/>the catalog IS a tools array
     D->>M: task + tools
     M-->>D: tool_use { name, typed args }
-    Note over M: chose by reading the description;<br/>never saw the recorded steps
+    Note over M: chose by reading the description,<br/>never saw the recorded steps
     D->>C: POST /:id/invoke { params }
     C->>R: runReplay(caller: "agent")
     R-->>C: four-way result

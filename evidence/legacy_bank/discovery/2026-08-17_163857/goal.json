@@ -234,9 +234,9 @@
     ]
   },
   "confidence": {
-    "runs": 0,
-    "successes": 0,
-    "last_outcome": null,
-    "updated_at": null
+    "runs": 1,
+    "successes": 1,
+    "last_outcome": "BUSINESS_OUTCOME",
+    "updated_at": "2026-08-17T18:07:50.176Z"
   }
 }
