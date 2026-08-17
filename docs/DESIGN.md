@@ -73,6 +73,13 @@ flowchart TB
     EMIT -->|yes| WRITE --> FILE
     EMIT -->|"stuck, or out of turns"| ESC["Escalate — see §4"]
     EMIT -->|no| NONE
+
+    classDef good fill:#1e5e3a,stroke:#3fae6a,color:#eafff1;
+    classDef bad fill:#5e2323,stroke:#c24747,color:#ffecec;
+    classDef wait fill:#4a3a12,stroke:#c99a34,color:#fff6e0;
+    class FILE good
+    class ESC wait
+    class NONE bad
 ```
 
 **Why the accessibility tree.** It is the one perception channel that exists on a modern
@@ -119,6 +126,15 @@ flowchart TB
     OUT --> B["BUSINESS_OUTCOME<br/>a real answer —<br/>handle as data"]
     OUT --> R["RECOVERABLE<br/>declared interstitial cleared,<br/>execution continued"]
     OUT --> H["HARD_FAILURE<br/>step, expectation, observation,<br/>every locator tried, screenshot"]
+
+    classDef good fill:#1e5e3a,stroke:#3fae6a,color:#eafff1;
+    classDef info fill:#1e3a5e,stroke:#4785c9,color:#e8f3ff;
+    classDef wait fill:#4a3a12,stroke:#c99a34,color:#fff6e0;
+    classDef bad fill:#5e2323,stroke:#c24747,color:#ffecec;
+    class S good
+    class B info
+    class R wait
+    class H bad
 ```
 
 **`engine/replay.js` imports no LLM SDK.** That is the invariant the determinism claim
