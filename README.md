@@ -18,7 +18,8 @@ This system is exercised against
 real product, no real data, no real credentials. It holds two differentiated test
 cases so the same capability model can be proven across two very different DOM shapes:
 
-- **legacy app** (repo root) — hostile, server-rendered, no ids or `data-testid`
+- **[`legacy`](https://github.com/Nainicorn/test-bank/tree/main/legacy)** — hostile,
+  server-rendered, no ids or `data-testid`
 - **[`mock-bank-spa`](https://github.com/Nainicorn/test-bank/tree/main/mock-bank-spa)**
   — clean, modern SPA counterpart
 
