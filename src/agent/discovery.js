@@ -148,7 +148,7 @@ function resolveTypedValue(input, params) {
  *
  * @param {object} args
  * @param {string} args.goal    natural-language goal
- * @param {string} args.appId   folder name under artifacts/
+ * @param {string} args.appId   folder name under config/
  * @param {object} [args.params]   run parameters, e.g. { member_id: '10001' }
  * @param {number} [args.maxTurns] model-call budget before forced escalation
  * @param {boolean} [args.headless]

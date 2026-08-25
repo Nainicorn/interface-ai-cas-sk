@@ -1,6 +1,6 @@
 /**
  * Add/edit-app dialog. Opens on `edit-app` {appId} to edit, or `add-app` to create,
- * writes artifacts/<app>/config.json, then broadcasts `targets-changed` so the sidebar re-reads.
+ * writes config/<app>/config.json, then broadcasts `targets-changed` so the sidebar re-reads.
  *
  * The password field arrives empty even when one is stored — the API reports only
  * whether it is set. Leaving it empty keeps the stored value.
@@ -75,7 +75,7 @@ export async function mount(root) {
       const config = await getJson(`/api/targets/${encodeURIComponent(id)}`);
       appId = id;
       title.textContent = 'Edit app';
-      intro.textContent = `Saving rewrites artifacts/${id}/config.json — the next run reads the new values.`;
+      intro.textContent = `Saving rewrites config/${id}/config.json — the next run reads the new values.`;
       deleteButton.hidden = false;
       field('name').value = config.name;
       field('url').value = config.url;

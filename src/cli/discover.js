@@ -46,7 +46,7 @@ function parseArgs(argv) {
     }
   }
   if (!args.appId || !args.goal) {
-    throw new Error('Required: --app-id <folder under artifacts/> --goal "<natural language goal>"');
+    throw new Error('Required: --app-id <folder under config/> --goal "<natural language goal>"');
   }
   return args;
 }

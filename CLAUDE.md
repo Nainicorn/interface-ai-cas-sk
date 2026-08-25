@@ -25,7 +25,7 @@ npm run agent-demo -- "task in plain english"                 # real outside AI 
 ```
 
 An app must exist first, either via the console's Add App modal or `POST /api/targets`
-(see README.md). Its config lives at `artifacts/<app_id>/config.json`, gitignored since
+(see README.md). Its config lives at `config/<app_id>/config.json`, gitignored since
 it holds credentials.
 
 ## Architecture Overview
@@ -50,7 +50,7 @@ diagrams in docs/DESIGN.md.
 list), `app-modal` (add/edit app), `tabs`, `capabilities` (replay + approve), `discoveries`,
 `human-in-the-loop` (operator console), `live-viewer` (watches a live discovery run).
 
-**Storage, no database:** `artifacts/<app>/config.json` per app (gitignored);
+**Storage, no database:** `config/<app>/config.json` per app (gitignored);
 `evidence/<app>/<discovery|replay>/<timestamp>/` per run (committed, it's the deliverable).
 
 **Invariants worth knowing before touching anything** (see `tests/invariants.test.js`):

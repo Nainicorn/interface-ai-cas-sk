@@ -7,7 +7,7 @@
  *
  * Layout: evidence/{app}/{kind}/{stamp}/goal.json — the recording lives in the run that
  * produced it, beside the screenshots and transcript proving it ran. There is no
- * separate artifacts tree and no promotion step; artifacts/ holds user-authored config
+ * separate artifacts tree and no promotion step; config/ holds user-authored config
  * only. A discovery folder WITH a goal.json passed its gates and is replayable; one
  * without did not.
  *

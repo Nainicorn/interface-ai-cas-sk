@@ -6,8 +6,8 @@ node_modules/
 # App configs carry credentials — never committed. The template is committed in
 # their place, so a fresh clone still shows the shape.
 # (ignore the files, not the directory, so the .example stays re-includable)
-artifacts/*/config.json
-!artifacts/config.example.json
+config/*/config.json
+!config/config.example.json
 
 # Runtime state. Evidence IS committed (it's the deliverable); scratch is not.
 tmp/

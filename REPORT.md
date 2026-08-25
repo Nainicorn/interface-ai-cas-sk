@@ -2,15 +2,20 @@
 
 ## 1. Architecture
 
-**Stack:** Node, Express, Playwright, Zod, Anthropic SDK.
+**Stack:** 
+Node
+Express
+Playwright
+Zod
+Anthropic SDK
 
 The agent is allowed five actions, `navigate`, `click`, `type`, `read`, `wait_for`, which all defined once in `src/engine/actions.js`. That's everything it needs to interact with a web interface. The model can't invent a sixth action, and neither can its recorded replay. The AI, the replay, and a human operator taking over all use these exact same five actions too, with no shortcuts for any of them, so whatever actually happens on the page always goes through the same path no matter who's driving.
 
 Every one of those five functions starts with `checkAllowed()` before it touches the page. This is to ensure guardrails for the agent and what its allowed to do.
 
-To test an app, a user is prompted to give the app name, app URL, a goal, and if applicable, login information (username/password), either via CLI and in `artifacts/<app>/config.json`, or through the console's "Add App" modal. Each run's evidence (steps, screenshots, result, cost) saves to `evidence/<app>/<kind>/<stamp>/`. A successful discovery also saves `goal.json`, the capability itself, sitting right in the run folder that produced it.
+To test an app, a user is prompted to give the app name, app URL, a goal, and if applicable, login information (username/password), either via CLI and in `config/<app>/config.json`, or through the console's "Add App" modal. Each run's evidence (steps, screenshots, result, cost) saves to `evidence/<app>/<kind>/<stamp>/`. A successful discovery also saves `goal.json`, the capability itself, sitting right in the run folder that produced it.
 
-No database was implemented for this application. `evidence/` and `artifacts/` on disk are essentially the storage system. Everything also runs as a single process with no queue or background workers, one step happens after another in order. The assignment specifically says it does not reward extra infrastructure like that, and a project meant to be reviewed by reading the code should not hide its logic behind something like a message queue. The tradeoff is real, if the process crashes mid run, that run does not pick back up on its own, and this would not hold up if many runs needed to happen at once. But for proving the design actually works, that tradeoff was worth it over building something more complicated.
+No database was implemented for this application. `evidence/` and `config/` on disk are essentially the storage system. Everything also runs as a single process with no queue or background workers, one step happens after another in order. The assignment specifically says it does not reward extra infrastructure like that, and a project meant to be reviewed by reading the code should not hide its logic behind something like a message queue. The tradeoff is real, if the process crashes mid run, that run does not pick back up on its own, and this would not hold up if many runs needed to happen at once. But for proving the design actually works, that tradeoff was worth it over building something more complicated.
 
 ---
 
@@ -59,7 +64,7 @@ This system was only built and tested against one type of app, a regular web app
 
 `src/engine/perception.js` is the only file that actually looks at the page. Right now it reads the accessibility tree first, then visible text, then takes a screenshot as backup. The accessibility tree was chosen because it's the one thing that exists across a modern web app, an old fashioned legacy web app, and even a desktop app. The recorded flow itself, the schema, the five actions, the ways of finding elements, doesn't know or care that it's running on Playwright. To support something like a desktop app later, only `perception.js` and the way locators are built would need to change. The schema and the replay logic wouldn't.
 
-`target.app_id` refers to the actual product being automated, not a specific customer or URL. The real website address and login details live separately in `artifacts/<app>/config.json`, and get filled in when the capability actually runs. That means one recording can be reused for any customer set up under that same app id. For cases where two customers use the same product but with small differences, the schema already has a place for that, `TenantOverrideSchema`, which lets one small change be layered on top of a base recording instead of starting over. It's not fully wired up yet, since the brief doesn't expect multi-tenant support to actually be built, only planned for. If a customer's replays start failing more often, that shows up in the confidence numbers already tracked on every capability, which is the signal that something needs an override.
+`target.app_id` refers to the actual product being automated, not a specific customer or URL. The real website address and login details live separately in `config/<app>/config.json`, and get filled in when the capability actually runs. That means one recording can be reused for any customer set up under that same app id. For cases where two customers use the same product but with small differences, the schema already has a place for that, `TenantOverrideSchema`, which lets one small change be layered on top of a base recording instead of starting over. It's not fully wired up yet, since the brief doesn't expect multi-tenant support to actually be built, only planned for. If a customer's replays start failing more often, that shows up in the confidence numbers already tracked on every capability, which is the signal that something needs an override.
 
 ---
 
@@ -91,7 +96,7 @@ This system only catches what it's been told to catch. If an app owner forgets t
 
 ## 7. Cuts
 
-- No database was built. `evidence/` and `artifacts/` on disk are the entire storage system. This keeps things simple and easy to read without any extra tools, but it also means there's no protection against two things trying to write at once beyond what one single process already gives.
+- No database was built. `evidence/` and `config/` on disk are the entire storage system. This keeps things simple and easy to read without any extra tools.
 - Multi-tenant and desktop support were planned, not built. `TenantOverrideSchema` exists in the schema and `perception.js` is set up to be the seam for it, but nothing actually applies a tenant override yet, and there's no desktop version.
 - The operator screen is intentionally basic, just a screenshot and buttons, not a full live view of the browser, which the assignment allows.
 - No AI assisted recovery during replay. The recovery list is small, fixed, and written by hand. I considered letting the AI help fix a failed step during replay, but decided against it for now. Replay never calling an AI is one rule I didn't want to bend, even a little, until everything else was proven solid first.

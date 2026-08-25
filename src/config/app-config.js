@@ -1,12 +1,12 @@
 /**
- * App configs: artifacts/<app>/config.json, authored by the user.
+ * App configs: config/<app>/config.json, authored by the user.
  *
  * This is target resolution, not enforcement — it answers "what am I driving, where does
  * it live, and what is it permitted to do". The gate that reads the permissions assembled
  * here lives in policy/allowlist.js, so resolving a target is never mistaken for
  * approving an action on it.
  *
- * artifacts/ holds what an app IS (gitignored — it carries credentials); evidence/ holds
+ * config/ holds what an app IS (gitignored — it carries credentials); evidence/ holds
  * what its runs DID. The recorded capability is written to the evidence run folder that
  * produced it, so nothing machine-generated lands here.
  *
@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { ACTION_TYPES } from '../schema/enums.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-export const ARTIFACTS_DIR = path.resolve(here, '../../artifacts');
+export const CONFIG_DIR = path.resolve(here, '../../config');
 
 /**
  * The permissions a config file gets when it does not state its own.
@@ -36,8 +36,8 @@ export const DEFAULT_ALLOWLIST = { route_prefixes: ['/'], action_types: [...ACTI
 export const slugify = (name) =>
   String(name).trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 
-/** artifacts/<app>/config.json — exported because the API writes through the same path. */
-export const configPath = (appId) => path.join(ARTIFACTS_DIR, appId, 'config.json');
+/** config/<app>/config.json — exported because the API writes through the same path. */
+export const configPath = (appId) => path.join(CONFIG_DIR, appId, 'config.json');
 
 /** Raised when an app has no config file. Surfaces as a 404 rather than a crash. */
 export class UnknownApp extends Error {
@@ -96,11 +96,11 @@ function toTarget(appId, raw) {
   };
 }
 
-/** Every configured app, keyed by app id — one subfolder of artifacts/ each. */
+/** Every configured app, keyed by app id — one subfolder of config/ each. */
 export function loadTargets() {
-  if (!existsSync(ARTIFACTS_DIR)) return {};
+  if (!existsSync(CONFIG_DIR)) return {};
   const entries = {};
-  for (const entry of readdirSync(ARTIFACTS_DIR, { withFileTypes: true })) {
+  for (const entry of readdirSync(CONFIG_DIR, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
     const file = configPath(entry.name);
     if (!existsSync(file)) continue;

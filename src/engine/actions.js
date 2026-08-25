@@ -29,7 +29,7 @@ import { resolveLocator } from './locator.js';
 /**
  * @typedef {object} ActionContext
  * @property {import('playwright').Page} page
- * @property {object} target resolved config from artifacts/<app>/config.json
+ * @property {object} target resolved config from config/<app>/config.json
  * @property {{logStep: Function}} [logger] optional evidence logger
  * @property {'llm'|'replay'|'human'} actor who is performing this action
  */
