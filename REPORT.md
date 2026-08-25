@@ -2,34 +2,36 @@
 
 ## 1. Architecture
 
-**Stack:** 
-Node
-Express
-Playwright
-Zod
-Anthropic SDK
+**Stack**
+- Node — runs the whole backend
+- Express — the server that the UI, CLI, and external agents all call
+- Playwright — browser automation for both discovery and replay
+- Zod — validates and types the capability schema to become a replay
+- Anthropic SDK — powers the discovery agent
 
-The agent is allowed five actions, `navigate`, `click`, `type`, `read`, `wait_for`, which all defined once in `src/engine/actions.js`. That's everything it needs to interact with a web interface. The model can't invent a sixth action, and neither can its recorded replay. The AI, the replay, and a human operator taking over all use these exact same five actions too, with no shortcuts for any of them, so whatever actually happens on the page always goes through the same path no matter who's driving.
+Express exposes one API that Playwright acts through, Zod makes sure whatever gets recorded from a Playwright run is a valid capability, and the Anthropic SDK only touches the discovery half of that loop, keeping replays deterministic
+
+**Overview**
+
+The agent is allowed five actions, `navigate`, `click`, `type`, `read`, `wait_for`. That's everything it needs to interact with a web interface. The model can't invent a sixth action, and neither can its recorded replay. The AI, the replay, and a human operator taking over all use the exact same five actions, with no shortcuts for any of them.
 
 Every one of those five functions starts with `checkAllowed()` before it touches the page. This is to ensure guardrails for the agent and what its allowed to do.
 
-To test an app, a user is prompted to give the app name, app URL, a goal, and if applicable, login information (username/password), either via CLI and in `config/<app>/config.json`, or through the console's "Add App" modal. Each run's evidence (steps, screenshots, result, cost) saves to `evidence/<app>/<kind>/<stamp>/`. A successful discovery also saves `goal.json`, the capability itself, sitting right in the run folder that produced it.
+To test an app, a user is prompted to give the app name, app URL, a goal, and if applicable, login information (username/password), either via CLI or through the console's "Add App" modal. Each run's evidence (steps, screenshots, result, cost) saves if successful as a discovery. This discovery can also become a capability (replay) with user approval.
 
-No database was implemented for this application. `evidence/` and `config/` on disk are essentially the storage system. Everything also runs as a single process with no queue or background workers, one step happens after another in order. The assignment specifically says it does not reward extra infrastructure like that, and a project meant to be reviewed by reading the code should not hide its logic behind something like a message queue. The tradeoff is real, if the process crashes mid run, that run does not pick back up on its own, and this would not hold up if many runs needed to happen at once. But for proving the design actually works, that tradeoff was worth it over building something more complicated.
+No database was implemented for this application. The evidence folder stores all the discovery and replay runs. Each run is also a single process with no queue or background workers, one step happens after another in order. The tradeoff however is that the process could crash mid run and does not retry. This could be a massive issue if several runs needed to happen at once. But for proving the design actually works, that tradeoff was worth it over building something a bit more complicated that needed further time and effort to design fully.
 
 ---
 
 ## 2. Artifact schema
 
-The schema lives in `src/schema/capability.js` (Zod). This was the part I spent the most time on, since the brief calls it out as a focal point. A capability is not just a record of what the model did. It's a typed, versioned description of a flow that an agent can call: the steps in order, how each control is found, typed inputs, typed outputs, and a checkpoint to confirm it actually worked. The raw model transcript is kept separately in `evidence/{run_id}/`, so the two never get mixed up.
+The schema was the part I spent the most time on, since it was a focal point. A capability is not just a record of what the model did. It's a typed, versioned description of a flow that an agent can call with the steps in order, how each control is found, typed inputs and outputs, and a confirmation to ensure it actually worked.
 
 Key decisions:
 
-- There are no test IDs in legacy apps, so any single selector is really just a guess. Each step carries an ordered list of candidates (role, label, placeholder, text, then css as a last resort). Replay tries them one at a time and uses the first one that matches exactly one visible, usable element. If a candidate matches more than one element, it gets rejected instead of guessing which one is right.
+- There are no test IDs in legacy apps, so any single selector is really just a guess. Each step carries an ordered list of candidates (role, label, placeholder, text, then css as a last resort). Replay tries them one at a time and uses the first one that matches. If a candidate matches more than one element, it gets rejected instead of guessing which one is right.
 
-- A step can list expected business outcomes, a condition to look for, and a code to return if it happens. This gets checked before the step's normal success check, since a real non happy path answer would usually fail that check too.
-
-- `target.app_id` is the name of the vendor product, not a tenant or a URL.
+- A step can list expected business outcomes, a condition to look for, and a code to return if it happens. This gets checked before the step's normal success check, since a wrong path answer would usually fail that check too.
 
 - A `type` step's value comes from exactly one of three places: `value_from` (a value the caller supplies), `value_literal` (something safe to hardcode), or `value_from_env` (an environment variable name for a credential). The model picks where a password goes, but never actually sees the password.
 

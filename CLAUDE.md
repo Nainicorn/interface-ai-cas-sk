@@ -45,8 +45,8 @@ diagrams in docs/DESIGN.md.
 - `evidence/`: writes `transcript.jsonl` / screenshots / `result.json` per run
 - `cli/`: the same operations, runnable from a terminal
 
-**Frontend (vanilla JS + Handlebars, `public/`):** component-based, one `.js`/`.html`/
-`.css` set per component under `public/components/<name>/`. Key ones: `sidebar` (apps
+**UI (vanilla JS + Handlebars, `ui/`):** component-based, one `.js`/`.html`/
+`.css` set per component under `ui/components/<name>/`. Key ones: `sidebar` (apps
 list), `app-modal` (add/edit app), `tabs`, `capabilities` (replay + approve), `discoveries`,
 `human-in-the-loop` (operator console), `live-viewer` (watches a live discovery run).
 

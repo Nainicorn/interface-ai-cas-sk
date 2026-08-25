@@ -4,7 +4,7 @@
  * reached only through a real browser — never from here.
  *
  * Hands off to: api/runs.js, api/artifacts.js, api/capabilities.js, api/escalation.js,
- * public/.
+ * ui/.
  */
 
 import express from 'express';
@@ -20,7 +20,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 app.use(express.json({ limit: '1mb' }));
-app.use(express.static(path.resolve(here, '../../public')));
+app.use(express.static(path.resolve(here, '../../ui')));
 
 app.use('/api/targets', targetsRouter);
 app.use('/api/runs', runsRouter);

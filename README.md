@@ -51,7 +51,7 @@ curl -X POST localhost:3000/api/targets -H 'content-type: application/json' -d '
 
 *username/password are only needed if the app you're pointing at requires a login*
 
-This information is saved in `artifacts/<app_id>/config.json`. Passwords are stored under an environment variable name, not written into any final recording. The AI is only ever told the *name* of where a password lives, never the password itself.
+This information is saved in `config/<app_id>/config.json`. Passwords are stored under an environment variable name, not written into any final recording. The AI is only ever told the *name* of where a password lives, never the password itself.
 
 ## 2. Record a run
 
@@ -208,8 +208,8 @@ src/api/        # web server the UI console talks to
 src/evidence/   # saves the screenshots and logs for every run
 src/cli/        # runnable scripts from terminal
 tests/          # automated checks, plus agent-demo for stretch goal
-public/         # the UI CAS console
-artifacts/      # one folder per app added and its config
+ui/             # the UI CAS console
+config/         # one folder per app added and its config
 evidence/       # one folder per run and its metadata
 docs/           # assignment saved & design notes
 ```
