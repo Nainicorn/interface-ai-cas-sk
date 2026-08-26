@@ -1,0 +1,27 @@
+{
+  "id": "heroku_app/replay/2026-08-26_192415",
+  "kind": "replay",
+  "app_id": "heroku_app",
+  "goal": null,
+  "status": "BUSINESS_OUTCOME",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "assisted_fallback_enabled": false,
+    "capability": "heroku-app-login",
+    "version": 1,
+    "outcome": "BUSINESS_OUTCOME",
+    "outputs": null,
+    "business_outcome": {
+      "code": "INVALID_PASSWORD",
+      "message": "The stored password did not match the supplied username (unexpected in normal operation).",
+      "step": 3,
+      "intent": "Submit the login form"
+    },
+    "failed_step": null,
+    "drift_warnings": null,
+    "assisted_fallbacks": null
+  },
+  "started_at": "2026-08-26T19:24:15.833Z",
+  "updated_at": "2026-08-26T19:24:21.279Z"
+}

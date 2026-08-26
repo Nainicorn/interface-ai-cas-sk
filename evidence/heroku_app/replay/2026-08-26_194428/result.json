@@ -1,0 +1,27 @@
+{
+  "id": "heroku_app/replay/2026-08-26_194428",
+  "kind": "replay",
+  "app_id": "heroku_app",
+  "goal": null,
+  "status": "SUCCESS",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "assisted_fallback_enabled": false,
+    "secrets_overridden": [
+      "HEROKU_APP_PASSWORD"
+    ],
+    "capability": "heroku-app-login",
+    "version": 1,
+    "outcome": "SUCCESS",
+    "outputs": {
+      "confirmation_message": "You logged into a secure area!"
+    },
+    "business_outcome": null,
+    "failed_step": null,
+    "drift_warnings": null,
+    "assisted_fallbacks": null
+  },
+  "started_at": "2026-08-26T19:44:28.117Z",
+  "updated_at": "2026-08-26T19:44:38.589Z"
+}
