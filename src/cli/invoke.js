@@ -57,7 +57,7 @@ function printCatalog(entries) {
     console.log('The catalog is empty.\n');
     console.log('Capabilities are recorded as drafts and stay invisible to agents until a');
     console.log('human approves one — in the console, or:');
-    console.log("  curl -X PATCH localhost:3000/api/artifacts/<id>/status \\");
+    console.log("  curl -X PATCH localhost:3000/api/capabilities/<id>/status \\");
     console.log("    -H 'content-type: application/json' -d '{\"status\":\"approved\"}'");
     return;
   }
@@ -82,12 +82,12 @@ try {
   const args = parseArgs(process.argv.slice(2));
 
   if (!args.id) {
-    printCatalog(await call(`${args.base}/api/capabilities`));
+    printCatalog(await call(`${args.base}/api/catalog`));
     process.exit(0);
   }
 
   console.log(`Invoking ${args.id} over HTTP…`);
-  const result = await call(`${args.base}/api/capabilities/${args.id}/invoke`, {
+  const result = await call(`${args.base}/api/catalog/${args.id}/invoke`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ params: args.params }),

@@ -6,8 +6,8 @@
  *
  * Each capability occupies exactly one row; everything that would stack lives inline.
  * Scoped to the sidebar's selected app, like the runs table beside it.
- * API: GET /api/artifacts, GET /api/artifacts/:id, POST /api/artifacts/:id/replay,
- *      PATCH /api/artifacts/:id/status.
+ * API: GET /api/capabilities, GET /api/capabilities/:id, POST /api/capabilities/:id/replay,
+ *      PATCH /api/capabilities/:id/status.
  */
 
 import { hasSelection, onSelectedApp, selectedAppId } from '/global/selected-app.js';
@@ -25,13 +25,13 @@ const ICON = {
  *  and never persisted — a fresh page load always starts with this empty. */
 const fallbackEnabled = new Set();
 
-const fetchArtifacts = () => getJson('/api/artifacts');
-const fetchArtifact = (id) => getJson(`/api/artifacts/${encodeURIComponent(id)}`);
-const setStatus = (id, status) => sendJson('PATCH', `/api/artifacts/${encodeURIComponent(id)}/status`, { status });
+const fetchArtifacts = () => getJson('/api/capabilities');
+const fetchArtifact = (id) => getJson(`/api/capabilities/${encodeURIComponent(id)}`);
+const setStatus = (id, status) => sendJson('PATCH', `/api/capabilities/${encodeURIComponent(id)}/status`, { status });
 const replay = (id, params, assistedFallback) =>
-  postJson(`/api/artifacts/${encodeURIComponent(id)}/replay`, { params, assisted_fallback: assistedFallback });
+  postJson(`/api/capabilities/${encodeURIComponent(id)}/replay`, { params, assisted_fallback: assistedFallback });
 const checkStability = (id, params, runs) =>
-  postJson(`/api/artifacts/${encodeURIComponent(id)}/stability`, { params, runs });
+  postJson(`/api/capabilities/${encodeURIComponent(id)}/stability`, { params, runs });
 
 /** One side of the contract as a definition list; "none" reads better than an em dash. */
 function schemaList(schema) {
@@ -90,7 +90,7 @@ function detailsHtml(capability) {
 
     <h4>Export</h4>
     <p class="muted export-line">
-      <a class="small secondary button-like" href="/api/artifacts/${esc(capability.id)}/codegen" download
+      <a class="small secondary button-like" href="/api/capabilities/${esc(capability.id)}/codegen" download
          title="A standalone Playwright script, generated from this recording">Generate test script</a>
     </p>
 
@@ -302,7 +302,7 @@ export async function mount(root) {
       return;
     }
 
-    // Delete removes the recording only; api/artifacts.js keeps the run's evidence and
+    // Delete removes the recording only; api/capabilities.js keeps the run's evidence and
     // refuses outright while the capability is still approved.
     const remove = event.target.closest('[data-delete]');
     if (remove) {
@@ -310,7 +310,7 @@ export async function mount(root) {
       if (!confirm(`Delete the recording "${id}"?\n\nThe run that produced it keeps its screenshots and transcript.`)) return;
       remove.disabled = true;
       try {
-        await deleteJson(`/api/artifacts/${encodeURIComponent(id)}`);
+        await deleteJson(`/api/capabilities/${encodeURIComponent(id)}`);
         window.dispatchEvent(new CustomEvent('capabilities-changed'));
       } catch (err) {
         remove.disabled = false;

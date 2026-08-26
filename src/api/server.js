@@ -3,18 +3,18 @@
  * API the console drives. Port 3000 by default; the target app is a separate process
  * reached only through a real browser — never from here.
  *
- * Hands off to: api/runs.js, api/artifacts.js, api/capabilities.js, api/escalation.js,
+ * Hands off to: api/runs.js, api/capabilities.js, api/catalog.js, api/escalation.js,
  * ui/.
  */
 
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import artifactsRouter from './artifacts.js';
 import capabilitiesRouter from './capabilities.js';
+import catalogRouter from './catalog.js';
 import escalationRouter from './escalation.js';
 import runsRouter from './runs.js';
-import targetsRouter from './targets.js';
+import appsRouter from './apps.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -22,10 +22,10 @@ const app = express();
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.resolve(here, '../../ui')));
 
-app.use('/api/targets', targetsRouter);
+app.use('/api/apps', appsRouter);
 app.use('/api/runs', runsRouter);
-app.use('/api/artifacts', artifactsRouter); // the operator's surface: drafts included
-app.use('/api/capabilities', capabilitiesRouter); // the agent's surface: approved only
+app.use('/api/capabilities', capabilitiesRouter); // the operator's surface: drafts included
+app.use('/api/catalog', catalogRouter); // the agent's surface: approved only
 app.use('/api/escalations', escalationRouter);
 
 /** Uniform error shape. Errors carry their own status; anything else is a server fault. */

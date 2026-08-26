@@ -24,7 +24,7 @@ function configRows(report) {
   if (artifact) {
     rows.push([
       'Capability',
-      `<a target="_blank" rel="noopener" href="/api/artifacts/${encodeURIComponent(artifact.id)}">${esc(artifact.id)} v${esc(artifact.version)}</a>`,
+      `<a target="_blank" rel="noopener" href="/api/capabilities/${encodeURIComponent(artifact.id)}">${esc(artifact.id)} v${esc(artifact.version)}</a>`,
     ]);
   }
   if (result?.model) rows.push(['Model', `<span class="mono">${esc(result.model)}</span>`]);

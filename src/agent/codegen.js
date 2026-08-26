@@ -12,7 +12,7 @@
  * not a second replay engine, so the remaining candidates are left as a comment instead
  * of reimplemented.
  *
- * Hands off to: api/artifacts.js (GET .../codegen), cli/generate.js.
+ * Hands off to: api/capabilities.js (GET .../codegen), cli/generate.js.
  */
 
 const jsonLiteral = (value) => JSON.stringify(value);

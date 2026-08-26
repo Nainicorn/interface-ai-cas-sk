@@ -10,12 +10,12 @@
  *
  * The loop is the whole demonstration:
  *
- *   1. GET /api/capabilities            → approved capabilities only
+ *   1. GET /api/catalog            → approved capabilities only
  *   2. hand them to Claude as `tools`   → no translation: the catalog is
  *                                          already shaped like tool definitions
  *   3. Claude picks one and fills in    → the model chooses by reading the
  *      its typed arguments                 description; it never sees the steps
- *   4. POST /api/capabilities/:id/invoke → deterministic replay, no LLM
+ *   4. POST /api/catalog/:id/invoke → deterministic replay, no LLM
  *   5. feed the result back             → Claude reports what it got
  *
  * Revoke the capability in the console and run this again: the model is told
@@ -39,7 +39,7 @@ const BASE = process.env.CONTROL_PLANE_URL ?? 'http://localhost:3000';
  * catalog this way: an agent needs no adapter to consume it.
  */
 async function loadTools() {
-  const res = await fetch(`${BASE}/api/capabilities`).catch(() => null);
+  const res = await fetch(`${BASE}/api/catalog`).catch(() => null);
   if (!res?.ok) throw new Error(`No control plane at ${BASE} — start it with: npm start`);
 
   const catalog = await res.json();
@@ -52,7 +52,7 @@ async function loadTools() {
 
 /** Invoke one capability. The four-way result goes back to the model verbatim. */
 async function invoke(id, params) {
-  const res = await fetch(`${BASE}/api/capabilities/${id}/invoke`, {
+  const res = await fetch(`${BASE}/api/catalog/${id}/invoke`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ params }),

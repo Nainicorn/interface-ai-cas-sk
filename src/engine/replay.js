@@ -23,7 +23,7 @@
  * that a patch was even applied, which is the point: cross-tenant reuse is a seam in
  * front of replay, not a second replay path.
  *
- * Hands off to: api/artifacts.js, api/capabilities.js, cli/replay.js.
+ * Hands off to: api/capabilities.js, api/catalog.js, cli/replay.js.
  */
 
 import { chromium } from 'playwright';
@@ -47,7 +47,7 @@ import { attemptRecovery } from './recovery-table.js';
  * two step_overrides, not a re-record.
  *
  * `base_url`, if the override declares one, lets a tenant's install be reached without
- * registering it as a whole separate app in config/ — useful for the common case of "same
+ * registering it as a whole separate app in apps/ — useful for the common case of "same
  * product, different subdomain, no other differences worth a config file of its own."
  *
  * @param {object} capability a validated Capability

@@ -7,11 +7,11 @@
  *
  * Layout: evidence/{app}/{kind}/{stamp}/goal.json — the recording lives in the run that
  * produced it, beside the screenshots and transcript proving it ran. There is no
- * separate artifacts tree and no promotion step; config/ holds user-authored config
+ * separate artifacts tree and no promotion step; apps/ holds user-authored config
  * only. A discovery folder WITH a goal.json passed its gates and is replayable; one
  * without did not.
  *
- * Hands off to: engine/replay.js, api/artifacts.js, agent/artifact-writer.js, cli/*.
+ * Hands off to: engine/replay.js, api/capabilities.js, agent/artifact-writer.js, cli/*.
  */
 
 import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';

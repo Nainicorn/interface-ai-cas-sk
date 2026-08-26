@@ -5,7 +5,7 @@
  * evidence trail, same run row, same fold into the capability's rolling confidence
  * signal. A stability check is N real, auditable replays, not a special-cased path.
  *
- * Hands off to: api/run-replay.js, api/artifacts.js, cli/stability.js.
+ * Hands off to: api/run-replay.js, api/capabilities.js, cli/stability.js.
  */
 
 import { runReplay } from './run-replay.js';

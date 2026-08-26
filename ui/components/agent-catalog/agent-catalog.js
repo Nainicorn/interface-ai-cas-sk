@@ -1,15 +1,15 @@
 /**
  * Agent catalog tab: the agent-facing surface, rendered as an agent would receive it.
  *
- * Reads /api/capabilities — a strictly narrower view than the Capabilities tab beside it,
+ * Reads /api/catalog — a strictly narrower view than the Capabilities tab beside it,
  * because that one is the operator's and shows drafts. Approving a capability there makes
  * it appear here; revoking it makes it vanish. That visible move is the point of the tab.
  *
  * One row per capability, callable in place: the declared arguments are the form, and
- * Invoke POSTs to /api/capabilities/:id/invoke. So this is not a description of the agent
+ * Invoke POSTs to /api/catalog/:id/invoke. So this is not a description of the agent
  * path — it is the agent path, driven by hand.
  *
- * API: GET /api/capabilities, POST /api/capabilities/:id/invoke.
+ * API: GET /api/catalog, POST /api/catalog/:id/invoke.
  */
 
 import { hasSelection, onSelectedApp, selectedAppId } from '/global/selected-app.js';
@@ -99,7 +99,7 @@ export async function mount(root) {
       return;
     }
     try {
-      const entries = (await getJson('/api/capabilities')).filter((e) => e.app_id === appId);
+      const entries = (await getJson('/api/catalog')).filter((e) => e.app_id === appId);
       const key = JSON.stringify([appId, entries.map((e) => [e.id, e.version, e.reliability?.runs ?? 0])]);
       if (key === lastKey) return; // don't clobber a half-typed argument while polling
       lastKey = key;
@@ -139,13 +139,13 @@ export async function mount(root) {
     button.disabled = true;
     result.innerHTML = '<span class="muted">Invoking…</span>';
     try {
-      const outcome = await postJson(`/api/capabilities/${id}/invoke`, { params });
+      const outcome = await postJson(`/api/catalog/${id}/invoke`, { params });
       result.innerHTML = resultHtml(outcome);
 
       // The replay record just moved, so update that one cell in place. A full re-render
       // would be simpler and wrong: it would wipe the result the caller is reading and
       // the arguments they typed to get it.
-      const fresh = await getJson(`/api/capabilities/${id}`).catch(() => null);
+      const fresh = await getJson(`/api/catalog/${id}`).catch(() => null);
       if (fresh) row.querySelector('.state').innerHTML = stateHtml(fresh);
       lastKey = ''; // and let the next poll re-sync the rest
 

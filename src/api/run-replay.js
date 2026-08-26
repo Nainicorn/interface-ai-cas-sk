@@ -1,7 +1,7 @@
 /**
  * One replay, fully accounted for: the approval gate, a run row, an evidence folder, and
  * the persisted result. Every caller goes through here — the operator surface
- * (api/artifacts.js), the agent-facing surface (api/capabilities.js), and the CLI — so a
+ * (api/capabilities.js), the agent-facing surface (api/catalog.js), and the CLI — so a
  * replay is gated and auditable identically whoever triggered it.
  *
  * Hands off to: policy/risk.js, engine/replay.js, evidence/runs.js, evidence/logger.js.

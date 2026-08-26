@@ -1,70 +1,37 @@
 /**
- * The agent-facing surface: a catalog of callable capabilities, and invocation by name.
+ * Capabilities over HTTP — the operator's surface: browse every recorded capability
+ * (drafts included), replay one with typed params, and perform the one human act the
+ * system never grants itself: promoting a draft to approved (which is what admits it to
+ * the agent-facing catalog in api/catalog.js and unlocks unattended replay for risky
+ * capabilities).
  *
- * This is deliberately NOT api/artifacts.js with a different URL. That route is the
- * operator's — it shows drafts, it can promote and demote, it exists to be browsed by a
- * person. This one is what an autonomous caller sees, and it is strictly narrower:
+ * The narrower, approved-only view an autonomous caller sees is api/catalog.js. Same
+ * files on disk, different audience — that split is the whole point of having two.
  *
- *   - Only approved capabilities exist here at all. A draft is not "listed but refused",
- *     it is invisible, because a catalog an agent cannot act on is noise in its context.
- *   - Entries are shaped like tool definitions (name, description, input_schema) because
- *     that is what a function-calling agent needs to decide whether and how to call one.
- *   - Invocation runs the same deterministic replay the console runs, through the same
- *     gate and the same evidence trail.
- *
- * Hands off to: schema/store.js, policy/risk.js, api/run-replay.js.
+ * Hands off to: schema/store.js, api/run-replay.js.
  */
 
 import { Router } from 'express';
-import { checkAgentInvocable } from '../policy/risk.js';
-import { listCapabilities, loadCapability } from '../schema/store.js';
+import { generatePlaywrightTest } from '../agent/codegen.js';
+import { CAPABILITY_STATUSES } from '../schema/enums.js';
+import { deleteCapability, listCapabilities, loadCapability, updateCapability } from '../schema/store.js';
 import { runReplay } from './run-replay.js';
+import { runStabilityCheck } from './stability.js';
 
 const router = Router();
 
-/**
- * One catalog entry: the contract, and nothing about how the flow is implemented.
- *
- * A caller decides from name/description/input_schema; the recorded steps are an
- * implementation detail it has no business reasoning about. `reliability` is the rolling
- * confidence signal, exposed so an agent can prefer a capability with a track record.
- */
-function toCatalogEntry(summary) {
-  const { runs = 0, successes = 0, last_outcome = null } = summary.confidence ?? {};
-  return {
-    id: summary.id,
-    name: summary.name,
-    version: summary.version,
-    description: summary.description,
-    input_schema: summary.input_schema,
-    output_schema: summary.output_schema,
-    risk_level: summary.risk_level,
-    app_id: summary.app_id,
-    reliability: { runs, successes, last_outcome },
-  };
-}
-
-/**
- * The catalog. Empty until a human approves something — that is the intended first
- * impression, not an empty-state bug.
- */
 router.get('/', async (_req, res, next) => {
   try {
-    const all = await listCapabilities();
-    res.json(all.filter((c) => checkAgentInvocable(c).allowed).map(toCatalogEntry));
+    res.json(await listCapabilities());
   } catch (err) {
     next(err);
   }
 });
 
-/** One entry, for a caller that already knows the name. 404 if it is not approved. */
 router.get('/:id', async (req, res, next) => {
   try {
-    const capability = await loadCapability(req.params.id);
-    const gate = checkAgentInvocable(capability);
-    // 404 rather than 403: an unapproved capability does not exist on this surface.
-    if (!gate.allowed) return res.status(404).json({ error: `No such capability "${req.params.id}"` });
-    res.json(toCatalogEntry({ ...capability, app_id: capability.target.app_id }));
+    const version = req.query.version ? Number(req.query.version) : undefined;
+    res.json(await loadCapability(req.params.id, version));
   } catch (err) {
     err.status = 404;
     next(err);
@@ -72,21 +39,119 @@ router.get('/:id', async (req, res, next) => {
 });
 
 /**
- * Invoke by name with typed args. Body: { params: {...} }
+ * Deterministic replay. Body: { params: {...}, version?: n, tenant_id?: string,
+ * assisted_fallback?: boolean }
+ * Responds with the full four-way outcome — BUSINESS_OUTCOME is a 200, because it is
+ * an answer, not an error.
  *
- * The four-way result goes back verbatim: BUSINESS_OUTCOME is a 200, because "no such
- * member" is the answer the caller asked for, not an error it should retry.
+ * `tenant_id`, when it matches an entry in the capability's own tenant_overrides, patches
+ * the run before anything else happens — see engine/replay.js's applyTenantOverride.
+ *
+ * `assisted_fallback` is OFF unless set true — it is the one option on this route that
+ * lets a replay make a single, bounded LLM call. See agent/assisted-fallback.js.
  */
-router.post('/:id/invoke', async (req, res, next) => {
+router.post('/:id/replay', async (req, res, next) => {
   try {
-    const capability = await loadCapability(req.params.id);
-    const gate = checkAgentInvocable(capability);
-    if (!gate.allowed) return res.status(403).json({ error: gate.reason });
+    const { params = {}, version, tenant_id: tenantId = null, assisted_fallback: assistedFallback = false } = req.body ?? {};
+    const capability = await loadCapability(req.params.id, version);
+    res.json(await runReplay(capability, params, { tenantId, assistedFallback }));
+  } catch (err) {
+    next(err);
+  }
+});
 
-    const { params = {} } = req.body ?? {};
-    // Tagged at the surface, not guessed downstream: reaching this route IS what
-    // makes a run agent-invoked.
-    res.json(await runReplay(capability, params, { caller: 'agent' }));
+/**
+ * A standalone Playwright script generated from the recording, for a human to read or
+ * hand-adapt outside this system. Text, not JSON — it's a file to save and run.
+ */
+router.get('/:id/codegen', async (req, res, next) => {
+  try {
+    const version = req.query.version ? Number(req.query.version) : undefined;
+    const capability = await loadCapability(req.params.id, version);
+    res
+      .type('text/javascript')
+      .set('Content-Disposition', `attachment; filename="${capability.id}.spec.js"`)
+      .send(generatePlaywrightTest(capability));
+  } catch (err) {
+    err.status = 404;
+    next(err);
+  }
+});
+
+/**
+ * Multi-run stability: replay the same capability N times in a row and report how many
+ * held. Body: { params: {...}, runs?: n (default 5), version?: n }
+ *
+ * Each run is a full replay through the normal gate — a risky, unapproved draft refuses
+ * here exactly like it would on a single replay, on the first run.
+ */
+router.post('/:id/stability', async (req, res, next) => {
+  try {
+    const { params = {}, runs = 5, version } = req.body ?? {};
+    const capability = await loadCapability(req.params.id, version);
+    res.json(await runStabilityCheck(capability, params, { runs: Number(runs) }));
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * The approval gate's human half. Body: { status: 'approved'|'draft', version?: n }
+ *
+ * Recording always produces a draft; THIS is the only way anything becomes approved.
+ * Demotion back to draft is allowed on purpose — a capability whose confidence decays
+ * should be pullable from the agent catalog without deleting its history.
+ */
+router.patch('/:id/status', async (req, res, next) => {
+  try {
+    const { status, version } = req.body ?? {};
+    if (!CAPABILITY_STATUSES.includes(status)) {
+      return res.status(400).json({ error: `status must be one of: ${CAPABILITY_STATUSES.join(', ')}` });
+    }
+
+    let capability;
+    try {
+      capability = await loadCapability(req.params.id, version ? Number(version) : undefined);
+    } catch (err) {
+      err.status = 404;
+      throw err;
+    }
+
+    const { capability: updated } = await updateCapability(capability.id, capability.version, { status });
+    res.json({ id: updated.id, version: updated.version, status: updated.status });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * Delete a capability — the recording only, never the run that produced it.
+ *
+ * An approved capability is refused. Approval is what admits it to the agent catalog, so
+ * it has to be the thing withdrawn first: revoke, then delete. That makes the gate mean
+ * something on the way out as well as on the way in, and it means nothing an agent may be
+ * calling right now can disappear on a single click.
+ */
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const version = req.query.version ? Number(req.query.version) : undefined;
+
+    let capability;
+    try {
+      capability = await loadCapability(req.params.id, version);
+    } catch (err) {
+      err.status = 404;
+      throw err;
+    }
+
+    if (capability.status === 'approved') {
+      return res.status(409).json({
+        error: `"${capability.id}" is approved and callable by agents. Revoke it first, then delete.`,
+      });
+    }
+
+    const { run_id } = deleteCapability(capability.id, capability.version);
+    res.json({ id: capability.id, version: capability.version, deleted: true, evidence_kept: run_id });
   } catch (err) {
     next(err);
   }

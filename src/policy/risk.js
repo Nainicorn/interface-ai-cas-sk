@@ -11,8 +11,8 @@
  * Route matters because "click" is safe on a search button and risky on a submit button,
  * and the action type alone cannot tell them apart.
  *
- * Hands off to: agent/discovery.js (escalate before risky), api/artifacts.js and
- * api/capabilities.js (the approval gate).
+ * Hands off to: agent/discovery.js (escalate before risky), api/capabilities.js and
+ * api/catalog.js (the approval gate).
  */
 
 import { routeOf } from './allowlist.js';
@@ -78,7 +78,7 @@ export function checkAgentInvocable(capability) {
       allowed: false,
       reason:
         `Capability "${capability.id}" is "${capability.status}". Only approved capabilities ` +
-        `are agent-invocable — a human promotes it via PATCH /api/artifacts/${capability.id}/status.`,
+        `are agent-invocable — a human promotes it via PATCH /api/capabilities/${capability.id}/status.`,
     };
   }
   return { allowed: true, reason: 'Capability is approved for agent invocation' };
