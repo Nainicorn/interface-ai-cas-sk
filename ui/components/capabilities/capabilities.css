@@ -207,6 +207,20 @@ ol.steps .mono { color: var(--ink-3); }
 }
 #capabilities .stability-pct { font-variant-numeric: tabular-nums; }
 
+/* --- assisted fallback: an explicit, per-capability, unarmed-by-default toggle --- */
+tr.expand h4 .hint { color: var(--ink-3); font-weight: 400; text-transform: none; letter-spacing: normal; font-size: 11px; margin-left: 4px; }
+#capabilities .fallback-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  cursor: pointer;
+  max-width: 46ch;
+}
+#capabilities .fallback-check input { margin-top: 2px; }
+.result-line .hint { color: var(--ink-3); font-style: italic; }
+
 /* --- export: a link styled to match the button it sits next to ---------------- */
 #capabilities .export-line { margin: 6px 0 0; }
 #capabilities .button-like {

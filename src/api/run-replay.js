@@ -7,6 +7,7 @@
  * Hands off to: policy/risk.js, engine/replay.js, evidence/runs.js, evidence/logger.js.
  */
 
+import { suggestLocator } from '../agent/assisted-fallback.js';
 import { replayCapability } from '../engine/replay.js';
 import { createRun, updateRun } from '../evidence/runs.js';
 import { RunLogger, newRunId } from '../evidence/logger.js';
@@ -50,14 +51,16 @@ export const CALLERS = ['operator', 'agent', 'cli'];
 /**
  * @param {object} capability a validated Capability from the store
  * @param {object} params caller-supplied inputs
- * @param {{headless?: boolean, runId?: string, caller?: 'operator'|'agent'|'cli', tenantId?: string|null}} [options]
+ * @param {{headless?: boolean, runId?: string, caller?: 'operator'|'agent'|'cli',
+ *   tenantId?: string|null, assistedFallback?: boolean}} [options] `assistedFallback`
+ *   is OFF unless a caller explicitly opts in — see agent/assisted-fallback.js.
  * @returns {Promise<object>} the four-way result, tagged with run_id / capability / version
  * @throws {ApprovalRequired} when a risky capability has not been approved
  */
 export async function runReplay(
   capability,
   params = {},
-  { headless = true, runId, caller = 'operator', tenantId = null } = {},
+  { headless = true, runId, caller = 'operator', tenantId = null, assistedFallback = false } = {},
 ) {
   // Before anything is written. A refusal must not leave a run row or an evidence
   // folder behind, because nothing was attempted.
@@ -79,11 +82,25 @@ export async function runReplay(
     status: 'running',
     // Written at creation, not at completion: a run that never finishes should
     // still say who started it.
-    detail: { caller: CALLERS.includes(caller) ? caller : 'operator', tenant_id: tenantId },
+    detail: {
+      caller: CALLERS.includes(caller) ? caller : 'operator',
+      tenant_id: tenantId,
+      assisted_fallback_enabled: assistedFallback,
+    },
   });
   const logger = new RunLogger(id);
 
-  const result = await replayCapability({ capability, params, headless, logger, tenantId });
+  const result = await replayCapability({
+    capability,
+    params,
+    headless,
+    logger,
+    tenantId,
+    // The suggestLocator FUNCTION only reaches replay when the caller opted in — passing
+    // null here is what keeps assisted fallback off by default, not a flag replay.js has
+    // to remember to check.
+    assistedFallback: assistedFallback ? suggestLocator : null,
+  });
 
   updateRun(id, {
     status: result.outcome,
@@ -96,6 +113,7 @@ export async function runReplay(
       business_outcome: result.business_outcome ?? null,
       failed_step: describeFailure(result.failure),
       drift_warnings: result.drift_warnings?.length ? result.drift_warnings : null,
+      assisted_fallbacks: result.assisted_fallbacks?.length ? result.assisted_fallbacks : null,
     },
   });
 

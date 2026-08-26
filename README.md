@@ -107,6 +107,10 @@ npm run replay -- --id add-remove-elements-cycle --tenant <tenant-id>
 # every replay after that compares against it and flags a warning in the run report
 # if the page has changed meaningfully — without failing a replay that still works
 
+# opt in to one bounded AI call if a step's locator can't be found at all — off by
+# default; every other replay above ran with zero model involvement
+npm run replay -- --id add-remove-elements-cycle --assisted-fallback
+
 # approve it, so an outside agent can call it
 curl -X PATCH localhost:3000/api/artifacts/add-remove-elements-cycle/status \
   -H 'content-type: application/json' -d '{"status":"approved"}'

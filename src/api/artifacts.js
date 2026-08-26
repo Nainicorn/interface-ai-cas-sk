@@ -35,18 +35,22 @@ router.get('/:id', async (req, res, next) => {
 });
 
 /**
- * Deterministic replay. Body: { params: {...}, version?: n, tenant_id?: string }
+ * Deterministic replay. Body: { params: {...}, version?: n, tenant_id?: string,
+ * assisted_fallback?: boolean }
  * Responds with the full four-way outcome — BUSINESS_OUTCOME is a 200, because it is
  * an answer, not an error.
  *
  * `tenant_id`, when it matches an entry in the capability's own tenant_overrides, patches
  * the run before anything else happens — see engine/replay.js's applyTenantOverride.
+ *
+ * `assisted_fallback` is OFF unless set true — it is the one option on this route that
+ * lets a replay make a single, bounded LLM call. See agent/assisted-fallback.js.
  */
 router.post('/:id/replay', async (req, res, next) => {
   try {
-    const { params = {}, version, tenant_id: tenantId = null } = req.body ?? {};
+    const { params = {}, version, tenant_id: tenantId = null, assisted_fallback: assistedFallback = false } = req.body ?? {};
     const capability = await loadCapability(req.params.id, version);
-    res.json(await runReplay(capability, params, { tenantId }));
+    res.json(await runReplay(capability, params, { tenantId, assistedFallback }));
   } catch (err) {
     next(err);
   }

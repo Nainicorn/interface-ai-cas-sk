@@ -21,10 +21,15 @@ const ICON = {
     '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11M6.5 4V2.75A.75.75 0 0 1 7.25 2h1.5a.75.75 0 0 1 .75.75V4"/><path d="M4 4.5v8A1.5 1.5 0 0 0 5.5 14h5a1.5 1.5 0 0 0 1.5-1.5v-8"/><path d="M6.75 7v4M9.25 7v4"/></svg>',
 };
 
+/** Capability ids with assisted fallback armed for their next replay. Explicit, per-id,
+ *  and never persisted — a fresh page load always starts with this empty. */
+const fallbackEnabled = new Set();
+
 const fetchArtifacts = () => getJson('/api/artifacts');
 const fetchArtifact = (id) => getJson(`/api/artifacts/${encodeURIComponent(id)}`);
 const setStatus = (id, status) => sendJson('PATCH', `/api/artifacts/${encodeURIComponent(id)}/status`, { status });
-const replay = (id, params) => postJson(`/api/artifacts/${encodeURIComponent(id)}/replay`, { params });
+const replay = (id, params, assistedFallback) =>
+  postJson(`/api/artifacts/${encodeURIComponent(id)}/replay`, { params, assisted_fallback: assistedFallback });
 const checkStability = (id, params, runs) =>
   postJson(`/api/artifacts/${encodeURIComponent(id)}/stability`, { params, runs });
 
@@ -76,6 +81,12 @@ function detailsHtml(capability) {
       <button class="small secondary" data-stability="${esc(capability.id)}" type="button">Replay 5×</button>
       <span class="stability-result" data-stability-result="${esc(capability.id)}"></span>
     </div>
+
+    <h4>Assisted fallback <span class="hint">off by default</span></h4>
+    <label class="fallback-check">
+      <input type="checkbox" data-fallback="${esc(capability.id)}" ${fallbackEnabled.has(capability.id) ? 'checked' : ''} />
+      Allow one bounded AI call on the next replay, only if a step's locator can't be found at all
+    </label>
 
     <h4>Export</h4>
     <p class="muted export-line">
@@ -256,6 +267,14 @@ export async function mount(root) {
   window.addEventListener('capabilities-changed', refreshNow);
 
   root.addEventListener('click', async (event) => {
+    const fallbackToggle = event.target.closest('[data-fallback]');
+    if (fallbackToggle) {
+      const id = fallbackToggle.dataset.fallback;
+      if (fallbackToggle.checked) fallbackEnabled.add(id);
+      else fallbackEnabled.delete(id);
+      return;
+    }
+
     const expand = event.target.closest('[data-expand]');
     if (expand) {
       const row = root.querySelector(`[data-details="${expand.dataset.expand}"]`);
@@ -335,7 +354,10 @@ export async function mount(root) {
 
     button.disabled = true;
     try {
-      await replay(id, params);
+      const outcome = await replay(id, params, fallbackEnabled.has(id));
+      if (outcome.assisted_fallbacks?.length) {
+        result.innerHTML = `<span class="hint">AI-assisted fix used — see the run report</span>`;
+      }
       // A replay IS a run: its result lives in the Runs tab; here only the replay
       // count in State moves. Refresh now so the count ticks immediately.
       window.dispatchEvent(new CustomEvent('replay-finished'));
