@@ -20,7 +20,7 @@ architecture).
   (same approval gate, same evidence trail, same confidence signal — no special-cased
   path) and `summarizeStability()` rolls the N results into `{runs, held, stability_pct,
   breakdown, run_ids}`.
-- API: `POST /api/artifacts/:id/stability` in `api/artifacts.js`.
+- API: `POST /api/capabilities/:id/stability` in `api/capabilities.js`.
 - CLI: `src/cli/stability.js` — `npm run stability -- --id <id> --runs 5 --param k=v`.
 - UI: a "Run Nx" control in the capabilities row's expanded detail, rendering each run as
   an existing `.badge.SUCCESS/BUSINESS_OUTCOME/RECOVERABLE/HARD_FAILURE` chip.
@@ -30,7 +30,7 @@ architecture).
 - `src/agent/codegen.js`: `generatePlaywrightTest(capability)` — walks recorded steps,
   emits a runnable `.spec.js` using the same locator-candidate fallback order replay uses,
   as a string.
-- API: `GET /api/artifacts/:id/codegen` returns the file as text.
+- API: `GET /api/capabilities/:id/codegen` returns the file as text.
 - CLI: `src/cli/generate.js` — `npm run generate -- --id <id> [--out file.spec.js]`.
 - UI: a "Generate test" action in the expanded detail that downloads/shows the snippet.
 - Test: generated output is syntactically valid JS (parseable) and contains one line per

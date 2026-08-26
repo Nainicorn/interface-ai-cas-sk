@@ -17,15 +17,15 @@ same set of actions, and they all write to the same kind of log.
 
 ```mermaid
 flowchart TB
-    subgraph callers["Three callers — and there is no fourth"]
-        LLM["LLM discovery loop<br/>agent/discovery.js"]
+    subgraph callers["Three callers"]
+        LLM["LLM discovery<br/>agent/discovery.js"]
         REPLAY["Deterministic replay<br/>engine/replay.js"]
         HUMAN["Human operator<br/>agent/escalation.js"]
     end
 
-    GATE{"checkAllowed<br/>policy/allowlist.js<br/>opens every primitive"}
+    GATE{"check allowed<br/>policy/allowlist.js<br/>opens every primitive"}
 
-    ACTIONS["The five primitives<br/>engine/actions.js<br/>navigate · click · type · read · wait_for"]
+    ACTIONS["Five primitives<br/>engine/actions.js<br/>navigate · click · type · read · wait_for"]
 
     LOCATOR["Ranked locator resolution<br/>engine/locator.js"]
     PAGE(["Playwright page<br/>one live browser session"])
@@ -176,15 +176,15 @@ view is what an AI agent gets to see.
 flowchart LR
     STORE[("Recordings on disk<br/>schema/store.js")]
 
-    subgraph op["Operator surface — api/artifacts.js"]
-        OL["GET /api/artifacts<br/>drafts included"]
+    subgraph op["Operator surface — api/capabilities.js"]
+        OL["GET /api/capabilities<br/>drafts included"]
         OS["PATCH /:id/status<br/>the one human act"]
         OR["POST /:id/replay"]
         OD["DELETE /:id<br/>refused while approved"]
     end
 
-    subgraph ag["Agent surface — api/capabilities.js"]
-        AL["GET /api/capabilities<br/>approved only — a draft is<br/>invisible, not refused"]
+    subgraph ag["Agent surface — api/catalog.js"]
+        AL["GET /api/catalog<br/>approved only — a draft is<br/>invisible, not refused"]
         AI["POST /:id/invoke"]
     end
 
@@ -253,11 +253,11 @@ prove anything about what a real outside caller can actually do.
 ```mermaid
 sequenceDiagram
     participant D as tests/agent-demo.js
-    participant C as api/capabilities.js
+    participant C as api/catalog.js
     participant M as Claude
     participant R as "api/run-replay.js → engine/replay.js"
 
-    D->>C: GET /api/capabilities
+    D->>C: GET /api/catalog
     C-->>D: approved entries<br/>{ name, description, input_schema }
     Note over D: three renames, no adapter —<br/>the catalog IS a tools array
     D->>M: task + tools

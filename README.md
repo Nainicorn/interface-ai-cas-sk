@@ -42,7 +42,7 @@ to limit what the agent is allowed to do on that app.
 Same steps from the command line:
 
 ```bash
-curl -X POST localhost:3000/api/targets -H 'content-type: application/json' -d '{
+curl -X POST localhost:3000/api/apps -H 'content-type: application/json' -d '{
   "name": "internet",
   "url": "https://the-internet.herokuapp.com/",
   "goal": "Navigate to Add/Remove Elements, add an element once, then remove it"
@@ -51,7 +51,7 @@ curl -X POST localhost:3000/api/targets -H 'content-type: application/json' -d '
 
 *username/password are only needed if the app you're pointing at requires a login*
 
-This information is saved in `config/<app_id>/config.json`. Passwords are stored under an environment variable name, not written into any final recording. The AI is only ever told the *name* of where a password lives, never the password itself.
+This information is saved in `apps/<app_id>/config.json`. Passwords are stored under an environment variable name, not written into any final recording. The AI is only ever told the *name* of where a password lives, never the password itself.
 
 ## 2. Record a run
 
@@ -112,7 +112,7 @@ npm run replay -- --id add-remove-elements-cycle --tenant <tenant-id>
 npm run replay -- --id add-remove-elements-cycle --assisted-fallback
 
 # approve it, so an outside agent can call it
-curl -X PATCH localhost:3000/api/artifacts/add-remove-elements-cycle/status \
+curl -X PATCH localhost:3000/api/capabilities/add-remove-elements-cycle/status \
   -H 'content-type: application/json' -d '{"status":"approved"}'
 
 # call it by name, the way an agent would
@@ -131,7 +131,7 @@ they're where credentials would live, even though this particular one needs none
 
 ```bash
 npm start
-curl -X POST localhost:3000/api/targets -H 'content-type: application/json' -d '{
+curl -X POST localhost:3000/api/apps -H 'content-type: application/json' -d '{
   "name": "internet",
   "url": "https://the-internet.herokuapp.com/"
 }'
@@ -155,7 +155,7 @@ capability that hasn't been approved is invisible, not just blocked. Once approv
 ```bash
 npm run invoke                             # the catalog an agent can see, empty until something's approved
 
-curl -X PATCH localhost:3000/api/artifacts/<capability-id>/status \
+curl -X PATCH localhost:3000/api/capabilities/<capability-id>/status \
   -H 'content-type: application/json' -d '{"status":"approved"}'
 
 npm run invoke -- --id <capability-id> --param member_id=12345
@@ -230,7 +230,7 @@ src/evidence/   # saves the screenshots and logs for every run
 src/cli/        # runnable scripts from terminal
 tests/          # automated checks, plus agent-demo for stretch goal
 ui/             # the UI CAS console
-config/         # one folder per app added and its config
+apps/           # one folder per app added and its config
 evidence/       # one folder per run and its metadata
 docs/           # assignment saved & design notes
 ```

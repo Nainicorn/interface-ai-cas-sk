@@ -27,8 +27,8 @@ npm run invoke -- --id <capability-id> [--param k=v]          # agent-facing cat
 npm run agent-demo -- "task in plain english"                 # real outside AI caller
 ```
 
-An app must exist first, either via the console's Add App modal or `POST /api/targets`
-(see README.md). Its config lives at `config/<app_id>/config.json`, gitignored since
+An app must exist first, either via the console's Add App modal or `POST /api/apps`
+(see README.md). Its config lives at `apps/<app_id>/config.json`, gitignored since
 it holds credentials.
 
 ## Architecture Overview
@@ -53,7 +53,7 @@ diagrams in docs/DESIGN.md.
 list), `app-modal` (add/edit app), `tabs`, `capabilities` (replay + approve), `discoveries`,
 `human-in-the-loop` (operator console), `live-viewer` (watches a live discovery run).
 
-**Storage, no database:** `config/<app>/config.json` per app (gitignored);
+**Storage, no database:** `apps/<app>/config.json` per app (gitignored);
 `evidence/<app>/<discovery|replay>/<timestamp>/` per run (committed, it's the deliverable).
 
 **Invariants worth knowing before touching anything** (see `tests/invariants.test.js`):
