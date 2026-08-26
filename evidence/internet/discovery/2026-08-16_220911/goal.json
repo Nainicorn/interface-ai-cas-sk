@@ -100,9 +100,45 @@
     "redact_fields": []
   },
   "confidence": {
-    "runs": 4,
-    "successes": 4,
+    "runs": 12,
+    "successes": 12,
     "last_outcome": "SUCCESS",
-    "updated_at": "2026-08-17T03:25:04.604Z"
+    "updated_at": "2026-08-26T16:42:09.185Z"
+  },
+  "drift_baseline": {
+    "0": [
+      "- /url: http://elementalselenium.com/",
+      "- /url: https://github.com/tourdedave/the-internet",
+      "- button \"Add Element\"",
+      "- heading \"Add/Remove Elements\" [level=3]",
+      "- img \"Fork me on GitHub\"",
+      "- link \"Elemental Selenium\":",
+      "- link \"Fork me on GitHub\":",
+      "- separator",
+      "- text: Powered by"
+    ],
+    "1": [
+      "- /url: http://elementalselenium.com/",
+      "- /url: https://github.com/tourdedave/the-internet",
+      "- button \"Add Element\"",
+      "- button \"Delete\"",
+      "- heading \"Add/Remove Elements\" [level=3]",
+      "- img \"Fork me on GitHub\"",
+      "- link \"Elemental Selenium\":",
+      "- link \"Fork me on GitHub\":",
+      "- separator",
+      "- text: Powered by"
+    ],
+    "2": [
+      "- /url: http://elementalselenium.com/",
+      "- /url: https://github.com/tourdedave/the-internet",
+      "- button \"Add Element\"",
+      "- heading \"Add/Remove Elements\" [level=3]",
+      "- img \"Fork me on GitHub\"",
+      "- link \"Elemental Selenium\":",
+      "- link \"Fork me on GitHub\":",
+      "- separator",
+      "- text: Powered by"
+    ]
   }
 }

@@ -1,0 +1,22 @@
+{
+  "id": "internet/replay/2026-08-26_155113",
+  "kind": "replay",
+  "app_id": "internet",
+  "goal": null,
+  "status": "SUCCESS",
+  "detail": {
+    "caller": "agent",
+    "tenant_id": null,
+    "assisted_fallback_enabled": false,
+    "capability": "add-remove-elements-cycle",
+    "version": 1,
+    "outcome": "SUCCESS",
+    "outputs": null,
+    "business_outcome": null,
+    "failed_step": null,
+    "drift_warnings": null,
+    "assisted_fallbacks": null
+  },
+  "started_at": "2026-08-26T15:51:13.104Z",
+  "updated_at": "2026-08-26T15:51:13.522Z"
+}

@@ -1,0 +1,3 @@
+{"ts":"2026-08-26T15:49:00.112Z","type":"action","actor":"replay","action":"navigate","detail":{"url":"/add_remove_elements/"},"result":"ok","landedOn":"https://the-internet.herokuapp.com/add_remove_elements/"}
+{"ts":"2026-08-26T15:49:00.173Z","type":"action","actor":"replay","action":"click","detail":{"description":"Add Element button"},"locatorUsed":{"kind":"role","value":"Add Element","role":"button","exact":true,"confidence":0.9},"candidatesTried":1,"result":"ok"}
+{"ts":"2026-08-26T15:49:00.191Z","type":"action","actor":"replay","action":"click","detail":{"description":"Delete button"},"locatorUsed":{"kind":"role","value":"Delete","role":"button","exact":true,"confidence":0.9},"candidatesTried":1,"result":"ok"}

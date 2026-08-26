@@ -1,0 +1,28 @@
+{
+  "id": "heroku_app/replay/2026-08-26_154941",
+  "kind": "replay",
+  "app_id": "heroku_app",
+  "goal": null,
+  "status": "HARD_FAILURE",
+  "detail": {
+    "caller": "agent",
+    "tenant_id": null,
+    "assisted_fallback_enabled": false,
+    "capability": "heroku-app-login",
+    "version": 1,
+    "outcome": "HARD_FAILURE",
+    "outputs": null,
+    "business_outcome": null,
+    "failed_step": {
+      "step": "pre-flight",
+      "intent": null,
+      "message": "No config for app \"heroku_app\". Run: npm run create -- --name \"heroku_app\"",
+      "url": null,
+      "screenshot": null
+    },
+    "drift_warnings": null,
+    "assisted_fallbacks": null
+  },
+  "started_at": "2026-08-26T15:49:41.590Z",
+  "updated_at": "2026-08-26T15:49:41.591Z"
+}
