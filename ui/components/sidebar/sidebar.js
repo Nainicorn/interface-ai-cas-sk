@@ -6,7 +6,7 @@
  * workspace has mounted its tables: an event fired here would reach nobody.
  *
  * + Add app and each row's Edit icon hand off to app-modal.
- * API: GET /api/targets.
+ * API: GET /api/apps.
  */
 
 import { setSelectedApp, storedAppId } from '/global/selected-app.js';
@@ -56,7 +56,7 @@ export async function mount(root) {
 
   const refresh = async ({ selectId } = {}) => {
     try {
-      targets = await getJson('/api/targets');
+      targets = await getJson('/api/apps');
       const key = JSON.stringify(targets.map((t) => [t.app_id, t.display_name, t.goal]));
       if (key !== lastKey) {
         lastKey = key;

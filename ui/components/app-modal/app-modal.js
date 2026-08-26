@@ -1,10 +1,10 @@
 /**
  * Add/edit-app dialog. Opens on `edit-app` {appId} to edit, or `add-app` to create,
- * writes config/<app>/config.json, then broadcasts `targets-changed` so the sidebar re-reads.
+ * writes apps/<app>/config.json, then broadcasts `targets-changed` so the sidebar re-reads.
  *
  * The password field arrives empty even when one is stored — the API reports only
  * whether it is set. Leaving it empty keeps the stored value.
- * API: GET/POST/PUT/DELETE /api/targets.
+ * API: GET/POST/PUT/DELETE /api/apps.
  */
 
 import { deleteJson, esc, getJson, postJson, putJson } from '/global/helpers.js';
@@ -72,10 +72,10 @@ export async function mount(root) {
   const openEdit = async (id) => {
     error.hidden = true;
     try {
-      const config = await getJson(`/api/targets/${encodeURIComponent(id)}`);
+      const config = await getJson(`/api/apps/${encodeURIComponent(id)}`);
       appId = id;
       title.textContent = 'Edit app';
-      intro.textContent = `Saving rewrites config/${id}/config.json — the next run reads the new values.`;
+      intro.textContent = `Saving rewrites apps/${id}/config.json — the next run reads the new values.`;
       deleteButton.hidden = false;
       field('name').value = config.name;
       field('url').value = config.url;
@@ -121,7 +121,7 @@ export async function mount(root) {
     };
     try {
       // Creating returns the slug the server chose; editing keeps the id it opened with.
-      const result = appId === null ? await postJson('/api/targets', body) : await putJson(`/api/targets/${encodeURIComponent(appId)}`, body);
+      const result = appId === null ? await postJson('/api/apps', body) : await putJson(`/api/apps/${encodeURIComponent(appId)}`, body);
       done(result.app_id ?? appId);
     } catch (err) {
       fail(err.message);
@@ -150,7 +150,7 @@ export async function mount(root) {
 
     if (!confirm(`Delete "${field('name').value}"?${scope}`)) return;
     try {
-      await deleteJson(`/api/targets/${encodeURIComponent(appId)}`);
+      await deleteJson(`/api/apps/${encodeURIComponent(appId)}`);
       done(null);
     } catch (err) {
       fail(err.message);
