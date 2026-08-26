@@ -21,6 +21,7 @@ npm test                          # runs tests/*.test.js
 npm run discover -- --app-id <id> --goal "log in and read the balance"
 npm run replay -- --id <capability-id> [--param k=v] [--headed]
 npm run stability -- --id <capability-id> --runs 5 [--param k=v]  # replay N times, report % held
+npm run generate -- --id <capability-id> [--out file.spec.js]     # standalone Playwright script
 npm run invoke -- --id <capability-id> [--param k=v]          # agent-facing catalog
 npm run agent-demo -- "task in plain english"                 # real outside AI caller
 ```

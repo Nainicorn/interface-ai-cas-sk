@@ -67,6 +67,7 @@ test('one action layer — nothing outside actions.js drives the page', () => {
   const offenders = sourceFiles()
     .filter((f) => !f.endsWith(path.join('engine', 'actions.js')))
     .filter((f) => !f.endsWith(path.join('engine', 'locator.js'))) // resolves, never acts
+    .filter((f) => !f.endsWith(path.join('agent', 'codegen.js'))) // emits page-verb TEXT for a human to run elsewhere; never holds a page itself
     .filter((f) => /\.(click|fill|selectOption|press)\(/.test(readFileSync(f, 'utf8')))
     .map((f) => path.relative(SRC, f));
 

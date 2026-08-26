@@ -76,6 +76,12 @@ function detailsHtml(capability) {
       <span class="stability-result" data-stability-result="${esc(capability.id)}"></span>
     </div>
 
+    <h4>Export</h4>
+    <p class="muted export-line">
+      <a class="small secondary button-like" href="/api/artifacts/${esc(capability.id)}/codegen" download
+         title="A standalone Playwright script, generated from this recording">Generate test script</a>
+    </p>
+
     <p class="muted provenance">Recorded by ${esc(capability.created_from.model ?? 'hand')} · run <span class="mono">${esc(capability.created_from.run_id)}</span></p>
   `;
 }

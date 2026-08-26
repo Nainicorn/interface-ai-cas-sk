@@ -93,6 +93,10 @@ npm run replay -- --id add-remove-elements-cycle --headed
 # replay it 5x in a row and see how often it holds
 npm run stability -- --id add-remove-elements-cycle --runs 5
 
+# turn it into a standalone Playwright script — a snapshot for a human to read or adapt
+npm run generate -- --id add-remove-elements-cycle --out ./add-remove-elements-cycle.spec.js
+BASE_URL=https://the-internet.herokuapp.com node ./add-remove-elements-cycle.spec.js
+
 # approve it, so an outside agent can call it
 curl -X PATCH localhost:3000/api/artifacts/add-remove-elements-cycle/status \
   -H 'content-type: application/json' -d '{"status":"approved"}'

@@ -8,6 +8,7 @@
  */
 
 import { Router } from 'express';
+import { generatePlaywrightTest } from '../agent/codegen.js';
 import { CAPABILITY_STATUSES } from '../schema/enums.js';
 import { deleteCapability, listCapabilities, loadCapability, updateCapability } from '../schema/store.js';
 import { runReplay } from './run-replay.js';
@@ -44,6 +45,24 @@ router.post('/:id/replay', async (req, res, next) => {
     const capability = await loadCapability(req.params.id, version);
     res.json(await runReplay(capability, params));
   } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * A standalone Playwright script generated from the recording, for a human to read or
+ * hand-adapt outside this system. Text, not JSON — it's a file to save and run.
+ */
+router.get('/:id/codegen', async (req, res, next) => {
+  try {
+    const version = req.query.version ? Number(req.query.version) : undefined;
+    const capability = await loadCapability(req.params.id, version);
+    res
+      .type('text/javascript')
+      .set('Content-Disposition', `attachment; filename="${capability.id}.spec.js"`)
+      .send(generatePlaywrightTest(capability));
+  } catch (err) {
+    err.status = 404;
     next(err);
   }
 });
