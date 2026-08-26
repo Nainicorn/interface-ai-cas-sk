@@ -173,6 +173,12 @@ export function generatePlaywrightTest(capability) {
     '  const outputs = {};',
     '',
     '  try {',
+    // engine/replay.js opens the entry route before step 0, so a recording is free to
+    // start with `type` rather than an explicit `navigate` — and most do. Without the
+    // same hop here the script would start on about:blank and every locator would time
+    // out, for every capability whose first step is not a navigate.
+    `    await page.goto(new URL(${jsonLiteral(capability.target.entry_route)}, BASE_URL).toString(), { waitUntil: 'domcontentloaded' }); // entry route, as replay does`,
+    '',
     stepBlocks,
     '',
     `    ${conditionExpr(capability.success_checkpoint)} // overall goal checkpoint`,

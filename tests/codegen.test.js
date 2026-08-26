@@ -92,6 +92,18 @@ describe('code generation', () => {
     }
   });
 
+  test('opens the entry route first, as replay does', () => {
+    // engine/replay.js goes to the entry route before step 0, so a recording may start
+    // with `type` rather than `navigate` — and this one does. A generated script that
+    // skips the hop starts on about:blank and every locator times out, which is exactly
+    // the bug this asserts against.
+    const code = generatePlaywrightTest(capability());
+    const goto = code.indexOf('page.goto(new URL("/login", BASE_URL)');
+    const firstStep = code.indexOf('// Step 0');
+    assert.ok(goto !== -1, 'the entry route is never opened');
+    assert.ok(goto < firstStep, 'the entry route must be opened before the first step runs');
+  });
+
   test('emits one step block per recorded step, in order', () => {
     const code = generatePlaywrightTest(capability());
     const indices = [...code.matchAll(/\/\/ Step (\d+) —/g)].map((m) => Number(m[1]));

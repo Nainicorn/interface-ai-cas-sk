@@ -35,6 +35,7 @@ import { driftScore, fingerprint, isDrifted } from './drift.js';
 import { LocatorResolutionError, MalformedStep, MissingCredential } from './errors.js';
 import { captureState, evaluateCondition } from './perception.js';
 import { attemptRecovery } from './recovery-table.js';
+import { maskValues } from '../policy/redact.js';
 
 /**
  * Merge a tenant's declared differences onto the base recording, if any exist.
@@ -133,16 +134,6 @@ function secretValues(capability, secrets) {
   return [...values];
 }
 
-/**
- * Replace every known credential value in captured page text with its shape.
- * Split/join rather than a regex: a credential is arbitrary text and may contain
- * characters a regex would treat as syntax.
- */
-function maskSecrets(text, values) {
-  if (!text || values.length === 0) return text ?? '';
-  return values.reduce((acc, value) => acc.split(value).join(`<string:${value.length}>`), text);
-}
-
 /** Build the argument object for one step's action primitive. */
 function argsForStep(step, params, secrets) {
   switch (step.action) {
@@ -197,7 +188,7 @@ async function attemptAssistedFallback(ctx, capability, step, params, secrets, m
   const state = await captureState(ctx.page, { screenshot: false }).catch(() => null);
   // Masked before it leaves the deterministic core: this is the one place in replay where
   // page text reaches a model, and a filled password field is visible in that text.
-  const ariaTree = maskSecrets(state?.ariaTree ?? '', masks);
+  const ariaTree = maskValues(state?.ariaTree ?? '', masks);
   const suggestion = await fallback({ step, attempts: err.attempts, ariaTree }).catch(() => null);
   if (!suggestion?.locator) return null;
 
@@ -228,7 +219,7 @@ async function recordDrift(ctx, capability, step, driftWarnings, observedFingerp
   const state = await captureState(ctx.page, { screenshot: false });
   // Masked before fingerprinting: this fingerprint is written into the artifact as the
   // drift baseline, and an artifact must never carry a credential.
-  const fp = fingerprint(maskSecrets(state.ariaTree, masks));
+  const fp = fingerprint(maskValues(state.ariaTree, masks));
   observedFingerprints[step.index] = fp;
   const baseline = capability.drift_baseline?.[String(step.index)];
   if (!baseline) return;

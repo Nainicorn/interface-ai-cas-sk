@@ -22,6 +22,7 @@ import { chromium } from 'playwright';
 import { performAction } from '../engine/actions.js';
 import { LocatorResolutionError } from '../engine/errors.js';
 import { captureState, evaluateCondition } from '../engine/perception.js';
+import { credentialValues, maskValues } from '../policy/redact.js';
 import { getTarget } from '../config/app-config.js';
 import { RunLogger, newRunId } from '../evidence/logger.js';
 import { createRun, updateRun } from '../evidence/runs.js';
@@ -107,18 +108,35 @@ function observationBlocks(state, screenshotName, resultNote) {
   return { blocks, screenshotName };
 }
 
-/** Capture, persist to evidence, and package the current page state. */
-async function observe(page, logger, label, resultNote) {
+/**
+ * Capture the page, mask any credential the run has already typed, then log it and hand
+ * it to the model.
+ *
+ * The masking is why this is not just captureState(). A browser publishes a filled
+ * input's value in the accessibility tree, so the moment the agent types a password that
+ * value is in every later snapshot of the page — which would put it in the evidence
+ * transcript AND in the observation the model is shown on its next turn. "The model never
+ * sees a password" is only true until it types one, unless it is masked back out here.
+ *
+ * Masked before either use, so the log and the model see the same redacted text.
+ */
+async function observe(page, logger, label, resultNote, target) {
   const state = await captureState(page);
+  const secrets = credentialValues(target);
+  const safe = {
+    ...state,
+    ariaTree: maskValues(state.ariaTree, secrets),
+    visibleText: maskValues(state.visibleText, secrets),
+  };
   const screenshotName = logger.saveScreenshot(state.screenshotBase64, label);
   logger.logEvent('observation', {
-    url: state.url,
-    title: state.title,
-    ariaTree: state.ariaTree,
-    visibleTextChars: state.visibleText.length,
+    url: safe.url,
+    title: safe.title,
+    ariaTree: safe.ariaTree,
+    visibleTextChars: safe.visibleText.length,
     screenshot: screenshotName,
   });
-  return observationBlocks(state, screenshotName, resultNote);
+  return observationBlocks(safe, screenshotName, resultNote);
 }
 
 /**
@@ -198,7 +216,7 @@ export async function runDiscovery({
   try {
     // Entry navigation goes through the same gated primitive as everything else.
     await performAction(ctx, 'navigate', { url: target.entry_route });
-    const first = await observe(page, logger, 'entry', null);
+    const first = await observe(page, logger, 'entry', null, target);
 
     const messages = [
       {
@@ -221,7 +239,7 @@ export async function runDiscovery({
         }
         const note = await parkForOperator(session, { reason, source: 'step_budget' });
         maxTurns += RESUME_EXTRA_TURNS;
-        const obs = await observe(page, logger, 'resumed', null);
+        const obs = await observe(page, logger, 'resumed', null, target);
         messages.push({
           role: 'user',
           content: [
@@ -277,7 +295,7 @@ export async function runDiscovery({
         }
         const note = await parkForOperator(session, { reason: call.input.reason, source: 'model' });
         maxTurns += RESUME_EXTRA_TURNS;
-        const obs = await observe(page, logger, 'resumed', null);
+        const obs = await observe(page, logger, 'resumed', null, target);
         messages.push(toolResult(call.id, [{ type: 'text', text: resumeMessage(note) }, ...obs.blocks]));
         continue;
       }
@@ -399,7 +417,7 @@ async function dispatch(call, session, ctx, params, { goal, runId, logger }) {
       });
 
       const note = `Action result: ${JSON.stringify(actionResult).slice(0, 500)}`;
-      const { blocks } = await observe(ctx.page, logger, name, note);
+      const { blocks } = await observe(ctx.page, logger, name, note, ctx.target);
       return { resultBlocks: blocks };
     } catch (err) {
       return { resultBlocks: [{ type: 'text', text: describeActionError(err) }], isError: true };
