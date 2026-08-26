@@ -50,11 +50,15 @@ export const CALLERS = ['operator', 'agent', 'cli'];
 /**
  * @param {object} capability a validated Capability from the store
  * @param {object} params caller-supplied inputs
- * @param {{headless?: boolean, runId?: string, caller?: 'operator'|'agent'|'cli'}} [options]
+ * @param {{headless?: boolean, runId?: string, caller?: 'operator'|'agent'|'cli', tenantId?: string|null}} [options]
  * @returns {Promise<object>} the four-way result, tagged with run_id / capability / version
  * @throws {ApprovalRequired} when a risky capability has not been approved
  */
-export async function runReplay(capability, params = {}, { headless = true, runId, caller = 'operator' } = {}) {
+export async function runReplay(
+  capability,
+  params = {},
+  { headless = true, runId, caller = 'operator', tenantId = null } = {},
+) {
   // Before anything is written. A refusal must not leave a run row or an evidence
   // folder behind, because nothing was attempted.
   const gate = checkUnattendedAllowed(capability);
@@ -75,11 +79,11 @@ export async function runReplay(capability, params = {}, { headless = true, runI
     status: 'running',
     // Written at creation, not at completion: a run that never finishes should
     // still say who started it.
-    detail: { caller: CALLERS.includes(caller) ? caller : 'operator' },
+    detail: { caller: CALLERS.includes(caller) ? caller : 'operator', tenant_id: tenantId },
   });
   const logger = new RunLogger(id);
 
-  const result = await replayCapability({ capability, params, headless, logger });
+  const result = await replayCapability({ capability, params, headless, logger, tenantId });
 
   updateRun(id, {
     status: result.outcome,

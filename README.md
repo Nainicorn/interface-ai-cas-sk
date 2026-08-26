@@ -97,6 +97,12 @@ npm run stability -- --id add-remove-elements-cycle --runs 5
 npm run generate -- --id add-remove-elements-cycle --out ./add-remove-elements-cycle.spec.js
 BASE_URL=https://the-internet.herokuapp.com node ./add-remove-elements-cycle.spec.js
 
+# see if any recorded route looks tenant-specific (a suggestion only, nothing is rewritten)
+npm run canonicalize -- --id add-remove-elements-cycle
+
+# replay it as if for a different tenant with a declared override (see REPORT.md §4)
+npm run replay -- --id add-remove-elements-cycle --tenant <tenant-id>
+
 # approve it, so an outside agent can call it
 curl -X PATCH localhost:3000/api/artifacts/add-remove-elements-cycle/status \
   -H 'content-type: application/json' -d '{"status":"approved"}'

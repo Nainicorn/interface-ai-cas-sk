@@ -18,6 +18,11 @@
  *   4. Anything still unresolved is a HARD_FAILURE carrying step, expectation,
  *      observation, and every locator candidate that was tried.
  *
+ * An optional tenant_id (see applyTenantOverride below) patches individual steps'
+ * locators/urls before any of the above runs — the outcome contract above is unaware
+ * that a patch was even applied, which is the point: cross-tenant reuse is a seam in
+ * front of replay, not a second replay path.
+ *
  * Hands off to: api/artifacts.js, api/capabilities.js, cli/replay.js.
  */
 
@@ -29,6 +34,46 @@ import { performAction, click } from './actions.js';
 import { LocatorResolutionError, MalformedStep, MissingCredential } from './errors.js';
 import { captureState, evaluateCondition } from './perception.js';
 import { attemptRecovery } from './recovery-table.js';
+
+/**
+ * Merge a tenant's declared differences onto the base recording, if any exist.
+ *
+ * Untouched steps stay exactly as recorded — an override only ever replaces what it
+ * explicitly names (a step's locator and/or its url), never the step's action, intent,
+ * checkpoint, or business outcomes. That is what keeps this a small patch over the base
+ * flow rather than a second recording: a tenant running the identical vendor product
+ * needs no override at all, and one with a couple of relabeled buttons needs only those
+ * two step_overrides, not a re-record.
+ *
+ * `base_url`, if the override declares one, lets a tenant's install be reached without
+ * registering it as a whole separate app in config/ — useful for the common case of "same
+ * product, different subdomain, no other differences worth a config file of its own."
+ *
+ * @param {object} capability a validated Capability
+ * @param {string|null} tenantId
+ * @returns {{capability: object, baseUrl: string|null}} the patched capability (or the
+ *   original, unchanged, when there is no tenant or no matching override) and an optional
+ *   base_url to replay against instead of the resolved target's own.
+ */
+export function applyTenantOverride(capability, tenantId) {
+  if (!tenantId) return { capability, baseUrl: null };
+
+  const override = capability.target.tenant_overrides.find((o) => o.tenant_id === tenantId);
+  if (!override) return { capability, baseUrl: null };
+
+  const patchByIndex = new Map(override.step_overrides.map((patch) => [patch.index, patch]));
+  const steps = capability.steps.map((step) => {
+    const patch = patchByIndex.get(step.index);
+    if (!patch) return step;
+    return {
+      ...step,
+      ...(patch.locator ? { locator: patch.locator } : {}),
+      ...(patch.url ? { url: patch.url } : {}),
+    };
+  });
+
+  return { capability: { ...capability, steps }, baseUrl: override.base_url ?? null };
+}
 
 /**
  * Work out what a `type` step should type.
@@ -272,14 +317,25 @@ export async function executeSteps(ctx, capability, params) {
  * @param {object} args.params     caller-supplied inputs
  * @param {boolean} [args.headless]
  * @param {object} [args.logger]   evidence logger
+ * @param {string|null} [args.tenantId] applies a matching tenant_overrides entry, if any
  * @returns {Promise<object>} structured result — never throws for an expected outcome
  */
-export async function replayCapability({ capability, params = {}, headless = true, logger = null }) {
+export async function replayCapability({
+  capability: baseCapability,
+  params = {},
+  headless = true,
+  logger = null,
+  tenantId = null,
+}) {
   const startedAt = Date.now();
+  // Confidence and evidence stay keyed to the BASE recording throughout — a tenant patch
+  // is how it runs, not a different capability with its own history.
+  const { capability, baseUrl: tenantBaseUrl } = applyTenantOverride(baseCapability, tenantId);
 
   const base = {
-    capability: { id: capability.id, version: capability.version, name: capability.name },
+    capability: { id: baseCapability.id, version: baseCapability.version, name: baseCapability.name },
     params_supplied: Object.keys(params),
+    tenant_id: tenantId,
     started_at: new Date(startedAt).toISOString(),
   };
 
@@ -302,6 +358,7 @@ export async function replayCapability({ capability, params = {}, headless = tru
   let target;
   try {
     target = getTarget(capability.target.app_id);
+    if (tenantBaseUrl) target = { ...target, base_url: tenantBaseUrl };
   } catch (err) {
     return {
       ...base,

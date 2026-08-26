@@ -69,6 +69,7 @@ function detailsHtml(capability) {
     <h4>Recorded steps</h4>
     <ol class="steps">${steps}</ol>
     ${outcomes ? `<h4>Also answers, without failing</h4><ol class="steps">${outcomes}</ol>` : ''}
+    ${tenantOverridesHtml(capability.target.tenant_overrides)}
 
     <h4>Stability</h4>
     <div class="stability-check">
@@ -84,6 +85,24 @@ function detailsHtml(capability) {
 
     <p class="muted provenance">Recorded by ${esc(capability.created_from.model ?? 'hand')} · run <span class="mono">${esc(capability.created_from.run_id)}</span></p>
   `;
+}
+
+/**
+ * Declared tenant patches, if this recording has any. Empty is the common case — most
+ * tenants running the same vendor product need no override at all — so nothing renders
+ * when the list is empty rather than an always-visible "0 overrides" line.
+ */
+function tenantOverridesHtml(overrides) {
+  if (!overrides?.length) return '';
+  const items = overrides
+    .map(
+      (o) => `<li><span class="mono">${esc(o.tenant_id)}</span> —
+        ${o.step_overrides.length} step${o.step_overrides.length === 1 ? '' : 's'} patched
+        ${o.base_url ? `, different origin` : ''}
+        ${o.note ? `<div class="muted desc">${esc(o.note)}</div>` : ''}</li>`,
+    )
+    .join('');
+  return `<h4>Tenant overrides</h4><ul class="contract-list">${items}</ul>`;
 }
 
 /** A run per dot, colored by the same outcome badge tones the rest of the console uses. */

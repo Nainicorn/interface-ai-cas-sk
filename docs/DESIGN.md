@@ -149,6 +149,14 @@ to nothing, because a missing element is sometimes the answer rather than a faul
 capability leaves no run row, no evidence folder, and no mark on its confidence: nothing
 happened, and the record says nothing happened.
 
+**Cross-tenant reuse is a seam in front of this diagram, not a branch inside it.** An
+optional `tenant_id` runs `applyTenantOverride()` before ENTRY does anything else — it
+patches the named steps' locators/urls (and optionally points at a different origin) and
+hands `EXEC` an ordinary capability. Everything from PARAMS onward, including the
+four-way outcome contract and the confidence fold, has no idea a patch happened. A tenant
+running the identical vendor product needs no override at all; one with a couple of
+relabeled buttons needs only those steps named, not a re-record.
+
 ---
 
 ## 3. The approval gate, and the two surfaces it separates

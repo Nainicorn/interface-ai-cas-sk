@@ -35,15 +35,18 @@ router.get('/:id', async (req, res, next) => {
 });
 
 /**
- * Deterministic replay. Body: { params: {...}, version?: n }
+ * Deterministic replay. Body: { params: {...}, version?: n, tenant_id?: string }
  * Responds with the full four-way outcome — BUSINESS_OUTCOME is a 200, because it is
  * an answer, not an error.
+ *
+ * `tenant_id`, when it matches an entry in the capability's own tenant_overrides, patches
+ * the run before anything else happens — see engine/replay.js's applyTenantOverride.
  */
 router.post('/:id/replay', async (req, res, next) => {
   try {
-    const { params = {}, version } = req.body ?? {};
+    const { params = {}, version, tenant_id: tenantId = null } = req.body ?? {};
     const capability = await loadCapability(req.params.id, version);
-    res.json(await runReplay(capability, params));
+    res.json(await runReplay(capability, params, { tenantId }));
   } catch (err) {
     next(err);
   }

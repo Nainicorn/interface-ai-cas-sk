@@ -4,7 +4,7 @@
  *   npm run replay -- --id lookup-member-savings-account --param member_id=10001
  *
  * Flags: --id (required), --param k=v (repeatable), --version N (latest if omitted),
- *        --headed (watch it), --run-id <id>
+ *        --headed (watch it), --run-id <id>, --tenant <id> (apply a tenant_overrides entry)
  *
  * Exit codes: 0 for SUCCESS and BUSINESS_OUTCOME (both are answers), 1 for HARD_FAILURE.
  */
@@ -35,6 +35,9 @@ function parseArgs(argv) {
       case '--run-id':
         args.runId = argv[++i];
         break;
+      case '--tenant':
+        args.tenantId = argv[++i];
+        break;
       default:
         throw new Error(`Unknown flag "${argv[i]}"`);
     }
@@ -54,6 +57,7 @@ try {
     headless: args.headless,
     runId: args.runId,
     caller: 'cli',
+    tenantId: args.tenantId ?? null,
   });
 
   console.log(`\nOutcome:  ${result.outcome}`);

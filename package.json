@@ -11,6 +11,7 @@
     "replay": "node --env-file-if-exists=.env src/cli/replay.js",
     "stability": "node --env-file-if-exists=.env src/cli/stability.js",
     "generate": "node --env-file-if-exists=.env src/cli/generate.js",
+    "canonicalize": "node --env-file-if-exists=.env src/cli/canonicalize.js",
     "invoke": "node --env-file-if-exists=.env src/cli/invoke.js",
     "agent-demo": "node --env-file-if-exists=.env tests/agent-demo.js",
     "test": "node --test tests/*.test.js"
