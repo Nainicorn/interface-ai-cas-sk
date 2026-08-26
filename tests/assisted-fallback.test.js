@@ -19,7 +19,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { replayCapability } from '../src/engine/replay.js';
-import { CONFIG_DIR } from '../src/config/app-config.js';
+import { APPS_DIR } from '../src/config/app-config.js';
 import { parseCapability } from '../src/schema/capability.js';
 
 // The recording expects #old-a / #old-b; the live page renamed both ids — a stand-in for
@@ -76,7 +76,7 @@ function buildCapability(appId, { stepA = '#old-a', stepB = '#old-b' } = {}) {
 
 /** Register a throwaway app config pointing at a local server; caller cleans it up. */
 function registerApp(appId, origin) {
-  const dir = path.join(CONFIG_DIR, appId);
+  const dir = path.join(APPS_DIR, appId);
   mkdirSync(dir, { recursive: true });
   writeFileSync(path.join(dir, 'config.json'), JSON.stringify({ name: appId, url: `${origin}/` }));
   return () => rmSync(dir, { recursive: true, force: true });

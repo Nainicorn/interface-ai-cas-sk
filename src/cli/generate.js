@@ -5,7 +5,8 @@
  *   npm run generate -- --id add-remove-elements-cycle
  *   npm run generate -- --id add-remove-elements-cycle --out ./add-remove-elements-cycle.spec.js
  *
- * Flags: --id (required), --version N (latest if omitted), --out <path> (stdout if omitted)
+ * Flags: --id (required), --version N (latest if omitted),
+ *   --out <path> (defaults to ./<id>.spec.js if omitted)
  */
 
 import { writeFileSync } from 'node:fs';
@@ -37,14 +38,11 @@ try {
   const args = parseArgs(process.argv.slice(2));
   const capability = await loadCapability(args.id, args.version);
   const code = generatePlaywrightTest(capability);
+  const outPath = args.out ?? `./${capability.id}.spec.js`;
 
-  if (args.out) {
-    writeFileSync(args.out, code, 'utf8');
-    console.log(`\x1b[32mWrote ${args.out}\x1b[0m  (${code.split('\n').length} lines, ${capability.steps.length} steps)`);
-    console.log(`Run it with:  BASE_URL=<target origin> node ${args.out}`);
-  } else {
-    process.stdout.write(code);
-  }
+  writeFileSync(outPath, code, 'utf8');
+  console.log(`\x1b[32mWrote ${outPath}\x1b[0m  (${code.split('\n').length} lines, ${capability.steps.length} steps)`);
+  console.log(`Run it with:  BASE_URL=<target origin> node ${outPath}`);
 } catch (err) {
   console.error(`generate: ${err.message}`);
   process.exit(1);
