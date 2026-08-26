@@ -1,0 +1,30 @@
+{
+  "id": "legacy_bank/replay/2026-08-26_220421",
+  "kind": "replay",
+  "app_id": "legacy_bank",
+  "goal": null,
+  "status": "RECOVERABLE",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "assisted_fallback_enabled": true,
+    "secrets_overridden": [],
+    "capability": "lookup-member-full-name",
+    "version": 1,
+    "outcome": "RECOVERABLE",
+    "outputs": {
+      "member_full_name": "Marcus Bell"
+    },
+    "business_outcome": null,
+    "failed_step": null,
+    "drift_warnings": null,
+    "assisted_fallbacks": [
+      {
+        "step": 6,
+        "reasoning": "The accessibility tree shows a row \"Name Marcus Bell\" with two cells: label 'Name' and value 'Marcus Bell', so targeting the cell containing 'Marcus Bell' directly or via a sibling selector relative to the 'Name' label cell should reliably locate the same element."
+      }
+    ]
+  },
+  "started_at": "2026-08-26T22:04:21.887Z",
+  "updated_at": "2026-08-26T22:04:38.467Z"
+}

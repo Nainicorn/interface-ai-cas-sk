@@ -1,0 +1,30 @@
+{
+  "id": "legacy_bank/replay/2026-08-26_220552",
+  "kind": "replay",
+  "app_id": "legacy_bank",
+  "goal": null,
+  "status": "RECOVERABLE",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "assisted_fallback_enabled": true,
+    "secrets_overridden": [],
+    "capability": "lookup-member-full-name",
+    "version": 1,
+    "outcome": "RECOVERABLE",
+    "outputs": {
+      "member_full_name": "Marcus Bell"
+    },
+    "business_outcome": null,
+    "failed_step": null,
+    "drift_warnings": null,
+    "assisted_fallbacks": [
+      {
+        "step": 6,
+        "reasoning": "The accessibility tree shows a row with cell \"Name\" followed by cell \"Marcus Bell\" inside the Member Detail table; the original nth-child(2) selector likely failed due to nested table structure or whitespace, so targeting the cell by its known text or using adjacent sibling combinator is more reliable."
+      }
+    ]
+  },
+  "started_at": "2026-08-26T22:05:52.419Z",
+  "updated_at": "2026-08-26T22:06:08.937Z"
+}

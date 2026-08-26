@@ -1,0 +1,26 @@
+{
+  "id": "legacy_bank/discovery/2026-08-26_220133",
+  "kind": "discovery",
+  "app_id": "legacy_bank",
+  "goal": "Log in, search for member 10001, open a new sub-account for them (Savings, initial deposit 100), and reach the confirmation screen showing a reference number",
+  "status": "escalated",
+  "detail": {
+    "artifact": null,
+    "turns": 15,
+    "usage": {
+      "input_tokens": 30,
+      "output_tokens": 7836,
+      "cache_read_input_tokens": 298995,
+      "cache_creation_input_tokens": 32984
+    },
+    "model": "claude-sonnet-5",
+    "evidence_dir": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/legacy_bank/discovery/2026-08-26_220133",
+    "escalation": {
+      "reason": "The \"Account Type\" field on the Open Sub-Account page is a native HTML <select> dropdown. Clicking it doesn't visually expand a selectable options list (headless rendering), and clicking the \"Savings\" <option> directly is rejected because the option is not considered visible. The type/fill action also fails because <select> elements aren't fillable. I need help selecting \"Savings\" from this dropdown so I can proceed with the initial deposit and submission.",
+      "attempted": "Clicked the select element, then tried clicking the \"Savings\" option via role and css locators (rejected as not visible). Tried using the type/fill action on the select via css and role locators (rejected: select is not fillable)."
+    },
+    "finished_at": "2026-08-26T22:03:35.543Z"
+  },
+  "started_at": "2026-08-26T22:01:33.247Z",
+  "updated_at": "2026-08-26T22:03:35.543Z"
+}

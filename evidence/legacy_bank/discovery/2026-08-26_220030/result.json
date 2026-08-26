@@ -1,0 +1,27 @@
+{
+  "id": "legacy_bank/discovery/2026-08-26_220030",
+  "kind": "discovery",
+  "app_id": "legacy_bank",
+  "goal": "Log in and search for member 10002, then read their full name from the member detail page",
+  "status": "recorded",
+  "detail": {
+    "artifact": {
+      "id": "lookup-member-full-name",
+      "version": 1,
+      "path": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/legacy_bank/discovery/2026-08-26_220030/goal.json"
+    },
+    "turns": 8,
+    "usage": {
+      "input_tokens": 16,
+      "output_tokens": 2455,
+      "cache_read_input_tokens": 96010,
+      "cache_creation_input_tokens": 22605
+    },
+    "model": "claude-sonnet-5",
+    "evidence_dir": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/legacy_bank/discovery/2026-08-26_220030",
+    "escalation": null,
+    "finished_at": "2026-08-26T22:01:04.960Z"
+  },
+  "started_at": "2026-08-26T22:00:30.964Z",
+  "updated_at": "2026-08-26T22:01:04.960Z"
+}

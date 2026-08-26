@@ -1,0 +1,29 @@
+{
+  "id": "legacy_bank/replay/2026-08-26_215411",
+  "kind": "replay",
+  "app_id": "legacy_bank",
+  "goal": null,
+  "status": "HARD_FAILURE",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "assisted_fallback_enabled": false,
+    "secrets_overridden": [],
+    "capability": "lookup-member-status",
+    "version": 1,
+    "outcome": "HARD_FAILURE",
+    "outputs": null,
+    "business_outcome": null,
+    "failed_step": {
+      "step": 5,
+      "intent": "Read the member's status value from the detail page",
+      "message": "Could not resolve \"Status value cell\" — all 1 candidate(s) failed",
+      "url": "http://localhost:3001/member/40000",
+      "screenshot": "000-hard-failure.png"
+    },
+    "drift_warnings": null,
+    "assisted_fallbacks": null
+  },
+  "started_at": "2026-08-26T21:54:11.384Z",
+  "updated_at": "2026-08-26T21:54:20.724Z"
+}

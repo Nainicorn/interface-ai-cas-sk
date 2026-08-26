@@ -1,0 +1,29 @@
+{
+  "id": "legacy_bank/replay/2026-08-26_215327",
+  "kind": "replay",
+  "app_id": "legacy_bank",
+  "goal": null,
+  "status": "HARD_FAILURE",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "assisted_fallback_enabled": false,
+    "secrets_overridden": [],
+    "capability": "lookup-member-status",
+    "version": 1,
+    "outcome": "HARD_FAILURE",
+    "outputs": null,
+    "business_outcome": null,
+    "failed_step": {
+      "step": "pre-flight",
+      "intent": null,
+      "message": "Invalid parameters: \"member_id\" is required",
+      "url": null,
+      "screenshot": null
+    },
+    "drift_warnings": null,
+    "assisted_fallbacks": null
+  },
+  "started_at": "2026-08-26T21:53:27.891Z",
+  "updated_at": "2026-08-26T21:53:27.891Z"
+}

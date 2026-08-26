@@ -7,6 +7,9 @@ If the agent is successful the flow gets saved as a typed, versioned "capability
 If either the agent or the replay gets stuck, a human can take over during the live session and can either hand back control, manually interact with the session, or give the agent some extra guidance.
 
 Diagrams of the entire flow of the application are in [docs/DESIGN.md](docs/DESIGN.md).
+A plain-language walkthrough of how it all works is in
+[docs/WALKTHROUGH.md](docs/WALKTHROUGH.md), and a full end-to-end demo of every feature —
+CLI and console — is in [docs/SCRIPT.md](docs/SCRIPT.md).
 
 ---
 

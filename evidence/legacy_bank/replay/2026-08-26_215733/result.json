@@ -1,0 +1,30 @@
+{
+  "id": "legacy_bank/replay/2026-08-26_215733",
+  "kind": "replay",
+  "app_id": "legacy_bank",
+  "goal": null,
+  "status": "RECOVERABLE",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "assisted_fallback_enabled": true,
+    "secrets_overridden": [],
+    "capability": "lookup-member-status",
+    "version": 1,
+    "outcome": "RECOVERABLE",
+    "outputs": {
+      "member_status": "Locked"
+    },
+    "business_outcome": null,
+    "failed_step": null,
+    "drift_warnings": null,
+    "assisted_fallbacks": [
+      {
+        "step": 5,
+        "reasoning": "The accessibility tree shows a row with cell \"Status\" followed by a sibling cell \"Locked\" inside the nested Member Detail table; the original CSS failed likely due to nested table scoping or exact text matching issues, so targeting the cell by its role and known value or a corrected nth-child selector should locate the same element."
+      }
+    ]
+  },
+  "started_at": "2026-08-26T21:57:33.123Z",
+  "updated_at": "2026-08-26T21:57:48.858Z"
+}

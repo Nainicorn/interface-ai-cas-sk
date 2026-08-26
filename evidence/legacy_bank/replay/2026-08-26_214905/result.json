@@ -1,0 +1,38 @@
+{
+  "id": "legacy_bank/replay/2026-08-26_214905",
+  "kind": "replay",
+  "app_id": "legacy_bank",
+  "goal": null,
+  "status": "SUCCESS",
+  "detail": {
+    "caller": "agent",
+    "tenant_id": null,
+    "assisted_fallback_enabled": false,
+    "secrets_overridden": [],
+    "capability": "get-member-account-count",
+    "version": 1,
+    "outcome": "SUCCESS",
+    "outputs": {
+      "accounts_table_text": "Account Number\tType\tOpened\tBalance\nCHK-10002-01\tChecking\t2019-11-25\t$812.09"
+    },
+    "business_outcome": null,
+    "failed_step": null,
+    "drift_warnings": [
+      {
+        "step": 3,
+        "score": 0.3
+      },
+      {
+        "step": 4,
+        "score": 0.49
+      },
+      {
+        "step": 5,
+        "score": 0.49
+      }
+    ],
+    "assisted_fallbacks": null
+  },
+  "started_at": "2026-08-26T21:49:05.110Z",
+  "updated_at": "2026-08-26T21:49:11.415Z"
+}
