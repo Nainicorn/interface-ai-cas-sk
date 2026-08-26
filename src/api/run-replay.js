@@ -60,7 +60,7 @@ export const CALLERS = ['operator', 'agent', 'cli'];
 export async function runReplay(
   capability,
   params = {},
-  { headless = true, runId, caller = 'operator', tenantId = null, assistedFallback = false } = {},
+  { headless = true, runId, caller = 'operator', tenantId = null, assistedFallback = false, secrets = null } = {},
 ) {
   // Before anything is written. A refusal must not leave a run row or an evidence
   // folder behind, because nothing was attempted.
@@ -86,6 +86,7 @@ export async function runReplay(
       caller: CALLERS.includes(caller) ? caller : 'operator',
       tenant_id: tenantId,
       assisted_fallback_enabled: assistedFallback,
+      secrets_overridden: secrets ? Object.keys(secrets) : [],
     },
   });
   const logger = new RunLogger(id);
@@ -93,6 +94,9 @@ export async function runReplay(
   const result = await replayCapability({
     capability,
     params,
+    // Per-call credentials. Never written to the run record — only the NAMES are, above,
+    // so a reviewer can see a credential was overridden without the value being kept.
+    secrets,
     headless,
     logger,
     tenantId,

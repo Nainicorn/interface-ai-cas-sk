@@ -39,8 +39,8 @@ router.get('/:id', async (req, res, next) => {
 });
 
 /**
- * Deterministic replay. Body: { params: {...}, version?: n, tenant_id?: string,
- * assisted_fallback?: boolean }
+ * Deterministic replay. Body: { params: {...}, secrets?: {...}, version?: n,
+ * tenant_id?: string, assisted_fallback?: boolean }
  * Responds with the full four-way outcome — BUSINESS_OUTCOME is a 200, because it is
  * an answer, not an error.
  *
@@ -49,12 +49,29 @@ router.get('/:id', async (req, res, next) => {
  *
  * `assisted_fallback` is OFF unless set true — it is the one option on this route that
  * lets a replay make a single, bounded LLM call. See agent/assisted-fallback.js.
+ *
+ * `secrets` overrides the app's stored credentials for this run only, keyed by the env
+ * var NAME the recording already references — so the same capability can run as a
+ * different user without editing the app or re-recording. It is a separate field from
+ * `params` rather than more params, because params are declared in input_schema, listed
+ * back in the run record, and published to agents in the catalog; a credential must be
+ * none of those. Nothing here is persisted — only the names reach the run record, and
+ * engine/replay.js masks the values back out of anything captured from the page.
+ *
+ * Deliberately absent from api/catalog.js: an autonomous caller has no business holding
+ * a user's password, so the agent surface cannot supply one.
  */
 router.post('/:id/replay', async (req, res, next) => {
   try {
-    const { params = {}, version, tenant_id: tenantId = null, assisted_fallback: assistedFallback = false } = req.body ?? {};
+    const {
+      params = {},
+      secrets = null,
+      version,
+      tenant_id: tenantId = null,
+      assisted_fallback: assistedFallback = false,
+    } = req.body ?? {};
     const capability = await loadCapability(req.params.id, version);
-    res.json(await runReplay(capability, params, { tenantId, assistedFallback }));
+    res.json(await runReplay(capability, params, { tenantId, assistedFallback, secrets }));
   } catch (err) {
     next(err);
   }

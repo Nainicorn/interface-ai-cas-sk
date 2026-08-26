@@ -79,11 +79,19 @@ export function applyTenantOverride(capability, tenantId) {
 /**
  * Work out what a `type` step should type.
  *
- * Three mutually exclusive sources, in precedence order. Credentials come from the
- * environment by NAME so that a secret never lives in the artifact — which is what lets
- * the same recording run against a different tenant with different credentials.
+ * Three mutually exclusive sources, in precedence order. Credentials are referenced by
+ * NAME so that a secret never lives in the artifact — which is what lets the same
+ * recording run for a different user, or a different tenant, with different credentials.
+ *
+ * A credential name resolves against the caller's `secrets` first and the process
+ * environment second. That ordering is the whole per-call credential feature: the app's
+ * stored credential is the default, and a caller who has a different one for this run
+ * supplies it without editing the app or touching the recording. `secrets` is a separate
+ * channel from `params` on purpose — params are declared in input_schema, echoed back in
+ * the run record, and offered to agents in the catalog, and a secret must be none of
+ * those things.
  */
-function resolveStepValue(step, params) {
+function resolveStepValue(step, params, secrets) {
   if (step.value_from !== undefined) {
     const value = params[step.value_from];
     if (value === undefined) {
@@ -92,7 +100,7 @@ function resolveStepValue(step, params) {
     return { value: String(value), fieldName: step.value_from };
   }
   if (step.value_from_env !== undefined) {
-    const value = process.env[step.value_from_env];
+    const value = secrets?.[step.value_from_env] ?? process.env[step.value_from_env];
     if (!value) throw new MissingCredential(step.value_from_env);
     return { value, fieldName: step.value_from_env };
   }
@@ -102,8 +110,41 @@ function resolveStepValue(step, params) {
   throw new MalformedStep(step.index, 'a "type" action needs value_from, value_from_env, or value_literal');
 }
 
+/**
+ * Every credential value this replay could type, so they can be masked back out of
+ * anything captured from the page.
+ *
+ * A browser publishes a filled input's value in the accessibility tree, so a password
+ * typed at step 2 is still sitting in step 5's snapshot. That snapshot feeds the drift
+ * fingerprint — which is PERSISTED into the artifact — and the assisted-fallback model
+ * call. Without this, a secret reaches an artifact and a model having been correctly
+ * redacted everywhere a reviewer would think to look.
+ *
+ * Reads the same two sources as resolveStepValue, in the same order, so a per-call
+ * credential is masked exactly like a stored one.
+ */
+function secretValues(capability, secrets) {
+  const values = new Set();
+  for (const step of capability.steps) {
+    if (!step.value_from_env) continue;
+    const value = secrets?.[step.value_from_env] ?? process.env[step.value_from_env];
+    if (value) values.add(value);
+  }
+  return [...values];
+}
+
+/**
+ * Replace every known credential value in captured page text with its shape.
+ * Split/join rather than a regex: a credential is arbitrary text and may contain
+ * characters a regex would treat as syntax.
+ */
+function maskSecrets(text, values) {
+  if (!text || values.length === 0) return text ?? '';
+  return values.reduce((acc, value) => acc.split(value).join(`<string:${value.length}>`), text);
+}
+
 /** Build the argument object for one step's action primitive. */
-function argsForStep(step, params) {
+function argsForStep(step, params, secrets) {
   switch (step.action) {
     case 'navigate':
       if (!step.url) throw new MalformedStep(step.index, '"navigate" requires a url');
@@ -113,7 +154,7 @@ function argsForStep(step, params) {
       return { locator: step.locator };
     case 'type': {
       if (!step.locator) throw new MalformedStep(step.index, '"type" requires a locator');
-      const { value, fieldName } = resolveStepValue(step, params);
+      const { value, fieldName } = resolveStepValue(step, params, secrets);
       return { locator: step.locator, value, fieldName };
     }
     case 'read':
@@ -152,9 +193,12 @@ async function matchBusinessOutcome(page, step) {
  *
  * @returns {Promise<{actionResult: object, suggestion: object}|null>}
  */
-async function attemptAssistedFallback(ctx, capability, step, params, err, fallback) {
+async function attemptAssistedFallback(ctx, capability, step, params, secrets, masks, err, fallback) {
   const state = await captureState(ctx.page, { screenshot: false }).catch(() => null);
-  const suggestion = await fallback({ step, attempts: err.attempts, ariaTree: state?.ariaTree ?? '' }).catch(() => null);
+  // Masked before it leaves the deterministic core: this is the one place in replay where
+  // page text reaches a model, and a filled password field is visible in that text.
+  const ariaTree = maskSecrets(state?.ariaTree ?? '', masks);
+  const suggestion = await fallback({ step, attempts: err.attempts, ariaTree }).catch(() => null);
   if (!suggestion?.locator) return null;
 
   ctx.logger?.logEvent('assisted_fallback', {
@@ -166,7 +210,7 @@ async function attemptAssistedFallback(ctx, capability, step, params, err, fallb
 
   const patchedStep = { ...step, locator: suggestion.locator };
   try {
-    const actionResult = await performAction(ctx, step.action, argsForStep(patchedStep, params));
+    const actionResult = await performAction(ctx, step.action, argsForStep(patchedStep, params, secrets));
     const check = await evaluateCondition(ctx.page, step.expected_outcome);
     if (!check.ok) return null;
     return { actionResult, suggestion };
@@ -180,9 +224,11 @@ async function attemptAssistedFallback(ctx, capability, step, params, err, fallb
  * and log a warning when it has drifted. Never affects the step's own outcome — see
  * engine/drift.js.
  */
-async function recordDrift(ctx, capability, step, driftWarnings, observedFingerprints) {
+async function recordDrift(ctx, capability, step, driftWarnings, observedFingerprints, masks) {
   const state = await captureState(ctx.page, { screenshot: false });
-  const fp = fingerprint(state.ariaTree);
+  // Masked before fingerprinting: this fingerprint is written into the artifact as the
+  // drift baseline, and an artifact must never carry a credential.
+  const fp = fingerprint(maskSecrets(state.ariaTree, masks));
   observedFingerprints[step.index] = fp;
   const baseline = capability.drift_baseline?.[String(step.index)];
   if (!baseline) return;
@@ -205,7 +251,8 @@ async function recordDrift(ctx, capability, step, driftWarnings, observedFingerp
  *   Fires at most once per call, only when a step's locator cannot be resolved at all.
  * @returns {Promise<object>} the structured replay result
  */
-export async function executeSteps(ctx, capability, params, { fallback = null } = {}) {
+export async function executeSteps(ctx, capability, params, { fallback = null, secrets = null } = {}) {
+  const masks = secretValues(capability, secrets);
   const outputs = {};
   const stepResults = [];
   const recoveries = [];
@@ -220,7 +267,7 @@ export async function executeSteps(ctx, capability, params, { fallback = null } 
 
     try {
       // --- act -------------------------------------------------------------
-      const actionResult = await performAction(ctx, step.action, argsForStep(step, params));
+      const actionResult = await performAction(ctx, step.action, argsForStep(step, params, secrets));
 
       // --- 1. declared business outcomes, BEFORE the checkpoint -------------
       const business = await matchBusinessOutcome(ctx.page, step);
@@ -284,7 +331,7 @@ export async function executeSteps(ctx, capability, params, { fallback = null } 
 
       // --- drift: only reached once the checkpoint above has already held; never what
       // decides SUCCESS vs failure, purely a side-channel warning for a human ----------
-      await recordDrift(ctx, capability, step, driftWarnings, observedFingerprints);
+      await recordDrift(ctx, capability, step, driftWarnings, observedFingerprints, masks);
 
       // --- bind declared outputs -------------------------------------------
       if (step.extract_as) {
@@ -331,7 +378,7 @@ export async function executeSteps(ctx, capability, params, { fallback = null } 
         // anything but a genuinely unresolved locator, never twice in one replay.
         if (fallbackAvailable) {
           fallbackAvailable = false;
-          const recovered = await attemptAssistedFallback(ctx, capability, step, params, err, fallback);
+          const recovered = await attemptAssistedFallback(ctx, capability, step, params, secrets, masks, err, fallback);
           if (recovered) {
             record.outcome = 'RECOVERABLE';
             record.assisted_fallback = { reasoning: recovered.suggestion.reasoning };
@@ -340,7 +387,7 @@ export async function executeSteps(ctx, capability, params, { fallback = null } 
               outputs[step.extract_as] = recovered.actionResult.extracted ?? recovered.actionResult.raw ?? null;
               record.extracted_to = step.extract_as;
             }
-            await recordDrift(ctx, capability, step, driftWarnings, observedFingerprints);
+            await recordDrift(ctx, capability, step, driftWarnings, observedFingerprints, masks);
             record.duration_ms = Date.now() - started;
             stepResults.push(record);
             continue;
@@ -434,6 +481,7 @@ export async function executeSteps(ctx, capability, params, { fallback = null } 
 export async function replayCapability({
   capability: baseCapability,
   params = {},
+  secrets = null,
   headless = true,
   logger = null,
   tenantId = null,
@@ -499,7 +547,7 @@ export async function replayCapability({
       waitUntil: 'domcontentloaded',
     });
 
-    const result = await executeSteps(ctx, capability, params, { fallback: assistedFallback });
+    const result = await executeSteps(ctx, capability, params, { fallback: assistedFallback, secrets });
 
     // Fold this outcome into the artifact's rolling confidence signal. Only runs that
     // actually exercised the recording count — pre-flight refusals and infrastructure

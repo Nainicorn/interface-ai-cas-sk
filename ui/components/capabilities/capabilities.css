@@ -15,6 +15,24 @@
 #capabilities dialog .hint { color: var(--ink-3); font-weight: 400; }
 #capabilities dialog .err { color: var(--danger); margin: 10px 0 0; font-size: 12.5px; }
 #capabilities dialog input { width: 100%; margin-bottom: 12px; }
+
+/* Running as a different user: set apart from the declared params above it, because these
+   two things are not the same kind of input. Params are part of the capability's public
+   contract; a credential is not, and blank here means "use the app's stored one". */
+#capabilities dialog .cred-block {
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid var(--line);
+}
+#capabilities dialog .cred-lede {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+#capabilities dialog .cred-lede .hint { display: block; font-weight: 400; margin-top: 2px; }
+#capabilities dialog .cred-block input { margin-bottom: 8px; }
+#capabilities dialog .cred-block input::placeholder { font-size: 12px; color: var(--ink-3); }
 #capabilities dialog .actions { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
 #capabilities dialog .actions .spacer { flex: 1; }
 

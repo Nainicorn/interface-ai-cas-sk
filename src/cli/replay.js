@@ -5,6 +5,8 @@
  *
  * Flags: --id (required), --param k=v (repeatable), --version N (latest if omitted),
  *        --headed (watch it), --run-id <id>, --tenant <id> (apply a tenant_overrides entry),
+ *        --secret NAME=value (repeatable — override a stored credential for THIS run only,
+ *        so the same recording can run as a different user; never persisted),
  *        --assisted-fallback (opt in to one bounded LLM locator suggestion if a step's
  *        recorded locator can't be resolved at all — off unless explicitly passed)
  *
@@ -26,6 +28,17 @@ function parseArgs(argv) {
         const eq = pair.indexOf('=');
         if (eq < 1) throw new Error(`--param expects name=value, got "${pair}"`);
         args.params[pair.slice(0, eq)] = pair.slice(eq + 1);
+        break;
+      }
+      case '--secret': {
+        // Same shape as --param, a separate bucket. Keeping credentials out of `params`
+        // is what keeps them out of input_schema validation, the run record, and the
+        // agent catalog.
+        const pair = argv[++i] ?? '';
+        const eq = pair.indexOf('=');
+        if (eq < 1) throw new Error(`--secret expects NAME=value, got "${pair}"`);
+        args.secrets ??= {};
+        args.secrets[pair.slice(0, eq)] = pair.slice(eq + 1);
         break;
       }
       case '--version':
@@ -67,6 +80,7 @@ try {
     caller: 'cli',
     tenantId: args.tenantId ?? null,
     assistedFallback: args.assistedFallback ?? false,
+    secrets: args.secrets ?? null,
   });
 
   console.log(`\nOutcome:  ${result.outcome}`);

@@ -28,8 +28,14 @@ const fallbackEnabled = new Set();
 const fetchArtifacts = () => getJson('/api/capabilities');
 const fetchArtifact = (id) => getJson(`/api/capabilities/${encodeURIComponent(id)}`);
 const setStatus = (id, status) => sendJson('PATCH', `/api/capabilities/${encodeURIComponent(id)}/status`, { status });
-const replay = (id, params, assistedFallback) =>
-  postJson(`/api/capabilities/${encodeURIComponent(id)}/replay`, { params, assisted_fallback: assistedFallback });
+const replay = (id, params, assistedFallback, secrets) =>
+  postJson(`/api/capabilities/${encodeURIComponent(id)}/replay`, {
+    params,
+    assisted_fallback: assistedFallback,
+    // Sent only when the operator typed one; omitted entirely otherwise, so the app's
+    // stored credential stays the default.
+    ...(secrets ? { secrets } : {}),
+  });
 const checkStability = (id, params, runs) =>
   postJson(`/api/capabilities/${encodeURIComponent(id)}/stability`, { params, runs });
 
@@ -192,17 +198,30 @@ export async function mount(root) {
   const paramsIntro = root.querySelector('[data-params-intro]');
   const paramsRun = root.querySelector('[data-params-run]');
 
+/** The credential env var names a recording references, deduped, in step order. */
+  const credentialNames = (capability) =>
+    [...new Set((capability.steps ?? []).map((s) => s.value_from_env).filter(Boolean))];
+
   /**
-   * Collect a capability's required inputs before replaying it. Resolves to a params
-   * object, or null if the operator cancels. No dialog at all when nothing is required —
-   * a capability with an empty input_schema should replay in one click, same as before.
+   * Collect a capability's required inputs — and, optionally, credentials to run it as
+   * somebody else — before replaying it. Resolves to {params, secrets}, or null on cancel.
+   * No dialog at all when there is nothing to ask for.
+   *
+   * Credentials are a separate section, blank by default, and blank means "use the app's
+   * stored one". They are kept out of `params` all the way through: params are declared
+   * in input_schema, echoed back in the run record, and published to agents; a credential
+   * must be none of those. What is typed here is sent once and never stored.
    */
   function askForParams(capability) {
     const required = capability.input_schema?.required ?? [];
-    if (!required.length) return Promise.resolve({});
+    const credentials = credentialNames(capability);
+    if (!required.length && !credentials.length) return Promise.resolve({ params: {}, secrets: null });
 
-    paramsIntro.textContent = `${capability.name} needs these to replay:`;
-    paramsFields.innerHTML = required
+    paramsIntro.textContent = required.length
+      ? `${capability.name} needs these to replay:`
+      : `${capability.name} replays with the credentials stored for this app.`;
+
+    const paramInputs = required
       .map((name) => {
         const desc = capability.input_schema.properties?.[name]?.description;
         return `
@@ -210,6 +229,21 @@ export async function mount(root) {
           <input name="param:${esc(name)}" autocomplete="off" />`;
       })
       .join('');
+
+    const credentialInputs = credentials.length
+      ? `<div class="cred-block">
+           <p class="cred-lede">Run as a different user <span class="hint">optional — leave blank to use the app's stored credentials</span></p>
+           ${credentials
+             .map(
+               (name) => `
+             <label>${esc(name)}</label>
+             <input name="secret:${esc(name)}" type="password" autocomplete="off" placeholder="stored — type to replace for this run only" />`,
+             )
+             .join('')}
+         </div>`
+      : '';
+
+    paramsFields.innerHTML = paramInputs + credentialInputs;
 
     return new Promise((resolve) => {
       let confirmed = false;
@@ -222,10 +256,25 @@ export async function mount(root) {
       const onClose = () => {
         paramsRun.removeEventListener('click', onRun);
         paramsDialog.removeEventListener('close', onClose);
-        if (!confirmed) return resolve(null);
+        // Clear the credential fields on the way out, whatever closed the dialog — a
+        // typed password should not still be sitting in the DOM after the run.
+        const wipe = () => paramsFields.querySelectorAll('[name^="secret:"]').forEach((el) => { el.value = ''; });
+        if (!confirmed) {
+          wipe();
+          return resolve(null);
+        }
         const params = {};
         for (const name of required) params[name] = paramsFields.querySelector(`[name="param:${name}"]`).value;
-        resolve(params);
+
+        // Only names the operator actually typed into. A blank field means "unchanged",
+        // never an empty credential.
+        const secrets = {};
+        for (const name of credentials) {
+          const value = paramsFields.querySelector(`[name="secret:${name}"]`)?.value ?? '';
+          if (value) secrets[name] = value;
+        }
+        wipe();
+        resolve({ params, secrets: Object.keys(secrets).length ? secrets : null });
       };
       paramsRun.addEventListener('click', onRun);
       paramsDialog.addEventListener('close', onClose);
@@ -327,8 +376,9 @@ export async function mount(root) {
       const id = stabilityButton.dataset.stability;
       const resultEl = root.querySelector(`[data-stability-result="${id}"]`);
       const capability = await fetchArtifact(id);
-      const params = await askForParams(capability);
-      if (params === null) return; // cancelled
+      const collected = await askForParams(capability);
+      if (collected === null) return; // cancelled
+      const { params } = collected;
 
       stabilityButton.disabled = true;
       resultEl.textContent = 'Replaying 5×…';
@@ -352,12 +402,13 @@ export async function mount(root) {
     // Required inputs need a value per replay — the recording has no memory of what
     // it was tried with. Optional ones stay unset unless the caller wants to override.
     const capability = await fetchArtifact(id);
-    const params = await askForParams(capability);
-    if (params === null) return; // cancelled
+    const collected = await askForParams(capability);
+    if (collected === null) return; // cancelled
+    const { params, secrets } = collected;
 
     button.disabled = true;
     try {
-      const outcome = await replay(id, params, fallbackEnabled.has(id));
+      const outcome = await replay(id, params, fallbackEnabled.has(id), secrets);
       if (outcome.assisted_fallbacks?.length) {
         result.innerHTML = `<span class="hint">AI-assisted fix used — see the run report</span>`;
       }
