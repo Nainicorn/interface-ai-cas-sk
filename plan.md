@@ -1,5 +1,10 @@
 # plan.md — remaining stretch goals + 1 unique feature
 
+**Status: all 5 phases complete and committed.** Phases 1–4 below (stability, codegen,
+cross-tenant, drift) landed in that order; assisted fallback (phase 4 in the original
+numbering) was deliberately built LAST since it's the highest-risk one. See REPORT.md's
+Cuts section for the final writeup of each.
+
 Goal: finish the 4 stretch goals not built in the original submission, plus one new
 feature (UI drift detector) not in the assignment at all. Each phase is small, tested,
 documented, and committed on its own before the next starts.
