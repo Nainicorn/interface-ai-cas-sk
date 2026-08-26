@@ -188,6 +188,13 @@ export const CapabilitySchema = z.object({
   // Spelled out rather than `.default({})`: Zod 4 returns a default value as-is instead
   // of parsing it, so `{}` stayed `{}` and the first replay computed `undefined + 1`.
   confidence: ConfidenceSchema.default({ runs: 0, successes: 0, last_outcome: null, updated_at: null }),
+
+  // Keyed by step index (as a string — object keys are always strings, and this is
+  // written straight to JSON). Established once, on the first successful replay, by
+  // engine/drift.js via schema/store.js's establishDriftBaseline — never overwritten
+  // after that, so later replays are compared against a fixed reference rather than
+  // silently renormalizing to whatever the page looked like most recently.
+  drift_baseline: z.record(z.string(), z.array(z.string())).default({}),
 });
 
 /**

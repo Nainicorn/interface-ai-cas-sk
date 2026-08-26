@@ -28,9 +28,10 @@
 
 import { chromium } from 'playwright';
 import { getTarget, resolveUrl } from '../config/app-config.js';
-import { recordReplayOutcome } from '../schema/store.js';
+import { recordReplayOutcome, establishDriftBaseline } from '../schema/store.js';
 import { validateParams } from '../schema/validate-params.js';
 import { performAction, click } from './actions.js';
+import { driftScore, fingerprint, isDrifted } from './drift.js';
 import { LocatorResolutionError, MalformedStep, MissingCredential } from './errors.js';
 import { captureState, evaluateCondition } from './perception.js';
 import { attemptRecovery } from './recovery-table.js';
@@ -149,6 +150,8 @@ export async function executeSteps(ctx, capability, params) {
   const outputs = {};
   const stepResults = [];
   const recoveries = [];
+  const driftWarnings = [];
+  const observedFingerprints = {};
 
   for (const step of capability.steps) {
     const record = { index: step.index, intent: step.intent, action: step.action };
@@ -171,6 +174,8 @@ export async function executeSteps(ctx, capability, params) {
           outputs,
           steps: stepResults,
           recoveries,
+          drift_warnings: driftWarnings,
+          observed_fingerprints: observedFingerprints,
           failure: null,
         };
       }
@@ -199,6 +204,8 @@ export async function executeSteps(ctx, capability, params) {
           outputs,
           steps: stepResults,
           recoveries,
+          drift_warnings: driftWarnings,
+          observed_fingerprints: observedFingerprints,
           business_outcome: null,
           failure: {
             step: step.index,
@@ -210,6 +217,21 @@ export async function executeSteps(ctx, capability, params) {
             screenshot: ctx.logger?.saveScreenshot(state.screenshotBase64, 'hard-failure') ?? null,
           },
         };
+      }
+
+      // --- drift: compare this step's page state against its established baseline ---
+      // Only reached once the checkpoint above has already held — this is never what
+      // decides SUCCESS vs failure, purely a side-channel warning for a human.
+      const state = await captureState(ctx.page, { screenshot: false });
+      const fp = fingerprint(state.ariaTree);
+      observedFingerprints[step.index] = fp;
+      const baseline = capability.drift_baseline?.[String(step.index)];
+      if (baseline) {
+        const score = driftScore(baseline, fp);
+        if (isDrifted(score)) {
+          driftWarnings.push({ step: step.index, score: Math.round(score * 100) / 100 });
+          ctx.logger?.logEvent('drift_warning', { step: step.index, intent: step.intent, score });
+        }
       }
 
       // --- bind declared outputs -------------------------------------------
@@ -245,6 +267,8 @@ export async function executeSteps(ctx, capability, params) {
             outputs,
             steps: stepResults,
             recoveries,
+            drift_warnings: driftWarnings,
+            observed_fingerprints: observedFingerprints,
             failure: null,
           };
         }
@@ -262,6 +286,8 @@ export async function executeSteps(ctx, capability, params) {
         outputs,
         steps: stepResults,
         recoveries,
+        drift_warnings: driftWarnings,
+        observed_fingerprints: observedFingerprints,
         business_outcome: null,
         failure: {
           step: step.index,
@@ -287,6 +313,8 @@ export async function executeSteps(ctx, capability, params) {
       outputs,
       steps: stepResults,
       recoveries,
+      drift_warnings: driftWarnings,
+      observed_fingerprints: observedFingerprints,
       business_outcome: null,
       failure: {
         step: 'success_checkpoint',
@@ -304,6 +332,8 @@ export async function executeSteps(ctx, capability, params) {
     outputs,
     steps: stepResults,
     recoveries,
+    drift_warnings: driftWarnings,
+    observed_fingerprints: observedFingerprints,
     business_outcome: null,
     failure: null,
   };
@@ -390,6 +420,13 @@ export async function replayCapability({
     // to, and telemetry must never turn a completed replay into a failure.
     try {
       recordReplayOutcome(capability.id, capability.version, result.outcome);
+
+      // Only a run that walked every step start to finish has a complete set of
+      // fingerprints worth freezing as the reference — SUCCESS and RECOVERABLE both
+      // qualify, BUSINESS_OUTCOME and HARD_FAILURE both exit early. See engine/drift.js.
+      if (['SUCCESS', 'RECOVERABLE'].includes(result.outcome)) {
+        establishDriftBaseline(capability.id, capability.version, result.observed_fingerprints);
+      }
     } catch {
       /* see above — telemetry never fails a completed replay */
     }
