@@ -190,6 +190,23 @@ ol.steps { margin: 6px 0; padding-left: 22px; color: var(--ink-2); }
 ol.steps li { margin: 3px 0; }
 ol.steps .mono { color: var(--ink-3); }
 
+/* --- stability check --------------------------------------------------------- */
+#capabilities .stability-check { display: flex; align-items: center; gap: 10px; margin: 6px 0 0; }
+#capabilities .stability-check [data-stability] { margin: 0; }
+#capabilities .stability-result { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; }
+#capabilities .stability-dots { display: inline-flex; gap: 3px; }
+/* One badge per run, shrunk to a dot: same outcome colors as everywhere else in the
+   console, just small enough to read as a strip rather than a list. */
+#capabilities .badge.dot {
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  text-indent: -999px;
+}
+#capabilities .stability-pct { font-variant-numeric: tabular-nums; }
+
 tr.expand .provenance { margin: 14px 0 0; font-size: 11.5px; }
 
 @media (max-width: 720px) {

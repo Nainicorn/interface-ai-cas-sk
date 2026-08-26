@@ -103,8 +103,9 @@ This system only catches what it's been told to catch. If an app owner forgets t
 - The operator screen is intentionally basic, just a screenshot and buttons, not a full live view of the browser, which the assignment allows.
 - No AI assisted recovery during replay. The recovery list is small, fixed, and written by hand. I considered letting the AI help fix a failed step during replay, but decided against it for now. Replay never calling an AI is one rule I didn't want to bend, even a little, until everything else was proven solid first.
 - No route cleanup yet. A step's value can be swapped out, like a different member ID, but the actual URL path itself isn't turned into a reusable pattern yet, like turning `/item/12345` into `/item/:id`.
-- No flakiness score yet. Every capability already tracks how many times it ran and succeeded, which is the start of a reliability score, but nothing runs a capability multiple times automatically to report a stability percentage.
 
 Beyond the core requirements, I also built an agent facing catalog (`src/api/capabilities.js` and `tests/agent-demo.js`), a real outside script that lists approved capabilities, hands them to Claude as tools, and lets it call one over HTTP. I also built a confidence and approval system, where a capability starts as a draft and a human has to approve it before it can run unattended if it's risky.
 
-With more time, next steps would be actually applying tenant overrides during replay and showing one recording working against two slightly different setups, building a real flakiness score from repeated replays, and making the allowlist block by default instead of relying on every app being fully configured.
+I also went back and built the multi-run stability stretch goal: `npm run stability -- --id <id> --runs 5` replays a capability N times in a row through the exact same gated path as a single replay (same approval check, same evidence folder per run, same confidence signal) and reports what percentage actually held. No special-cased "test mode" — it's just N real replays, aggregated.
+
+With more time, next steps would be actually applying tenant overrides during replay and showing one recording working against two slightly different setups, and making the allowlist block by default instead of relying on every app being fully configured.

@@ -25,6 +25,8 @@ const fetchArtifacts = () => getJson('/api/artifacts');
 const fetchArtifact = (id) => getJson(`/api/artifacts/${encodeURIComponent(id)}`);
 const setStatus = (id, status) => sendJson('PATCH', `/api/artifacts/${encodeURIComponent(id)}/status`, { status });
 const replay = (id, params) => postJson(`/api/artifacts/${encodeURIComponent(id)}/replay`, { params });
+const checkStability = (id, params, runs) =>
+  postJson(`/api/artifacts/${encodeURIComponent(id)}/stability`, { params, runs });
 
 /** One side of the contract as a definition list; "none" reads better than an em dash. */
 function schemaList(schema) {
@@ -67,8 +69,24 @@ function detailsHtml(capability) {
     <h4>Recorded steps</h4>
     <ol class="steps">${steps}</ol>
     ${outcomes ? `<h4>Also answers, without failing</h4><ol class="steps">${outcomes}</ol>` : ''}
+
+    <h4>Stability</h4>
+    <div class="stability-check">
+      <button class="small secondary" data-stability="${esc(capability.id)}" type="button">Replay 5×</button>
+      <span class="stability-result" data-stability-result="${esc(capability.id)}"></span>
+    </div>
+
     <p class="muted provenance">Recorded by ${esc(capability.created_from.model ?? 'hand')} · run <span class="mono">${esc(capability.created_from.run_id)}</span></p>
   `;
+}
+
+/** A run per dot, colored by the same outcome badge tones the rest of the console uses. */
+function stabilityResultHtml(summary) {
+  const dots = summary.results
+    .map((r) => `<span class="badge dot ${esc(r.outcome)}" title="${esc(r.outcome)}"></span>`)
+    .join('');
+  return `<span class="stability-dots">${dots}</span><b class="stability-pct">${summary.stability_pct}%</b>
+    <span class="muted">held (${summary.held}/${summary.runs})</span>`;
 }
 
 
@@ -253,6 +271,28 @@ export async function mount(root) {
       } catch (err) {
         remove.disabled = false;
         alert(err.message);
+      }
+      return;
+    }
+
+    const stabilityButton = event.target.closest('[data-stability]');
+    if (stabilityButton) {
+      const id = stabilityButton.dataset.stability;
+      const resultEl = root.querySelector(`[data-stability-result="${id}"]`);
+      const capability = await fetchArtifact(id);
+      const params = await askForParams(capability);
+      if (params === null) return; // cancelled
+
+      stabilityButton.disabled = true;
+      resultEl.textContent = 'Replaying 5×…';
+      try {
+        const summary = await checkStability(id, params, 5);
+        resultEl.innerHTML = stabilityResultHtml(summary);
+        window.dispatchEvent(new CustomEvent('replay-finished'));
+      } catch (err) {
+        resultEl.innerHTML = `<span class="error">${esc(err.message)}</span>`;
+      } finally {
+        stabilityButton.disabled = false;
       }
       return;
     }

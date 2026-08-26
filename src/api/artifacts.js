@@ -11,6 +11,7 @@ import { Router } from 'express';
 import { CAPABILITY_STATUSES } from '../schema/enums.js';
 import { deleteCapability, listCapabilities, loadCapability, updateCapability } from '../schema/store.js';
 import { runReplay } from './run-replay.js';
+import { runStabilityCheck } from './stability.js';
 
 const router = Router();
 
@@ -42,6 +43,23 @@ router.post('/:id/replay', async (req, res, next) => {
     const { params = {}, version } = req.body ?? {};
     const capability = await loadCapability(req.params.id, version);
     res.json(await runReplay(capability, params));
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * Multi-run stability: replay the same capability N times in a row and report how many
+ * held. Body: { params: {...}, runs?: n (default 5), version?: n }
+ *
+ * Each run is a full replay through the normal gate — a risky, unapproved draft refuses
+ * here exactly like it would on a single replay, on the first run.
+ */
+router.post('/:id/stability', async (req, res, next) => {
+  try {
+    const { params = {}, runs = 5, version } = req.body ?? {};
+    const capability = await loadCapability(req.params.id, version);
+    res.json(await runStabilityCheck(capability, params, { runs: Number(runs) }));
   } catch (err) {
     next(err);
   }

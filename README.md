@@ -90,6 +90,9 @@ cat evidence/internet/discovery/<stamp>/goal.json
 # replay it, no AI
 npm run replay -- --id add-remove-elements-cycle --headed
 
+# replay it 5x in a row and see how often it holds
+npm run stability -- --id add-remove-elements-cycle --runs 5
+
 # approve it, so an outside agent can call it
 curl -X PATCH localhost:3000/api/artifacts/add-remove-elements-cycle/status \
   -H 'content-type: application/json' -d '{"status":"approved"}'
