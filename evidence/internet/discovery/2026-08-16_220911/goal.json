@@ -100,10 +100,10 @@
     "redact_fields": []
   },
   "confidence": {
-    "runs": 12,
-    "successes": 12,
+    "runs": 14,
+    "successes": 14,
     "last_outcome": "SUCCESS",
-    "updated_at": "2026-08-26T16:42:09.185Z"
+    "updated_at": "2026-08-26T23:00:04.545Z"
   },
   "drift_baseline": {
     "0": [

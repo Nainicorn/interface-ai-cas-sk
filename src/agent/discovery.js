@@ -76,7 +76,9 @@ After each action you receive the page URL, title, accessibility tree, visible t
 ## Recording quality
 - Every recorded step needs an expected_outcome that positively proves the step worked. Never infer success from "the action didn't error".
 - Declare business_outcomes wherever the app has a legitimate non-happy path (e.g. searching for a record that doesn't exist). "No such record" is an answer the caller needs, not a failure — declare how it looks on screen so replay can classify it without guessing.
+- A business_outcome's detect value must be text that appears ONLY in that failure state. Forms carry permanent help text and field hints — "Minimum opening deposit is $25.00", "cannot be opened for non-active members" — which sit on the page on every run including the successful ones. Detecting on a substring of that fires on every replay and misreports good runs, and misreports OTHER failures as this one. Use the error the app actually renders when the rule trips, and prefer a distinctive phrase over a generic one. If you have not seen the real error text, either trigger the case to read it, or leave that outcome undeclared rather than guessing at it.
 - Think past the one path you saw. For each step ask what a legitimate alternative result would look like — record missing, a sub-record the goal targets absent (e.g. the member holds no account of that type), validation rejected, permission denied — and declare those business_outcomes even if this run never hit them. Any legitimate state you leave undeclared will surface as a HARD_FAILURE at replay.
+- A native <select> dropdown is set with a "type" step whose value is the option's visible label — there is no separate primitive for it. Checkpoint it with value_equals, never text_visible or element_exists: a selected <option> is not reported visible by the browser, so those two fail even when the selection worked. value_equals takes "<css selector>=<expected value>" and compares the control's value exactly, e.g. value_equals "select[name='accountType']=SAVINGS". Use the option's underlying VALUE there, which is often not the visible label — read it off the accessibility tree or the page before recording it.
 - Locators are ranked candidate lists, most robust first: role+name, label, placeholder, visible text, tightly-scoped css last. A candidate matching more than one element is rejected at replay, so every candidate must be unique on its page. Legacy UIs nest layout tables: a bare row selector like tr:has-text(...) usually matches several nested rows — scope to a distinguishing ancestor, and give each locator a second candidate as fallback. When a candidate is rejected as ambiguous, the error lists each match's ancestor path with its attributes — pick a distinguishing ancestor attribute from it to scope your next candidate.
 - Record only what you have verified. Before emitting, exercise each output's read using the SAME candidate list and extract_pattern you will record — a candidate list you never executed is a guess, and it is the top cause of replay failure.
 - Never build a recorded locator from the concrete value it extracts (e.g. locating by this run's account number). That embeds one run's data and cannot replay for other inputs. Locate by structure or stable labels instead.
@@ -443,6 +445,37 @@ async function dispatch(call, session, ctx, params, { goal, runId, logger }) {
           {
             type: 'text',
             text: `success_checkpoint does not hold on the live page (observed: ${check.observed}). Reach the goal state first, or fix the checkpoint.`,
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    // A business outcome that matches the page we SUCCEEDED on is definitionally wrong:
+    // replay checks business outcomes before the checkpoint, so such a rule would fire on
+    // every happy-path run and report a good result as an exceptional one.
+    //
+    // This is a real failure mode, not a hypothetical. The model is asked to declare
+    // outcomes it did not observe, and it reaches for a phrase from the page — which is
+    // often static help text ("Sub-accounts cannot be opened for non-active members")
+    // sitting on the form at all times, not an error message. Detecting on a substring of
+    // that matches always. Checking it here turns a bug that only shows up on a later
+    // replay into a correction the model can act on while it still has the page open.
+    const falsePositives = [];
+    for (const step of parsed.data.steps) {
+      for (const rule of step.business_outcomes ?? []) {
+        const hit = await evaluateCondition(ctx.page, { ...rule.detect, timeout_ms: 500 });
+        if (hit.ok) falsePositives.push(`step ${step.index} "${rule.code}": detect ${rule.detect.type} "${rule.detect.value}"`);
+      }
+    }
+    if (falsePositives.length > 0) {
+      return {
+        resultBlocks: [
+          {
+            type: 'text',
+            text:
+              `These business_outcomes also match the SUCCESSFUL page, so they would fire on every happy-path replay:\n- ${falsePositives.join('\n- ')}\n\n` +
+              'Pick a detect value that only appears in the failure state — the specific error message the app renders — not wording that also appears in static help text or field hints.',
           },
         ],
         isError: true,

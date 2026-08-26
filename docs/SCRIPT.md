@@ -42,6 +42,8 @@ The bank is built so every branch has a fixed input — nothing is random.
 | `40000` Dana Whitfield | **Locked** — risky actions are refused |
 | `99999` | **Does not exist** — not-found |
 | wrong password | login rejected |
+| `Savings` + deposit `100` | opens a sub-account — the risky, state-changing flow |
+| deposit below `25` | rejected, below the minimum |
 
 Login is `teller01` / `demo-password`.
 
@@ -352,6 +354,48 @@ inventing a move it doesn't have. **Own this one** — it's a real limitation of
 five-primitive design: a native `<select>` needs Playwright's `selectOption`, which isn't
 one of the five. The fix I'd make is to extend `type` so that typing into a `<select>`
 selects the matching option, keeping the vocabulary at five.
+
+## A14. A risky, state-changing capability, and the approval gate
+
+`open-sub-account` actually creates a sub-account, and `/open-account` is marked risky in
+the app config, so the step that submits is classified `risky` and the whole capability
+rolls up to `risky`.
+
+```bash
+# reset the bank's data first, since this one mutates
+curl -s localhost:3001/reset
+
+# as a draft, unattended replay is refused outright
+npm run replay -- --id open-sub-account \
+  --param member_id=10001 --param account_type=Savings --param initial_deposit=100
+```
+```
+replay: Capability "open-sub-account" is risky and still in draft.
+        Approve it (PATCH status to "approved") before unattended replay.
+```
+
+Approve it in the console, or by curl, then run it again:
+
+```
+Outcome:  SUCCESS
+Outputs:  {"reference_number":"REQ-10001-03","new_account_number":"SAV-10001-03",
+           "opening_balance":"$100.00"}
+```
+
+**Say:** the refusal happens before anything is written — no run row, no evidence folder,
+no mark on its record. A safe capability replays as a draft because a person is watching;
+a risky one does not, because "risky" means it changes something a customer can see.
+
+This flow also contains a **dropdown**, which is the reason `type` handles a `<select>`:
+step 6 selects the account type and is checkpointed with `value_equals`, since a selected
+`<option>` is never reported visible and neither `text_visible` nor `element_exists` can
+assert one.
+
+**Own the flaw before they find it.** A locked member (`40000`) comes back as
+`DEPOSIT_TOO_LOW` rather than a permission denial. The model recorded that detector as the
+text `"Minimum opening deposit"` — which is permanent help text on the form, present on
+every run. Two guards catch the other shapes of this (see WALKTHROUGH.md, Part 5); this
+one needs per-step page capture at record time, which isn't built.
 
 ---
 

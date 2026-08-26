@@ -87,11 +87,19 @@ function buildLocator(page, candidate) {
  * @param {object} strategy a LocatorStrategy — { description, candidates[] }
  * @param {object} [options]
  * @param {number} [options.timeoutMs] per-candidate settle budget
+ * @param {boolean} [options.requireEnabled] reject a match that is present but disabled.
+ *   Set by the primitives that INTERACT (click, type); left off for `read`, where a
+ *   greyed-out field still has a value worth reading.
  * @returns {Promise<{locator: import('playwright').Locator, candidate: object, attempts: object[]}>}
  * @throws {LocatorResolutionError} when no candidate resolves uniquely
  */
-export async function resolveLocator(page, strategy, { timeoutMs = 3000 } = {}) {
+export async function resolveLocator(page, strategy, { timeoutMs = 3000, requireEnabled = false } = {}) {
   const attempts = [];
+  // Tracks whether any candidate has actually TOUCHED the page yet — deliberately not
+  // attempts.length, which also counts candidates rejected before any wait happened. A
+  // malformed first candidate used to consume the "first" slot and silently downgrade the
+  // next one from the full budget to 250ms on a page that had not settled.
+  let waited = false;
 
   for (const candidate of strategy.candidates) {
     let locator;
@@ -102,10 +110,11 @@ export async function resolveLocator(page, strategy, { timeoutMs = 3000 } = {}) 
       continue;
     }
 
-    // Give only the FIRST candidate a real wait budget. Once the page has settled,
-    // later candidates are evaluated immediately — otherwise a step with five
-    // candidates would pay the timeout five times over on a genuine failure.
-    const budget = attempts.length === 0 ? timeoutMs : 250;
+    // Give only the first candidate that reaches the page a real wait budget. Once the
+    // page has settled, later candidates are evaluated immediately — otherwise a step
+    // with five candidates would pay the timeout five times over on a genuine failure.
+    const budget = waited ? 250 : timeoutMs;
+    waited = true;
     try {
       await locator.first().waitFor({ state: 'attached', timeout: budget });
     } catch {
@@ -135,6 +144,18 @@ export async function resolveLocator(page, strategy, { timeoutMs = 3000 } = {}) 
     if (!isVisible) {
       attempts.push({ candidate, matchCount, reason: 'Matched exactly one element, but it is not visible' });
       continue;
+    }
+
+    // A greyed-out Submit button is not a usable target. Without this the click lands on
+    // a disabled control, does nothing, and surfaces later as a confusing "checkpoint
+    // failed" rather than the true reason — which is the difference between a report an
+    // operator can act on and one they cannot.
+    if (requireEnabled) {
+      const isEnabled = await locator.isEnabled().catch(() => false);
+      if (!isEnabled) {
+        attempts.push({ candidate, matchCount, reason: 'Matched exactly one element, but it is disabled' });
+        continue;
+      }
     }
 
     attempts.push({ candidate, matchCount, reason: 'resolved' });

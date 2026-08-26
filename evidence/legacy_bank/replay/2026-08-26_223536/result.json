@@ -1,0 +1,28 @@
+{
+  "id": "legacy_bank/replay/2026-08-26_223536",
+  "kind": "replay",
+  "app_id": "legacy_bank",
+  "goal": null,
+  "status": "BUSINESS_OUTCOME",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "assisted_fallback_enabled": false,
+    "secrets_overridden": [],
+    "capability": "open-savings-subaccount",
+    "version": 1,
+    "outcome": "BUSINESS_OUTCOME",
+    "outputs": null,
+    "business_outcome": {
+      "code": "MEMBER_NOT_ACTIVE",
+      "message": "Sub-accounts cannot be opened because the member is not active",
+      "step": 5,
+      "intent": "Navigate to open a new sub-account for this member"
+    },
+    "failed_step": null,
+    "drift_warnings": null,
+    "assisted_fallbacks": null
+  },
+  "started_at": "2026-08-26T22:35:36.541Z",
+  "updated_at": "2026-08-26T22:35:42.903Z"
+}

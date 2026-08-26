@@ -1,0 +1,33 @@
+{
+  "id": "heroku_app/replay/2026-08-26_225226",
+  "kind": "replay",
+  "app_id": "heroku_app",
+  "goal": null,
+  "status": "BUSINESS_OUTCOME",
+  "detail": {
+    "caller": "agent",
+    "tenant_id": null,
+    "assisted_fallback_enabled": false,
+    "secrets_overridden": [],
+    "capability": "heroku-app-login",
+    "version": 1,
+    "outcome": "BUSINESS_OUTCOME",
+    "outputs": null,
+    "business_outcome": {
+      "code": "INVALID_USERNAME",
+      "message": "The supplied username is not recognized by the app.",
+      "step": 3,
+      "intent": "Submit the login form"
+    },
+    "failed_step": null,
+    "drift_warnings": [
+      {
+        "step": 2,
+        "score": 0.35
+      }
+    ],
+    "assisted_fallbacks": null
+  },
+  "started_at": "2026-08-26T22:52:26.421Z",
+  "updated_at": "2026-08-26T22:52:27.410Z"
+}

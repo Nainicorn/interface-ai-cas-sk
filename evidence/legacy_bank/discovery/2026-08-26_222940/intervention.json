@@ -1,0 +1,9 @@
+{
+  "run_id": "legacy_bank/discovery/2026-08-26_222940",
+  "goal": "Log in, search for member 10001, open a new sub-account for them (Savings, initial deposit 100), and reach the confirmation screen showing a reference number",
+  "app_id": "legacy_bank",
+  "reason": "Step budget exhausted after 24 turns",
+  "url": "http://localhost:3001/member/10001",
+  "screenshot": "018-escalation.png",
+  "created_at": "2026-08-26T22:31:35.735Z"
+}

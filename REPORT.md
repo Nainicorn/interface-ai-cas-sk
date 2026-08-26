@@ -13,7 +13,7 @@ Express exposes one API that Playwright acts through, Zod makes sure whatever ge
 
 **Overview**
 
-The agent is allowed five actions, `navigate`, `click`, `type`, `read`, `wait_for`. That's everything it needs to interact with a web interface. The model can't invent a sixth action, and neither can its recorded replay. The AI, the replay, and a human operator taking over all use the exact same five actions, with no shortcuts for any of them.
+The agent is allowed five actions, `navigate`, `click`, `type`, `read`, `wait_for`. That's everything it needs to interact with a web interface. A native `<select>` is handled inside `type` rather than as a sixth action — picking an option is putting a value into a control — because fill() throws on a select and a native `<option>` is never reported visible, so without that the five primitives cannot drive a dropdown at all. The model can't invent a sixth action, and neither can its recorded replay. The AI, the replay, and a human operator taking over all use the exact same five actions, with no shortcuts for any of them.
 
 Every one of those five functions starts with `checkAllowed()` before it touches the page. This is to ensure guardrails for the agent and what its allowed to do.
 

@@ -61,6 +61,15 @@ function conditionExpr(condition) {
       return `await page.getByText(${jsonLiteral(value)}).waitFor({ state: 'detached', timeout: ${timeoutMs} }).catch(() => {});`;
     case 'element_exists':
       return `await page.locator(${jsonLiteral(value)}).first().waitFor({ state: 'visible', timeout: ${timeoutMs} });`;
+    case 'value_equals': {
+      // Same "<selector>=<expected>" split engine/perception.js does, resolved here at
+      // generation time so the emitted line reads as ordinary Playwright.
+      const eq = value.indexOf('=');
+      if (eq < 1) return `// malformed value_equals checkpoint ${jsonLiteral(value)}`;
+      const selector = value.slice(0, eq).trim();
+      const expected = value.slice(eq + 1).trim();
+      return `await expectValue(page, ${jsonLiteral(selector)}, ${jsonLiteral(expected)}, ${timeoutMs});`;
+    }
     default:
       return `// unknown checkpoint type "${type}"`;
   }
@@ -163,6 +172,22 @@ export function generatePlaywrightTest(capability) {
     '  if (!pattern) return raw;',
     '  const match = new RegExp(pattern).exec(raw);',
     '  return match ? (match[1] ?? match[0]) : null;',
+    '}',
+    '',
+    '/** Poll a form control until it holds the expected value, mirroring value_equals. */',
+    'async function expectValue(page, selector, expected, timeoutMs) {',
+    '  const deadline = Date.now() + timeoutMs;',
+    '  let actual = null;',
+    '  for (;;) {',
+    '    try {',
+    '      actual = (await page.locator(selector).first().inputValue()).trim();',
+    '      if (actual === expected) return;',
+    '    } catch { /* not ready yet */ }',
+    '    if (Date.now() >= deadline) {',
+    '      throw new Error(`${selector} = ${JSON.stringify(actual)}, expected ${JSON.stringify(expected)}`);',
+    '    }',
+    '    await page.waitForTimeout(100);',
+    '  }',
     '}',
     '',
     'async function main() {',

@@ -1,0 +1,25 @@
+{
+  "id": "legacy_bank/discovery/2026-08-26_222940",
+  "kind": "discovery",
+  "app_id": "legacy_bank",
+  "goal": "Log in, search for member 10001, open a new sub-account for them (Savings, initial deposit 100), and reach the confirmation screen showing a reference number",
+  "status": "escalated",
+  "detail": {
+    "artifact": null,
+    "turns": 24,
+    "usage": {
+      "input_tokens": 48,
+      "output_tokens": 7291,
+      "cache_read_input_tokens": 744016,
+      "cache_creation_input_tokens": 43366
+    },
+    "model": "claude-sonnet-5",
+    "evidence_dir": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/legacy_bank/discovery/2026-08-26_222940",
+    "escalation": {
+      "reason": "Step budget exhausted after 24 turns"
+    },
+    "finished_at": "2026-08-26T22:31:35.751Z"
+  },
+  "started_at": "2026-08-26T22:29:40.791Z",
+  "updated_at": "2026-08-26T22:31:35.751Z"
+}

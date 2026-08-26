@@ -36,9 +36,12 @@ app.use((err, _req, res, _next) => {
 
 import { reconcileAtBoot } from '../evidence/runs.js';
 
-const { orphanedRuns, orphanedInterventions } = reconcileAtBoot();
-if (orphanedRuns || orphanedInterventions) {
-  console.log(`Reconciled ${orphanedRuns} orphaned run(s), ${orphanedInterventions} intervention(s) from a previous process.`);
+// reconcileAtBoot returns a count, not a record. Destructuring it as an object gave two
+// undefineds and a message that could never print, which hid the fact that reconciliation
+// was happening at all.
+const reconciled = reconcileAtBoot();
+if (reconciled > 0) {
+  console.log(`Reconciled ${reconciled} run(s) left mid-flight by a previous process.`);
 }
 
 const port = Number(process.env.PORT ?? 3000);

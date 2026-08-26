@@ -103,6 +103,11 @@ that AI can't even see it exists.
 The AI can't do anything it wants. There are exactly five moves: **go to a page, click,
 type, read, wait**. That's it.
 
+A dropdown is still one of the five — `type` means "put this value into this control", so
+choosing an option in a `<select>` records and replays as an ordinary type step. That
+matters: without it the five primitives simply cannot operate a dropdown, and any form
+with one escalates to a human every time.
+
 And here's the part that matters: **the AI, the replay, and a human taking over all use
 the same five moves.** Nobody gets a secret back door. There is only one piece of code
 that knows how to click — there's even a test that reads the source code and fails if a
@@ -360,58 +365,84 @@ happened.
 > Say these **before someone finds them.** Knowing your own weak spots reads as senior.
 > Being surprised by them doesn't.
 
+### Business-outcome detectors are written by a model, and can be too loose
+
+The biggest one. A recording declares what a legitimate failure looks like on screen. The
+model writes those detectors by picking a phrase off the page — and forms carry permanent
+help text that reads exactly like an error. The mock bank's form always says *"Minimum
+opening deposit is $25.00. Sub-accounts cannot be opened for non-active members."* The
+model detected `DEPOSIT_TOO_LOW` on `"Minimum opening deposit"` — text that is on the page
+every single run.
+
+Two guards now catch two of the three shapes of this:
+
+- **A detector that matches the successful page** is rejected at record time. The emit
+  gate checks every declared outcome against the live page and hands the model the list to
+  fix before the recording is accepted.
+- **A detector that matches while the step's own checkpoint also holds** is ignored at
+  replay time. The checkpoint is the stronger statement — it proves the step reached the
+  state it wanted, where a matched detector only proves some text was present — so a
+  happy-path run stays a happy-path run.
+
+Still open: a detector that only false-positives on a *different* failure page. In
+`open-sub-account`, a locked member is reported as `DEPOSIT_TOO_LOW` rather than a
+permission denial, because both land on the same form and the loose detector matches
+first. **The fix I'd make next** is to capture each step's page text as the run proceeds
+and validate every declared detector against all of them at emit time, not just against
+the final page.
+
 ### Safety assumes the form got filled in
 
-If someone forgets to mark a page as risky, a risky action there won't get flagged.
-**The fix:** block everything by default, and require pages to be explicitly marked
-safe. Already written up in REPORT.md as the next thing to build.
+If someone forgets to mark a route as risky, a risky action there won't get flagged.
+**The fix:** deny by default, and require routes to be explicitly marked safe.
 
 ### The safety gate only looks at the path
 
 Anything after a `?` or `#` in a web address is invisible to it. And matching is a plain
 prefix, so allowing `/account` also allows `/account-admin`.
 
-### The docs promise something the code doesn't do
-
-Three separate comments say a button must be "visible and **enabled**" — but the code
-only ever checks visible. So a greyed-out button gets clicked, and you get a confusing
-failure instead of a clear one.
-
-### Redaction covers action lines, not observations
-
-The `type` action correctly logs `<string:20>` instead of a password. But the
-page-observation lines capture the accessibility tree verbatim, and a browser exposes
-typed input values there — so a password typed into a field shows up in full in the
-observation, and in the drift baseline built from it.
-
-Visible in `evidence/heroku_app/`, where the demo site's own public credential appears
-in the transcript. Not a real secret, but the redaction claim is narrower than it
-sounds. **The fix:** run `captureState`'s `ariaTree` through the same redaction filter
-before it's written.
-
 ### Drift detection can't count
 
 The page fingerprint is a *set*, so 40 identical table rows collapse into one entry.
-Delete 39 of them and it reports zero drift. It also ignores indentation, which is how
-the accessibility tree encodes nesting — so moving a button from a popup to the footer
-reads as no change.
+Delete 39 and it reports zero drift. It also ignores indentation, which is how the
+accessibility tree encodes nesting — so moving a button from a popup to the footer reads
+as no change. That's the same property that makes harmless reordering not count as drift,
+so it's a trade-off rather than a bug — but name it first.
 
-**That's a real trade-off, not a bug** — it's the same property that makes harmless
-reordering not count as drift. But name it first.
+### Assisted fallback lands about half the time
 
-### One check ignores its own timeout, and fails the wrong way
+Measured over four runs against a genuinely broken locator: two recoveries, two hard
+failures. That is what "one model call, one attempt, no retries" buys. It isn't a bug —
+retrying until something sticks would turn a bounded recovery into the open-ended loop the
+whole design exists to avoid — but don't promise it in a live demo.
 
-The "this text should be gone" check doesn't wait — it looks instantly. And if looking
-throws an error, it reports *"gone, as expected."* An error that produces a confident
-pass is worth flagging in a system built on proving success.
+### Discovery can record a locator it never executed
 
-### A real bug, confirmed
+The system prompt tells the model to exercise every read before recording it. It
+consistently doesn't, and the resulting capability hard-fails on its first replay. Which
+is exactly why a new recording is a **draft** carrying a reliability score rather than
+something the system trusts — the console shows `2/7` on such a capability, in amber.
 
-At startup the code unpacks a value as if it were a box of two things, but the function
-returns a plain number. So the "cleaned up N leftover runs" message can **never** print.
-The cleanup itself still works — only the message is dead. One-line fix.
+### Replay cannot ask a human
 
-### The AI's conversation grows forever
+Escalation exists only in discovery. A stuck replay returns `HARD_FAILURE` with a
+screenshot; nobody is paged. The session-handoff machinery already exists, so wiring
+replay into it is the obvious next step.
 
-Every turn re-sends the whole history, screenshots included. The 24-turn limit is the
-only thing stopping it. Caching softens the cost; there's no trimming.
+### Credentials are process-global
+
+A per-call credential is threaded through the replay context, but the fallback still reads
+`process.env`, which the whole process shares. Two concurrent replays for two different
+users in one server would race. The fix is contained — `resolveStepValue` is the only
+function that reads it.
+
+### Older committed evidence predates the redaction fix
+
+`evidence/heroku_app/` was recorded before credential values were masked out of captured
+page text, so that demo site's public password is still visible in those transcripts. New
+runs are clean; those would need regenerating.
+
+### Dead code
+
+`redactObject` and `RunLogger.saveResult` are exported and tested but have no production
+caller.

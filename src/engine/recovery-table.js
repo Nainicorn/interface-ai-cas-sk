@@ -66,10 +66,16 @@ export async function attemptRecovery(ctx, { evaluateCondition, click }) {
     const { ok } = await evaluateCondition(ctx.page, rule.detect);
     if (!ok) continue;
 
+    // Only a rule that actually DID something counts as applied. Pushing unconditionally
+    // meant an unrecognised action type was a silent no-op that still reported itself as
+    // a recovery — and replay would then classify the run RECOVERABLE on the strength of
+    // nothing having happened.
     if (rule.action.type === 'reload') {
       await ctx.page.reload({ waitUntil: 'domcontentloaded' });
     } else if (rule.action.type === 'click') {
       await click(ctx, { locator: rule.action.locator });
+    } else {
+      continue;
     }
 
     applied.push({ code: rule.code, description: rule.description });

@@ -160,12 +160,37 @@ function argsForStep(step, params, secrets) {
 
 /**
  * Check a step's declared business outcomes.
+ *
+ * A rule only counts when the step's OWN success condition does not also hold. That
+ * second half matters: a detector is written from the page, and page furniture is easy to
+ * mistake for an error. A form carrying permanent help text — "Sub-accounts cannot be
+ * opened for non-active members" — will match a `text_visible` detector on every single
+ * run, including the ones that worked. Without this check, the happy path for an active
+ * member reports MEMBER_NOT_ACTIVE.
+ *
+ * When both hold, the checkpoint wins. It is the stronger statement: a checkpoint asserts
+ * the step reached the state it wanted, whereas a matched detector only says some text
+ * was present. So "both true" means the detector could not tell the two states apart, and
+ * the state we can actually verify is success.
+ *
+ * The ordering the file header describes is unchanged — business outcomes are still
+ * decided before anything is called a failure. This only stops a rule firing on a page
+ * that demonstrably succeeded.
+ *
  * @returns {Promise<{code: string, message: string}|null>} the first rule that matched
  */
 async function matchBusinessOutcome(page, step) {
   for (const rule of step.business_outcomes ?? []) {
     const { ok } = await evaluateCondition(page, rule.detect);
-    if (ok) return { code: rule.code, message: rule.message };
+    if (!ok) continue;
+
+    if (step.expected_outcome) {
+      // Short timeout: the detector already matched, so this only asks "did the step also
+      // plainly succeed", and a slow answer here means it did not.
+      const success = await evaluateCondition(page, { ...step.expected_outcome, timeout_ms: 500 });
+      if (success.ok) continue; // ambiguous detector, not an exceptional state
+    }
+    return { code: rule.code, message: rule.message };
   }
   return null;
 }

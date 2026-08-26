@@ -18,7 +18,18 @@ export const ACTION_TYPES = ['navigate', 'click', 'type', 'read', 'wait_for'];
  * Checkpoint condition vocabulary. Intentionally boring and exact-match — a fuzzy or
  * model-scored matcher would smuggle nondeterminism into the no-LLM path.
  */
-export const CONDITION_TYPES = ['text_visible', 'text_absent', 'url_contains', 'element_exists'];
+export const CONDITION_TYPES = [
+  'text_visible',
+  'text_absent',
+  'url_contains',
+  'element_exists',
+  // `value_equals` exists because the other four cannot assert a form control's value.
+  // A <select>'s chosen <option> is never reported visible by a browser, so text_visible
+  // and element_exists both fail on it however the selector is written — which left a
+  // dropdown step with no way to prove it worked. Exact string comparison against
+  // inputValue(), so it stays as deterministic as the rest of the vocabulary.
+  'value_equals',
+];
 
 /** How a locator candidate finds its element, ordered here by preferred robustness. */
 export const LOCATOR_KINDS = ['role', 'label', 'placeholder', 'text', 'css'];

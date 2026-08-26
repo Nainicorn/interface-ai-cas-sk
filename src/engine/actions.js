@@ -60,7 +60,7 @@ export async function navigate(ctx, { url }) {
  */
 export async function click(ctx, { locator: strategy }) {
   checkAllowed({ target: ctx.target, action: 'click', url: ctx.page.url() });
-  const { locator, candidate, attempts } = await resolveLocator(ctx.page, strategy);
+  const { locator, candidate, attempts } = await resolveLocator(ctx.page, strategy, { requireEnabled: true });
   await locator.click();
 
   log(ctx, {
@@ -82,13 +82,33 @@ export async function click(ctx, { locator: strategy }) {
  * else logs its value, because a replay that typed the wrong member ID is undebuggable
  * otherwise. The `redacted` flag is written either way so a reviewer can see the gate ran.
  *
+ * A native <select> is filled by choosing an option rather than typing characters. That
+ * is handled here rather than by adding a sixth primitive: `type` means "put this value
+ * into this control", and picking an option is putting a value into a select. Keeping it
+ * inside `type` is what lets the recorded vocabulary stay at exactly five — a dropdown
+ * records, and replays, as an ordinary type step.
+ *
+ * Without this the five primitives simply cannot operate a dropdown: fill() throws on a
+ * <select>, and clicking an <option> fails because a native option is never reported
+ * visible in an automated browser. A discovery run against a form with a dropdown
+ * escalates to a human every time.
+ *
  * @param {ActionContext} ctx
  * @param {{locator: object, value: string, fieldName?: string}} args
  */
 export async function typeText(ctx, { locator: strategy, value, fieldName }) {
   checkAllowed({ target: ctx.target, action: 'type', url: ctx.page.url() });
-  const { locator, candidate, attempts } = await resolveLocator(ctx.page, strategy);
-  await locator.fill(String(value ?? ''));
+  const { locator, candidate, attempts } = await resolveLocator(ctx.page, strategy, { requireEnabled: true });
+  const text = String(value ?? '');
+
+  const tagName = await locator.evaluate((el) => el.tagName?.toLowerCase() ?? '').catch(() => '');
+  if (tagName === 'select') {
+    // By visible label first, since that is what a recording describes and what a person
+    // sees; by underlying value as a fallback, for a form whose labels and values differ.
+    await locator.selectOption({ label: text }).catch(() => locator.selectOption(text));
+  } else {
+    await locator.fill(text);
+  }
 
   const logged = redact(value, fieldName, ctx.target);
   log(ctx, {
@@ -98,6 +118,9 @@ export async function typeText(ctx, { locator: strategy, value, fieldName }) {
       field: fieldName ?? null,
       value: logged.value,
       redacted: logged.redacted,
+      // Recorded so a reviewer can tell a dropdown selection from typed characters
+      // without inferring it from the page.
+      control: tagName === 'select' ? 'select' : 'text',
     },
     locatorUsed: candidate,
     candidatesTried: attempts.length,

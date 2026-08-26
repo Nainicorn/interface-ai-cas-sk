@@ -86,10 +86,27 @@ export async function evaluateCondition(page, condition) {
     }
 
     case 'text_absent': {
-      const count = await page.getByText(value).count().catch(() => 0);
-      return count === 0
-        ? { ok: true, observed: `"${value}" absent as expected` }
-        : { ok: false, observed: `"${value}" present ${count} time(s)` };
+      // Polls rather than reading once. "The error message is gone" is usually asserted
+      // straight after a click, and a single instant read races the re-render — it can
+      // pass because the new DOM has not painted, or fail because the old one has not
+      // been torn down. Same 100ms cadence as url_contains, for the same reason.
+      //
+      // A counting error is NOT treated as absence. Swallowing it produced
+      // `ok: true, "absent as expected"` — an affirmative, confident-sounding pass
+      // derived from a failure, in a system whose whole job is proving success.
+      const deadline = Date.now() + timeoutMs;
+      let observed = `"${value}" was never successfully checked`;
+      for (;;) {
+        try {
+          const count = await page.getByText(value).count();
+          if (count === 0) return { ok: true, observed: `"${value}" absent as expected` };
+          observed = `"${value}" present ${count} time(s)`;
+        } catch (err) {
+          observed = `could not check for "${value}": ${err.message}`;
+        }
+        if (Date.now() >= deadline) return { ok: false, observed };
+        await page.waitForTimeout(100).catch(() => {});
+      }
     }
 
     case 'element_exists': {
@@ -98,6 +115,36 @@ export async function evaluateCondition(page, condition) {
         return { ok: true, observed: `selector "${value}" matched` };
       } catch {
         return { ok: false, observed: `selector "${value}" matched nothing within ${timeoutMs}ms` };
+      }
+    }
+
+    // "<css selector> = <expected value>" — the only condition that can prove a form
+    // control holds a particular value. Needed because a <select>'s chosen <option> is
+    // never reported visible, so neither text_visible nor element_exists can assert a
+    // dropdown however the selector is written.
+    //
+    // Polls, because the value is usually asserted immediately after the action that set
+    // it. Exact comparison after trimming, so it stays as deterministic as the rest.
+    case 'value_equals': {
+      const eq = value.indexOf('=');
+      if (eq < 1) {
+        return { ok: false, observed: `value_equals needs "<selector>=<expected>", got "${value}"` };
+      }
+      const selector = value.slice(0, eq).trim();
+      const expected = value.slice(eq + 1).trim();
+
+      const deadline = Date.now() + timeoutMs;
+      let observed = `"${selector}" was never successfully read`;
+      for (;;) {
+        try {
+          const actual = (await page.locator(selector).first().inputValue()).trim();
+          if (actual === expected) return { ok: true, observed: `${selector} = "${actual}"` };
+          observed = `${selector} = "${actual}", expected "${expected}"`;
+        } catch (err) {
+          observed = `could not read ${selector}: ${err.message}`;
+        }
+        if (Date.now() >= deadline) return { ok: false, observed };
+        await page.waitForTimeout(100).catch(() => {});
       }
     }
 

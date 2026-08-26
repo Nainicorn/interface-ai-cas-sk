@@ -1,0 +1,29 @@
+{
+  "id": "legacy_bank/replay/2026-08-26_225841",
+  "kind": "replay",
+  "app_id": "legacy_bank",
+  "goal": null,
+  "status": "HARD_FAILURE",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "assisted_fallback_enabled": false,
+    "secrets_overridden": [],
+    "capability": "get-member-accounts",
+    "version": 1,
+    "outcome": "HARD_FAILURE",
+    "outputs": null,
+    "business_outcome": null,
+    "failed_step": {
+      "step": 3,
+      "intent": "Enter the member ID to search for",
+      "message": "expected {\"type\":\"value_equals\",\"value\":\"input[placeholder='Member ID']=10001\",\"timeout_ms\":5000}, observed \"could not read input[placeholder: locator.inputValue: Unexpected token \\\"\\\" while parsing css selector \\\"input[placeholder\\\". Did you mean to CSS.escape it?\\nCall log:\\n  - waiting for input[placeholder >> nth=0\\n\"",
+      "url": "http://localhost:3001/search",
+      "screenshot": "000-hard-failure.png"
+    },
+    "drift_warnings": null,
+    "assisted_fallbacks": null
+  },
+  "started_at": "2026-08-26T22:58:41.118Z",
+  "updated_at": "2026-08-26T22:58:50.429Z"
+}
