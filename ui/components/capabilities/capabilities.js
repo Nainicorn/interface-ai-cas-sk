@@ -85,7 +85,10 @@ function detailsHtml(capability) {
     <h4>Assisted fallback <span class="hint">off by default</span></h4>
     <label class="fallback-check">
       <input type="checkbox" data-fallback="${esc(capability.id)}" ${fallbackEnabled.has(capability.id) ? 'checked' : ''} />
-      Allow one bounded AI call on the next replay, only if a step's locator can't be found at all
+      <span class="fallback-copy">
+        <span class="fallback-title">Allow one AI call on the next replay</span>
+        <span class="fallback-note">Only fires if a step's locator can't be found at all. At most once per replay, and it can suggest nothing but another way to find the same element.</span>
+      </span>
     </label>
 
     <h4>Export</h4>
