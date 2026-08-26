@@ -1,14 +1,19 @@
 /**
- * App configs: config/<app>/config.json, authored by the user.
+ * App configs: apps/<app>/config.json, authored by the user.
  *
  * This is target resolution, not enforcement — it answers "what am I driving, where does
  * it live, and what is it permitted to do". The gate that reads the permissions assembled
  * here lives in policy/allowlist.js, so resolving a target is never mistaken for
  * approving an action on it.
  *
- * config/ holds what an app IS (gitignored — it carries credentials); evidence/ holds
+ * apps/ holds what an app IS (gitignored — it carries credentials); evidence/ holds
  * what its runs DID. The recorded capability is written to the evidence run folder that
  * produced it, so nothing machine-generated lands here.
+ *
+ * The resolved object is still called a "target" throughout the engine, and
+ * `capability.target.app_id` is a persisted schema field — renaming either would
+ * invalidate every goal.json already on disk. The folder and the API say "apps"; the
+ * in-memory noun stays "target".
  *
  * Hands off to: engine/actions.js, engine/replay.js, agent/discovery.js, cli/*.
  */
@@ -19,7 +24,7 @@ import { fileURLToPath } from 'node:url';
 import { ACTION_TYPES } from '../schema/enums.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-export const CONFIG_DIR = path.resolve(here, '../../config');
+export const APPS_DIR = path.resolve(here, '../../apps');
 
 /**
  * The permissions a config file gets when it does not state its own.
@@ -36,13 +41,13 @@ export const DEFAULT_ALLOWLIST = { route_prefixes: ['/'], action_types: [...ACTI
 export const slugify = (name) =>
   String(name).trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 
-/** config/<app>/config.json — exported because the API writes through the same path. */
-export const configPath = (appId) => path.join(CONFIG_DIR, appId, 'config.json');
+/** apps/<app>/config.json — exported because the API writes through the same path. */
+export const configPath = (appId) => path.join(APPS_DIR, appId, 'config.json');
 
 /** Raised when an app has no config file. Surfaces as a 404 rather than a crash. */
 export class UnknownApp extends Error {
   constructor(appId, known) {
-    super(`No config for app "${appId}". Run: npm run create -- --name "${appId}"`);
+    super(`No app "${appId}". Add it in the console, or: POST /api/apps {"name":"${appId}","url":"..."}`);
     this.name = 'UnknownApp';
     this.status = 404;
     this.detail = { app_id: appId, known };
@@ -96,11 +101,11 @@ function toTarget(appId, raw) {
   };
 }
 
-/** Every configured app, keyed by app id — one subfolder of config/ each. */
+/** Every configured app, keyed by app id — one subfolder of apps/ each. */
 export function loadTargets() {
-  if (!existsSync(CONFIG_DIR)) return {};
+  if (!existsSync(APPS_DIR)) return {};
   const entries = {};
-  for (const entry of readdirSync(CONFIG_DIR, { withFileTypes: true })) {
+  for (const entry of readdirSync(APPS_DIR, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
     const file = configPath(entry.name);
     if (!existsSync(file)) continue;

@@ -1,7 +1,7 @@
 /**
  * App listing and editing for the console sidebar.
  *
- * Apps live as config/<app>/config.json, so editing one from the UI is a file write,
+ * Apps live as apps/<app>/config.json, so editing one from the UI is a file write,
  * not a registration API — reading the file back is the source of truth either way.
  *
  * Hands off to: config/app-config.js.
@@ -11,7 +11,7 @@ import { Router } from 'express';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import {
-  CONFIG_DIR,
+  APPS_DIR,
   DEFAULT_ALLOWLIST,
   configPath,
   loadTargets,
@@ -50,7 +50,7 @@ const FIELDS = [
 function configPathFor(appId) {
   if (!appId || slugify(appId) !== appId) return null;
   const file = configPath(appId);
-  return path.resolve(path.dirname(file)) === path.resolve(CONFIG_DIR, appId) ? file : null;
+  return path.resolve(path.dirname(file)) === path.resolve(APPS_DIR, appId) ? file : null;
 }
 
 router.get('/', (_req, res) => {
@@ -164,7 +164,7 @@ router.put('/:appId', (req, res) => {
 });
 
 /**
- * Delete an app and everything it produced: its `config/<app>/` config AND its
+ * Delete an app and everything it produced: its `apps/<app>/` config AND its
  * `evidence/<app>/` runs, capabilities included.
  *
  * The cascade is deliberate. Deleting an app used to leave its evidence behind on the
