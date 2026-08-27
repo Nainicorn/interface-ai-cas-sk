@@ -1,0 +1,23 @@
+{
+  "id": "legacy_bank/replay/2026-08-27_000511",
+  "kind": "replay",
+  "app_id": "legacy_bank",
+  "goal": null,
+  "status": "SUCCESS",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "get-member-account-count",
+    "version": 1,
+    "outcome": "SUCCESS",
+    "outputs": {
+      "accounts_table_text": "Account Number\tType\tOpened\tBalance\nCHK-10001-01\tChecking\t2014-03-11\t$2450.75\nSAV-10001-01\tSavings\t2016-07-02\t$18320.40"
+    },
+    "business_outcome": null,
+    "failed_step": null,
+    "drift_warnings": null
+  },
+  "started_at": "2026-08-27T00:05:11.795Z",
+  "updated_at": "2026-08-27T00:05:21.201Z"
+}

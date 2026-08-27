@@ -236,10 +236,10 @@
     ]
   },
   "confidence": {
-    "runs": 7,
+    "runs": 8,
     "successes": 2,
     "last_outcome": "HARD_FAILURE",
-    "updated_at": "2026-08-26T22:06:41.522Z"
+    "updated_at": "2026-08-27T00:05:36.978Z"
   },
   "drift_baseline": {
     "0": [

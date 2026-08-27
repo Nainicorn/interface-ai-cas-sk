@@ -225,49 +225,7 @@ ol.steps .mono { color: var(--ink-3); }
 }
 #capabilities .stability-pct { font-variant-numeric: tabular-nums; }
 
-/* --- assisted fallback: an explicit, per-capability, unarmed-by-default toggle --- */
 tr.expand h4 .hint { color: var(--ink-3); font-weight: 400; text-transform: none; letter-spacing: normal; font-size: 11px; margin-left: 4px; }
-/* Assisted fallback: the one control here that turns a model back on, so it reads as a
-   deliberate switch rather than a stray tickbox. Card-framed to match .contract above,
-   and it tints when armed — arming it is a real change to how the next replay behaves,
-   and that should be visible without reading the label. */
-#capabilities .fallback-check {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin: 6px 0 0;
-  padding: 11px 13px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  cursor: pointer;
-  max-width: 62ch;
-}
-#capabilities .fallback-check:hover { border-color: var(--line-strong); }
-#capabilities .fallback-check:has(input:checked) {
-  background: var(--attention-wash);
-  border-color: var(--attention-line);
-}
-
-/* The global input rule sizes text boxes — width:100%, padding, a 9px radius. A checkbox
-   inherits all of it and lands as a stretched blob away from its label, so it is reset
-   here rather than by loosening that rule for every input in the console. */
-#capabilities .fallback-check input[type='checkbox'] {
-  width: 15px;
-  height: 15px;
-  flex: none;
-  margin: 1px 0 0;
-  padding: 0;
-  border-radius: 4px;
-  accent-color: var(--brand);
-  cursor: pointer;
-}
-
-#capabilities .fallback-copy { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-#capabilities .fallback-title { font-size: 12.5px; font-weight: 600; color: var(--ink); }
-#capabilities .fallback-note { font-size: 11.5px; line-height: 1.45; color: var(--ink-3); }
-.result-line .hint { color: var(--ink-3); font-style: italic; }
-
 /* --- export: a link styled to match the button it sits next to ---------------- */
 #capabilities .export-line { margin: 6px 0 0; }
 #capabilities .button-like {

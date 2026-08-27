@@ -131,7 +131,8 @@ browsing and a robot calling need to see different things.
 ## Part 2 — The stretch goals
 
 > The assignment listed six optional extras and said **"pick at most one or two."** This
-> project built **all six, plus a seventh** that wasn't on the list.
+> project built all six plus a seventh, then deliberately removed one of them — see #4,
+> which is a cut rather than a gap.
 
 ### 1. A catalog an outside AI can call
 
@@ -179,27 +180,28 @@ approval state.*
    instantly, without deleting its history
 6. An approved recipe can't be deleted. Un-approve it first
 
-### 4. Letting the AI help once, if a replay gets stuck
+### 4. Letting the AI help once, if a replay gets stuck — **built, then cut**
 
 *Asked: on replay failure, allow a bounded, policy-checked LLM recovery for a single
 step (never open-ended), and record it as evidence.*
 
-This is the risky one — it's the *only* thing that puts AI back into replay, and "no AI
-in replay" is the whole point of the project. So it's boxed in five ways:
+I built this and then took it out. It worked, and it stayed inside every bound: off
+unless you asked for it, one call per replay, only when a button genuinely couldn't be
+found, and it could suggest nothing except another way to find that same button.
 
-1. **Off unless you specifically turn it on.** A checkbox that starts unticked
-2. **Once per replay** — not once per step. The permission is used up *before* the call,
-   so even a crash doesn't get a second go
-3. **Only when a button genuinely can't be found** — and only after checking it isn't
-   just a normal "no such record" answer
-4. **It can only suggest another way to find the same button.** Not a different action,
-   not a different page. The form it fills in literally can't express anything else
-5. **Its suggestion goes through the same safety gate as everything else**, and the
-   step's own success check must still pass afterwards
+**Why it's gone:** I measured it. On a genuinely broken locator it fixed two runs out of
+four. That's not a bug to fix — it's one model call with one shot and no retries, and
+retrying until something sticks is exactly the open-ended loop the whole design avoids.
 
-> **The clever structural bit:** the replay code still imports zero AI. The model call
-> lives in a separate file and arrives as a plain function that replay never knows is an
-> AI. So the test that proves "replay has no AI in it" still passes, untouched.
+So the choice was a feature that works half the time, or no feature. A replay that fails
+the same way every time — with the step, the selector, everything it tried, and a
+screenshot — is more useful to whoever has to fix it than one that sometimes quietly
+repairs itself. And it keeps the headline claim absolute instead of nearly true:
+**replay never calls a model.** No flag, no opt-in, no exception.
+
+**What I'd need to put it back:** a way to tell "the suggestion was wrong" apart from
+"the page was in a state no locator could match", so the one retry is spent where it
+would actually help.
 
 ### 5. One recipe, many customers
 

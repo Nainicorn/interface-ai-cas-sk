@@ -234,10 +234,10 @@
     ]
   },
   "confidence": {
-    "runs": 24,
-    "successes": 24,
-    "last_outcome": "BUSINESS_OUTCOME",
-    "updated_at": "2026-08-26T22:59:50.700Z"
+    "runs": 33,
+    "successes": 31,
+    "last_outcome": "SUCCESS",
+    "updated_at": "2026-08-27T00:08:57.123Z"
   },
   "drift_baseline": {
     "0": [

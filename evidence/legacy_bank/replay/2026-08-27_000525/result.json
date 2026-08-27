@@ -1,0 +1,27 @@
+{
+  "id": "legacy_bank/replay/2026-08-27_000525",
+  "kind": "replay",
+  "app_id": "legacy_bank",
+  "goal": null,
+  "status": "HARD_FAILURE",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "lookup-member-full-name",
+    "version": 1,
+    "outcome": "HARD_FAILURE",
+    "outputs": null,
+    "business_outcome": null,
+    "failed_step": {
+      "step": 6,
+      "intent": "Read the member's full name from the detail page",
+      "message": "Could not resolve \"Member Name value cell\" — all 1 candidate(s) failed",
+      "url": "http://localhost:3001/member/10002",
+      "screenshot": "000-hard-failure.png"
+    },
+    "drift_warnings": null
+  },
+  "started_at": "2026-08-27T00:05:25.647Z",
+  "updated_at": "2026-08-27T00:05:36.995Z"
+}

@@ -118,12 +118,6 @@ step_13() {
   run "npm run discover -- --app-id $APP --goal \"Navigate to Add/Remove Elements, add an element once, then remove it\""
 }
 
-step_14() {
-  bold "14. [KEY] Assisted fallback — one bounded AI call, opt-in, off by default"
-  dim   "Only fires if a locator cannot be found at all, and only once per replay."
-  run "npm run replay -- --id $CAP --assisted-fallback"
-}
-
 # ---------------------------------------------------------------------------
 
 ALL_SAFE=(1 2 3 5 6 7 8 9 10 11)
@@ -144,7 +138,6 @@ usage() {
   11  the agent catalog from the CLI
   12  a REAL outside AI calls it        [needs API key]
   13  discovery from scratch            [needs API key]
-  14  assisted fallback                 [needs API key]
 
   ./demo.sh 5          run one
   ./demo.sh 3 5 7      run several

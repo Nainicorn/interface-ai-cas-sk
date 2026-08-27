@@ -27,20 +27,6 @@
   font-size: 12.5px;
 }
 
-/* Same treatment as drift, but the needs-human tint — this line means an AI made a
-   decision inside what is otherwise a model-free replay, which is a different kind of
-   "worth noticing" than a UI that quietly moved. */
-.report .fallback-note {
-  flex-basis: 100%;
-  margin: 0;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: var(--needs-human-wash);
-  border: 1px solid var(--needs-human-line);
-  color: var(--ink-2);
-  font-size: 12.5px;
-}
-
 .report dl.config { display: grid; grid-template-columns: 160px 1fr; gap: 6px 14px; margin: 0; }
 .report dl.config dt { color: var(--ink-3); font-size: 12px; }
 .report dl.config dd { margin: 0; overflow-wrap: anywhere; }

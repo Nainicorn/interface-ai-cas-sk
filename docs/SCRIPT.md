@@ -153,7 +153,17 @@ Failure:  {"step": "pre-flight", "error_type": "ParameterValidationError",
 **Say:** the inputs are typed, so a bad call is rejected at the boundary rather than
 halfway through a flow with the browser already open.
 
-### RECOVERABLE — see A8, it needs the assisted-fallback setup
+### RECOVERABLE — no live demo on these apps, and say so
+
+`RECOVERABLE` means a known interstitial was cleared and the run carried on. The recovery
+table holds two hand-written rules — a "Dismiss" notice banner, and one reload on a 502 —
+and neither the mock bank nor the practice site produces either, so there is nothing to
+trigger here.
+
+**Say:** it's a fixed lookup table, not the model improvising, because replay may not call
+a model even to recover. The mechanism is the deliverable and the table is deliberately
+tiny; rules are scoped per app via `app_ids`, so a real target grows its own. Covered by
+`tests/policy.test.js` and exercised in `engine/recovery-table.js`.
 
 ## A5. Secrets never reach the log
 
@@ -209,7 +219,7 @@ and show the `// fallback if this breaks:` comments — the recipe carries sever
 find each button, the script uses the best one and leaves the rest as notes rather than
 reimplementing the fallback logic as a second, unmaintained copy.
 
-## A8. Assisted fallback *(stretch goal)* — and RECOVERABLE
+## A8. A capability that fails, and why that's the system working
 
 The capability discovered in A2 recorded a locator the model never actually executed.
 Replay catches it:
@@ -223,50 +233,23 @@ Failure:  {"step": 6, "error_type": "LocatorResolutionError",
            "message": "Could not resolve \"Member Name value cell\" — all 1 candidate(s) failed"}
 ```
 
-Now opt in to one AI call:
+**Say:** three things at once.
 
-```bash
-npm run replay -- --id lookup-member-full-name --param member_id=10002 --assisted-fallback
-```
-```
-Replaying lookup-member-full-name v1 (assisted fallback ON — up to one LLM call if a locator fails)…
-Outcome:  RECOVERABLE
-Outputs:  {"member_full_name":"Marcus Bell"}
-Assisted: [{"step":6,"reasoning":"The accessibility tree shows a row \"Name Marcus Bell\"
-  with two cells: label 'Name' and value 'Marcus Bell', so targeting the cell containing
-  'Marcus Bell' directly or via a sibling selector relative to the 'Name' label cell
-  should reliably locate the same element."}]
-```
+1. **Discovery isn't always right.** It recorded a guess. That's exactly why a new
+   recording is a *draft* and why the score exists — the console shows this one at `2/7`,
+   in amber.
+2. **Replay caught it deterministically**, and the failure names the step, the selector,
+   and every candidate it tried, with a screenshot.
+3. **Nothing silently papered over it.** I built assisted fallback — one bounded model
+   call to suggest a different locator — measured it recovering two runs in four, and
+   removed it. A replay that fails the same way every time is more useful than one that
+   sometimes repairs itself, and it keeps the headline claim absolute: replay never calls
+   a model. See REPORT.md's Cuts section.
 
-**Say — this is the best single moment in the demo.** Three things at once:
-
-1. **Discovery isn't always right.** It recorded a guess. That's why a new recipe is a
-   *draft* and why the score exists.
-2. **Replay caught it**, with the step, the selector, and what it tried.
-3. **One bounded AI call fixed it** — and the answer is right: member 10002 really is
-   Marcus Bell. Note the outcome is `RECOVERABLE`, not `SUCCESS`, so the run is honest about
-   having needed help.
-
-**Warning before you demo this live: the rescue is not reliable.** Measured over four
-runs it recovered twice and hard-failed twice. That is not a bug — it is a real model
-call getting exactly one attempt, and if the locator it suggests doesn't resolve, or the
-step's checkpoint still doesn't hold, that counts as no recovery and there is no second
-try. So rehearse it, and if it hard-fails in the room, say that:
-
-> "It gets one shot and no retries. Half the time that's enough. I'd rather it fail
-> honestly than keep calling a model until something sticks — that would turn a bounded
-> recovery into an open-ended loop, which is the thing the whole design is avoiding."
-
-The HARD_FAILURE half of this demo *is* deterministic, so lead with that.
-
-**The recorded-a-guess part is reproducible, though.** Every discovery run against this
-bank's table layout records an unverified CSS selector for the final `read`. The system
-prompt explicitly tells the model to execute a read before recording it; it consistently
-doesn't. That is a genuine weakness worth naming — and precisely why a new recording is a
-draft with a score attached rather than something the system trusts.
-
-And it's boxed in: off by default, at most once per replay, only when a locator can't be
-found at all, and it can suggest nothing but another way to find the same element.
+**And the recorded-a-guess part is reproducible**, not luck. Every discovery run against
+this bank's table layout records an unverified CSS selector for the final `read`. The
+system prompt tells the model to execute a read before recording it; it consistently
+doesn't. Worth naming as a real weakness.
 
 ## A9. Canonicalization *(stretch goal)*
 
@@ -511,5 +494,5 @@ If you only get five minutes, run these four:
 
 1. `npm run replay -- --id get-member-account-count --param member_id=10001` — SUCCESS, no AI
 2. `... --param member_id=99999` — BUSINESS_OUTCOME, an answer not a crash
-3. `npm run replay -- --id lookup-member-full-name --param member_id=10002` — HARD_FAILURE with the exact selector that failed. Add `--assisted-fallback` to try the one-shot AI rescue (lands about half the time — see A8)
+3. `npm run replay -- --id lookup-member-full-name --param member_id=10002` — HARD_FAILURE naming the exact selector that failed, and the reliability score that predicted it
 4. `npm run invoke` then revoke and re-run — approval is the whole boundary

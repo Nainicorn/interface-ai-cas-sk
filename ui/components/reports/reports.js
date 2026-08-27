@@ -95,17 +95,6 @@ function render(root, runId, report) {
       .join(', ')} — the page has changed since this capability's baseline, even though it still passed.`;
   }
 
-  // Assisted fallback is the one thing on this page that means an AI made a decision
-  // during what is supposed to be a model-free replay — always worth flagging plainly.
-  const fallbacks = run.detail?.assisted_fallbacks;
-  const fallbackEl = root.querySelector('[data-fallback-note]');
-  fallbackEl.hidden = !fallbacks?.length;
-  if (fallbacks?.length) {
-    fallbackEl.innerHTML = fallbacks
-      .map((f) => `🤖 Step ${esc(f.step)} recovered by an assisted-fallback AI call: “${esc(f.reasoning)}”`)
-      .join('<br>');
-  }
-
   root.querySelector('[data-config]').innerHTML = configRows(report)
     .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`)
     .join('');

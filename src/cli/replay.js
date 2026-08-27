@@ -6,9 +6,7 @@
  * Flags: --id (required), --param k=v (repeatable), --version N (latest if omitted),
  *        --headed (watch it), --run-id <id>, --tenant <id> (apply a tenant_overrides entry),
  *        --secret NAME=value (repeatable — override a stored credential for THIS run only,
- *        so the same recording can run as a different user; never persisted),
- *        --assisted-fallback (opt in to one bounded LLM locator suggestion if a step's
- *        recorded locator can't be resolved at all — off unless explicitly passed)
+ *        so the same recording can run as a different user; never persisted)
  *
  * Exit codes: 0 for SUCCESS and BUSINESS_OUTCOME (both are answers), 1 for HARD_FAILURE.
  */
@@ -53,9 +51,6 @@ function parseArgs(argv) {
       case '--tenant':
         args.tenantId = argv[++i];
         break;
-      case '--assisted-fallback':
-        args.assistedFallback = true;
-        break;
       default:
         throw new Error(`Unknown flag "${argv[i]}"`);
     }
@@ -67,10 +62,7 @@ function parseArgs(argv) {
 try {
   const args = parseArgs(process.argv.slice(2));
   const capability = await loadCapability(args.id, args.version);
-  console.log(
-    `Replaying ${capability.id} v${capability.version} ` +
-      `(${args.assistedFallback ? 'assisted fallback ON — up to one LLM call if a locator fails' : 'no LLM'})…`,
-  );
+  console.log(`Replaying ${capability.id} v${capability.version} (no LLM)…`);
 
   // Same entry point the console and the agent catalog use, so the approval gate, the
   // run row, and the evidence folder cannot differ by which door the caller came in.
@@ -79,7 +71,6 @@ try {
     runId: args.runId,
     caller: 'cli',
     tenantId: args.tenantId ?? null,
-    assistedFallback: args.assistedFallback ?? false,
     secrets: args.secrets ?? null,
   });
 
@@ -88,7 +79,6 @@ try {
   if (result.business_outcome) console.log(`Business: ${JSON.stringify(result.business_outcome)}`);
   if (result.failure) console.log(`Failure:  ${JSON.stringify(result.failure, null, 2)}`);
   if (result.drift_warnings?.length) console.log(`Drift:    ${JSON.stringify(result.drift_warnings)}`);
-  if (result.assisted_fallbacks?.length) console.log(`Assisted: ${JSON.stringify(result.assisted_fallbacks)}`);
   console.log(`Evidence: ${result.evidence_dir}`);
 
   process.exit(result.outcome === 'HARD_FAILURE' ? 1 : 0);

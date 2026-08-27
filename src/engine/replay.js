@@ -117,9 +117,8 @@ function resolveStepValue(step, params, secrets) {
  *
  * A browser publishes a filled input's value in the accessibility tree, so a password
  * typed at step 2 is still sitting in step 5's snapshot. That snapshot feeds the drift
- * fingerprint — which is PERSISTED into the artifact — and the assisted-fallback model
- * call. Without this, a secret reaches an artifact and a model having been correctly
- * redacted everywhere a reviewer would think to look.
+ * fingerprint, which is PERSISTED into the artifact. Without this a secret reaches an
+ * artifact having been correctly redacted everywhere a reviewer would think to look.
  *
  * Reads the same two sources as resolveStepValue, in the same order, so a per-call
  * credential is masked exactly like a stored one.
@@ -196,46 +195,6 @@ async function matchBusinessOutcome(page, step) {
 }
 
 /**
- * Try exactly one assisted-fallback suggestion for a step whose locator could not be
- * resolved. Asks the model once via the injected `fallback` callback (see
- * agent/assisted-fallback.js), retries the SAME action with the suggested locator
- * through the ordinary action primitives — so checkAllowed() still runs, there is no
- * privileged path here — and re-checks the step's own checkpoint. Anything short of "the
- * checkpoint now holds" is treated as no recovery; this never gets a second try.
- *
- * Logs its own evidence event whether or not the suggestion actually worked — "the model
- * tried and it still didn't resolve" is meaningfully different from "never tried" for
- * anyone reviewing the run later.
- *
- * @returns {Promise<{actionResult: object, suggestion: object}|null>}
- */
-async function attemptAssistedFallback(ctx, capability, step, params, secrets, masks, err, fallback) {
-  const state = await captureState(ctx.page, { screenshot: false }).catch(() => null);
-  // Masked before it leaves the deterministic core: this is the one place in replay where
-  // page text reaches a model, and a filled password field is visible in that text.
-  const ariaTree = maskValues(state?.ariaTree ?? '', masks);
-  const suggestion = await fallback({ step, attempts: err.attempts, ariaTree }).catch(() => null);
-  if (!suggestion?.locator) return null;
-
-  ctx.logger?.logEvent('assisted_fallback', {
-    step: step.index,
-    intent: step.intent,
-    reasoning: suggestion.reasoning,
-    suggested_locator: suggestion.locator,
-  });
-
-  const patchedStep = { ...step, locator: suggestion.locator };
-  try {
-    const actionResult = await performAction(ctx, step.action, argsForStep(patchedStep, params, secrets));
-    const check = await evaluateCondition(ctx.page, step.expected_outcome);
-    if (!check.ok) return null;
-    return { actionResult, suggestion };
-  } catch {
-    return null; // the suggested locator didn't resolve either — treated as no suggestion
-  }
-}
-
-/**
  * Compare a just-succeeded step's page state against its established baseline, if any,
  * and log a warning when it has drifted. Never affects the step's own outcome — see
  * engine/drift.js.
@@ -262,20 +221,15 @@ async function recordDrift(ctx, capability, step, driftWarnings, observedFingerp
  * already mid-flow, rather than being forced to start a fresh browser.
  *
  * @param {object} [options]
- * @param {Function|null} [options.fallback] see agent/assisted-fallback.js's
- *   suggestLocator — an opaque callback so this file never imports the Anthropic SDK.
- *   Fires at most once per call, only when a step's locator cannot be resolved at all.
  * @returns {Promise<object>} the structured replay result
  */
-export async function executeSteps(ctx, capability, params, { fallback = null, secrets = null } = {}) {
+export async function executeSteps(ctx, capability, params, { secrets = null } = {}) {
   const masks = secretValues(capability, secrets);
   const outputs = {};
   const stepResults = [];
   const recoveries = [];
   const driftWarnings = [];
   const observedFingerprints = {};
-  const assistedFallbacks = [];
-  let fallbackAvailable = Boolean(fallback);
 
   for (const step of capability.steps) {
     const record = { index: step.index, intent: step.intent, action: step.action };
@@ -300,7 +254,6 @@ export async function executeSteps(ctx, capability, params, { fallback = null, s
           recoveries,
           drift_warnings: driftWarnings,
           observed_fingerprints: observedFingerprints,
-          assisted_fallbacks: assistedFallbacks,
           failure: null,
         };
       }
@@ -331,7 +284,6 @@ export async function executeSteps(ctx, capability, params, { fallback = null, s
           recoveries,
           drift_warnings: driftWarnings,
           observed_fingerprints: observedFingerprints,
-          assisted_fallbacks: assistedFallbacks,
           business_outcome: null,
           failure: {
             step: step.index,
@@ -384,30 +336,8 @@ export async function executeSteps(ctx, capability, params, { fallback = null, s
             recoveries,
             drift_warnings: driftWarnings,
             observed_fingerprints: observedFingerprints,
-            assisted_fallbacks: assistedFallbacks,
             failure: null,
           };
-        }
-
-        // --- assisted fallback: one bounded, opt-in LLM call, locator-only -----------
-        // See agent/assisted-fallback.js for what "bounded" means here. Never fires for
-        // anything but a genuinely unresolved locator, never twice in one replay.
-        if (fallbackAvailable) {
-          fallbackAvailable = false;
-          const recovered = await attemptAssistedFallback(ctx, capability, step, params, secrets, masks, err, fallback);
-          if (recovered) {
-            record.outcome = 'RECOVERABLE';
-            record.assisted_fallback = { reasoning: recovered.suggestion.reasoning };
-            assistedFallbacks.push({ step: step.index, reasoning: recovered.suggestion.reasoning });
-            if (step.extract_as) {
-              outputs[step.extract_as] = recovered.actionResult.extracted ?? recovered.actionResult.raw ?? null;
-              record.extracted_to = step.extract_as;
-            }
-            await recordDrift(ctx, capability, step, driftWarnings, observedFingerprints, masks);
-            record.duration_ms = Date.now() - started;
-            stepResults.push(record);
-            continue;
-          }
         }
       }
 
@@ -425,7 +355,6 @@ export async function executeSteps(ctx, capability, params, { fallback = null, s
         recoveries,
         drift_warnings: driftWarnings,
         observed_fingerprints: observedFingerprints,
-        assisted_fallbacks: assistedFallbacks,
         business_outcome: null,
         failure: {
           step: step.index,
@@ -453,7 +382,6 @@ export async function executeSteps(ctx, capability, params, { fallback = null, s
       recoveries,
       drift_warnings: driftWarnings,
       observed_fingerprints: observedFingerprints,
-      assisted_fallbacks: assistedFallbacks,
       business_outcome: null,
       failure: {
         step: 'success_checkpoint',
@@ -467,15 +395,12 @@ export async function executeSteps(ctx, capability, params, { fallback = null, s
   }
 
   return {
-    // An assisted fallback is a recovery too — the run only got here because a step's
-    // FIRST attempt failed and something (the fixed table or the model) cleared it.
-    outcome: recoveries.length > 0 || assistedFallbacks.length > 0 ? 'RECOVERABLE' : 'SUCCESS',
+    outcome: recoveries.length > 0 ? 'RECOVERABLE' : 'SUCCESS',
     outputs,
     steps: stepResults,
     recoveries,
     drift_warnings: driftWarnings,
     observed_fingerprints: observedFingerprints,
-    assisted_fallbacks: assistedFallbacks,
     business_outcome: null,
     failure: null,
   };
@@ -490,8 +415,6 @@ export async function executeSteps(ctx, capability, params, { fallback = null, s
  * @param {boolean} [args.headless]
  * @param {object} [args.logger]   evidence logger
  * @param {string|null} [args.tenantId] applies a matching tenant_overrides entry, if any
- * @param {Function|null} [args.assistedFallback] opt-in, one-shot LLM locator suggestion
- *   — see agent/assisted-fallback.js. Omitted or null means off, which is the default.
  * @returns {Promise<object>} structured result — never throws for an expected outcome
  */
 export async function replayCapability({
@@ -501,7 +424,6 @@ export async function replayCapability({
   headless = true,
   logger = null,
   tenantId = null,
-  assistedFallback = null,
 }) {
   const startedAt = Date.now();
   // Confidence and evidence stay keyed to the BASE recording throughout — a tenant patch
@@ -527,7 +449,6 @@ export async function replayCapability({
       recoveries: [],
       drift_warnings: [],
       observed_fingerprints: {},
-      assisted_fallbacks: [],
       business_outcome: null,
       failure: { step: 'pre-flight', error_type: err.name, message: err.message, errors: err.errors },
       duration_ms: Date.now() - startedAt,
@@ -547,7 +468,6 @@ export async function replayCapability({
       recoveries: [],
       drift_warnings: [],
       observed_fingerprints: {},
-      assisted_fallbacks: [],
       business_outcome: null,
       failure: { step: 'pre-flight', error_type: err.name, message: err.message },
       duration_ms: Date.now() - startedAt,
@@ -563,7 +483,7 @@ export async function replayCapability({
       waitUntil: 'domcontentloaded',
     });
 
-    const result = await executeSteps(ctx, capability, params, { fallback: assistedFallback, secrets });
+    const result = await executeSteps(ctx, capability, params, { secrets });
 
     // Fold this outcome into the artifact's rolling confidence signal. Only runs that
     // actually exercised the recording count — pre-flight refusals and infrastructure
@@ -594,7 +514,6 @@ export async function replayCapability({
       recoveries: [],
       drift_warnings: [],
       observed_fingerprints: {},
-      assisted_fallbacks: [],
       business_outcome: null,
       failure: {
         step: 'infrastructure',

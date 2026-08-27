@@ -1,0 +1,27 @@
+{
+  "id": "legacy_bank/replay/2026-08-27_000627",
+  "kind": "replay",
+  "app_id": "legacy_bank",
+  "goal": null,
+  "status": "HARD_FAILURE",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "get-member-account-count",
+    "version": 1,
+    "outcome": "HARD_FAILURE",
+    "outputs": null,
+    "business_outcome": null,
+    "failed_step": {
+      "step": 5,
+      "intent": "Read the Accounts table to determine number/details of accounts held by the member",
+      "message": "Could not resolve \"Accounts table on member detail page\" — all 1 candidate(s) failed",
+      "url": "http://localhost:3001/member/10001",
+      "screenshot": "000-hard-failure.png"
+    },
+    "drift_warnings": null
+  },
+  "started_at": "2026-08-27T00:06:27.403Z",
+  "updated_at": "2026-08-27T00:06:36.840Z"
+}
