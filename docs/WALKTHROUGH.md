@@ -131,8 +131,8 @@ browsing and a robot calling need to see different things.
 ## Part 2 — The stretch goals
 
 > The assignment listed six optional extras and said **"pick at most one or two."** This
-> project built all six plus a seventh, then deliberately removed one of them — see #4,
-> which is a cut rather than a gap.
+> project built all six plus a seventh of its own, then deliberately removed two of them
+> after measuring — #4 and #7. Those are cuts, not gaps, and the reasoning is the point.
 
 ### 1. A catalog an outside AI can call
 
@@ -229,19 +229,26 @@ Run the recipe 5 times, report what percent held. **No special test mode** — i
 the exact same replay function 5 times, with the same approval checks and the same
 evidence trail, then adds up the results.
 
-### 7. Noticing when a page quietly changes *(not in the assignment)*
+### 7. Noticing when a page quietly changes — **built, then cut**
 
-The gap it fills: a hard failure tells you the page *broke*. Nothing tells you the page
-is slowly *drifting* while still technically working.
+The gap it aimed at is real: a hard failure tells you the page *broke*. Nothing tells you
+it's slowly *drifting* while still working.
 
-1. The first successful replay takes a fingerprint of each page and freezes it
-2. Every replay after that compares against **that frozen fingerprint**
-3. Drifted too far? Log a warning, show it in the report
-4. **It never changes the result.** A recipe that still works is still a success
+It worked. The first good replay photographed each page, later replays compared, and too
+much difference logged a warning without ever failing the run. I watched it fire live at
+0.37 on a deliberately redesigned page while the replay still reported `SUCCESS`.
 
-> **The smartest decision in the whole feature:** the fingerprint is *never* updated. If
-> it were, a slow redesign — one small change a week — would quietly seep into the
-> baseline and never trigger a warning at all.
+**Why it's gone:** the photograph is a *set of lines*, and a set can't count. Forty
+identical table rows collapse into one entry — so deleting thirty-nine of them scores
+**zero drift**. Rows vanishing is exactly what a bank operator would want flagged. It also
+throws away indentation, which is how the page tree encodes nesting, so moving a button
+from a popup into the footer reads as no change at all.
+
+A warning light that stays dark for the changes that matter most is worse than no warning
+light, because people start trusting it.
+
+**What I'd need to put it back:** compare structure instead of a bag of lines, and a
+threshold per capability rather than one number for everything.
 
 ---
 
@@ -402,21 +409,6 @@ If someone forgets to mark a route as risky, a risky action there won't get flag
 
 Anything after a `?` or `#` in a web address is invisible to it. And matching is a plain
 prefix, so allowing `/account` also allows `/account-admin`.
-
-### Drift detection can't count
-
-The page fingerprint is a *set*, so 40 identical table rows collapse into one entry.
-Delete 39 and it reports zero drift. It also ignores indentation, which is how the
-accessibility tree encodes nesting — so moving a button from a popup to the footer reads
-as no change. That's the same property that makes harmless reordering not count as drift,
-so it's a trade-off rather than a bug — but name it first.
-
-### Assisted fallback lands about half the time
-
-Measured over four runs against a genuinely broken locator: two recoveries, two hard
-failures. That is what "one model call, one attempt, no retries" buys. It isn't a bug —
-retrying until something sticks would turn a bounded recovery into the open-ended loop the
-whole design exists to avoid — but don't promise it in a live demo.
 
 ### Discovery can record a locator it never executed
 

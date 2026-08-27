@@ -1,0 +1,20 @@
+{
+  "id": "internet/replay/2026-08-27_002705",
+  "kind": "replay",
+  "app_id": "internet",
+  "goal": null,
+  "status": "SUCCESS",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "add-remove-elements-cycle",
+    "version": 1,
+    "outcome": "SUCCESS",
+    "outputs": null,
+    "business_outcome": null,
+    "failed_step": null
+  },
+  "started_at": "2026-08-27T00:27:05.097Z",
+  "updated_at": "2026-08-27T00:27:05.526Z"
+}

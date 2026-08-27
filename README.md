@@ -106,10 +106,6 @@ npm run canonicalize -- --id add-remove-elements-cycle
 # replay it as if for a different tenant with a declared override (see REPORT.md §4)
 npm run replay -- --id add-remove-elements-cycle --tenant <tenant-id>
 
-# a capability's first successful replay quietly establishes its UI-drift baseline;
-# every replay after that compares against it and flags a warning in the run report
-# if the page has changed meaningfully — without failing a replay that still works
-
 # approve it, so an outside agent can call it
 curl -X PATCH localhost:3000/api/capabilities/add-remove-elements-cycle/status \
   -H 'content-type: application/json' -d '{"status":"approved"}'

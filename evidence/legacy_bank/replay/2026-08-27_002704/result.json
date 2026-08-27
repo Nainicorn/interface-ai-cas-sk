@@ -1,0 +1,27 @@
+{
+  "id": "legacy_bank/replay/2026-08-27_002704",
+  "kind": "replay",
+  "app_id": "legacy_bank",
+  "goal": null,
+  "status": "BUSINESS_OUTCOME",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [
+      "LEGACY_BANK_PASSWORD"
+    ],
+    "capability": "get-member-account-count",
+    "version": 1,
+    "outcome": "BUSINESS_OUTCOME",
+    "outputs": null,
+    "business_outcome": {
+      "code": "LOGIN_FAILED",
+      "message": "Login was rejected due to invalid credentials.",
+      "step": 2,
+      "intent": "Submit login form"
+    },
+    "failed_step": null
+  },
+  "started_at": "2026-08-27T00:27:04.043Z",
+  "updated_at": "2026-08-27T00:27:04.789Z"
+}

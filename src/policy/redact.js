@@ -89,9 +89,8 @@ export function redactObject(input, policy = {}) {
  * The rules above redact by field NAME, at the moment a value is logged. This one is for
  * the other direction: a browser publishes a filled input's value in the accessibility
  * tree, so once a password has been typed it is sitting in every later snapshot of that
- * page — text nobody explicitly logged, but which flows into the evidence transcript, the
- * drift fingerprint that gets written into the artifact, and the observation the model is
- * shown on its next turn.
+ * page — text nobody explicitly logged, but which flows into the evidence transcript and
+ * into the observation the model is shown on its next turn.
  *
  * Without this, "the model never sees a password" is only true until it types one.
  *

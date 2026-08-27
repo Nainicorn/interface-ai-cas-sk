@@ -159,17 +159,6 @@ export function deleteCapability(id, version) {
   return { run_id: record.runId };
 }
 
-/**
- * Establish the drift baseline from a replay's observed per-step fingerprints — but only
- * once. A capability that already has a baseline keeps it; later replays compare against
- * that fixed reference rather than the most recent run, which is what makes "drift" mean
- * something (see engine/drift.js).
- */
-export function establishDriftBaseline(id, version, observedFingerprints) {
-  const current = loadCapability(id, version);
-  if (Object.keys(current.drift_baseline).length > 0) return current; // already set
-  return updateCapability(id, version, { drift_baseline: observedFingerprints }).capability;
-}
 
 /**
  * Fold one replay outcome into the capability's rolling confidence signal.

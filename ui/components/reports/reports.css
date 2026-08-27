@@ -14,19 +14,6 @@
 .report .badge.big { font-size: 13px; padding: 5px 14px; }
 .report .headline { font-weight: 600; font-size: 15px; flex: 1; min-width: 200px; }
 
-/* A side-channel warning, not part of the outcome line — it always wraps to its own row
-   and never competes with the badge for the reader's first read of pass/fail. */
-.report .drift-note {
-  flex-basis: 100%;
-  margin: 0;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: var(--attention-wash);
-  border: 1px solid var(--attention-line);
-  color: var(--ink-2);
-  font-size: 12.5px;
-}
-
 .report dl.config { display: grid; grid-template-columns: 160px 1fr; gap: 6px 14px; margin: 0; }
 .report dl.config dt { color: var(--ink-3); font-size: 12px; }
 .report dl.config dd { margin: 0; overflow-wrap: anywhere; }

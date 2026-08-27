@@ -84,17 +84,6 @@ function render(root, runId, report) {
   root.querySelector('[data-headline]').innerHTML = esc(run.goal ?? run.detail?.capability ?? '');
   root.querySelector('[data-when]').textContent = `${dt(run.created_at)}${run.updated_at ? ` → ${dt(run.updated_at)}` : ''}`;
 
-  // Drift is a side-channel warning, never why a run failed — this outcome badge above
-  // can say SUCCESS while this line still flags that the page has moved under it.
-  const drift = run.detail?.drift_warnings;
-  const driftEl = root.querySelector('[data-drift]');
-  driftEl.hidden = !drift?.length;
-  if (drift?.length) {
-    driftEl.innerHTML = `⚠ UI drift detected on step${drift.length === 1 ? '' : 's'} ${drift
-      .map((d) => `${esc(d.step)} (${esc(Math.round(d.score * 100))}% different)`)
-      .join(', ')} — the page has changed since this capability's baseline, even though it still passed.`;
-  }
-
   root.querySelector('[data-config]').innerHTML = configRows(report)
     .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`)
     .join('');

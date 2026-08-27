@@ -78,7 +78,6 @@ try {
   if (result.outputs) console.log(`Outputs:  ${JSON.stringify(result.outputs)}`);
   if (result.business_outcome) console.log(`Business: ${JSON.stringify(result.business_outcome)}`);
   if (result.failure) console.log(`Failure:  ${JSON.stringify(result.failure, null, 2)}`);
-  if (result.drift_warnings?.length) console.log(`Drift:    ${JSON.stringify(result.drift_warnings)}`);
   console.log(`Evidence: ${result.evidence_dir}`);
 
   process.exit(result.outcome === 'HARD_FAILURE' ? 1 : 0);

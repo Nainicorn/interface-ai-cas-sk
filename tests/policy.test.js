@@ -10,7 +10,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { PolicyViolation, checkAllowed, routeOf } from '../src/policy/allowlist.js';
-import { isSensitive, redact, redactObject, shapeOf } from '../src/policy/redact.js';
+import { isSensitive, maskValues, redact, redactObject, shapeOf } from '../src/policy/redact.js';
 import { checkAgentInvocable, checkUnattendedAllowed, classifyRisk } from '../src/policy/risk.js';
 
 const target = {
@@ -113,5 +113,44 @@ describe('risk and approval', () => {
 
   test('a draft is invisible to an agent even when it is safe', () => {
     assert.equal(checkAgentInvocable({ id: 'c', risk_level: 'safe', status: 'draft' }).allowed, false);
+  });
+});
+
+/**
+ * Masking by VALUE, the counterpart to redacting by NAME above.
+ *
+ * A browser publishes a filled input's value in the accessibility tree, so once the agent
+ * types a password it is sitting in every later snapshot of that page — text nobody
+ * explicitly logged. agent/discovery.js runs each observation through this before the
+ * transcript and before the model sees it, which is what keeps "the model never sees a
+ * password" true after the model has typed one.
+ */
+describe('masking captured page text', () => {
+  test('a typed credential is replaced by its shape wherever it appears', () => {
+    const tree = '- textbox "Password": hunter2\n- text: signed in as hunter2';
+    const masked = maskValues(tree, ['hunter2']);
+    assert.ok(!masked.includes('hunter2'), 'the credential survived masking');
+    assert.equal(masked.split('<string:7>').length - 1, 2, 'both occurrences should be masked');
+  });
+
+  test('shape, not deletion — an empty field stays distinguishable from a filled one', () => {
+    assert.equal(maskValues('value: abcd', ['abcd']), 'value: <string:4>');
+  });
+
+  test('a credential containing regex syntax is still masked', () => {
+    // Split/join rather than a regex, precisely so this cannot blow up or under-match.
+    const masked = maskValues('pw is a.*b[c]$ here', ['a.*b[c]$']);
+    assert.ok(!masked.includes('a.*b[c]$'));
+  });
+
+  test('no secrets, or empty text, is a no-op rather than a throw', () => {
+    assert.equal(maskValues('nothing to hide', []), 'nothing to hide');
+    assert.equal(maskValues('', ['x']), '');
+    assert.equal(maskValues(null, ['x']), '');
+  });
+
+  test('an empty-string secret cannot blank the whole page', () => {
+    // ''.split('') would explode a string into every character; the guard matters.
+    assert.equal(maskValues('untouched', ['']), 'untouched');
   });
 });

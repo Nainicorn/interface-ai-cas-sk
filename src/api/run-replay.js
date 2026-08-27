@@ -109,7 +109,6 @@ export async function runReplay(
       outputs: result.outputs && Object.keys(result.outputs).length ? result.outputs : null,
       business_outcome: result.business_outcome ?? null,
       failed_step: describeFailure(result.failure),
-      drift_warnings: result.drift_warnings?.length ? result.drift_warnings : null,
     },
   });
 

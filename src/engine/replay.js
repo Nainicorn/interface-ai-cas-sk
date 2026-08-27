@@ -28,14 +28,12 @@
 
 import { chromium } from 'playwright';
 import { getTarget, resolveUrl } from '../config/app-config.js';
-import { recordReplayOutcome, establishDriftBaseline } from '../schema/store.js';
+import { recordReplayOutcome } from '../schema/store.js';
 import { validateParams } from '../schema/validate-params.js';
 import { performAction, click } from './actions.js';
-import { driftScore, fingerprint, isDrifted } from './drift.js';
 import { LocatorResolutionError, MalformedStep, MissingCredential } from './errors.js';
 import { captureState, evaluateCondition } from './perception.js';
 import { attemptRecovery } from './recovery-table.js';
-import { maskValues } from '../policy/redact.js';
 
 /**
  * Merge a tenant's declared differences onto the base recording, if any exist.
@@ -111,27 +109,6 @@ function resolveStepValue(step, params, secrets) {
   throw new MalformedStep(step.index, 'a "type" action needs value_from, value_from_env, or value_literal');
 }
 
-/**
- * Every credential value this replay could type, so they can be masked back out of
- * anything captured from the page.
- *
- * A browser publishes a filled input's value in the accessibility tree, so a password
- * typed at step 2 is still sitting in step 5's snapshot. That snapshot feeds the drift
- * fingerprint, which is PERSISTED into the artifact. Without this a secret reaches an
- * artifact having been correctly redacted everywhere a reviewer would think to look.
- *
- * Reads the same two sources as resolveStepValue, in the same order, so a per-call
- * credential is masked exactly like a stored one.
- */
-function secretValues(capability, secrets) {
-  const values = new Set();
-  for (const step of capability.steps) {
-    if (!step.value_from_env) continue;
-    const value = secrets?.[step.value_from_env] ?? process.env[step.value_from_env];
-    if (value) values.add(value);
-  }
-  return [...values];
-}
 
 /** Build the argument object for one step's action primitive. */
 function argsForStep(step, params, secrets) {
@@ -195,26 +172,6 @@ async function matchBusinessOutcome(page, step) {
 }
 
 /**
- * Compare a just-succeeded step's page state against its established baseline, if any,
- * and log a warning when it has drifted. Never affects the step's own outcome — see
- * engine/drift.js.
- */
-async function recordDrift(ctx, capability, step, driftWarnings, observedFingerprints, masks) {
-  const state = await captureState(ctx.page, { screenshot: false });
-  // Masked before fingerprinting: this fingerprint is written into the artifact as the
-  // drift baseline, and an artifact must never carry a credential.
-  const fp = fingerprint(maskValues(state.ariaTree, masks));
-  observedFingerprints[step.index] = fp;
-  const baseline = capability.drift_baseline?.[String(step.index)];
-  if (!baseline) return;
-  const score = driftScore(baseline, fp);
-  if (isDrifted(score)) {
-    driftWarnings.push({ step: step.index, score: Math.round(score * 100) / 100 });
-    ctx.logger?.logEvent('drift_warning', { step: step.index, intent: step.intent, score });
-  }
-}
-
-/**
  * Execute a capability's steps against an already-open page.
  *
  * Separated from browser lifecycle so escalation can reuse it on a live session that is
@@ -224,12 +181,9 @@ async function recordDrift(ctx, capability, step, driftWarnings, observedFingerp
  * @returns {Promise<object>} the structured replay result
  */
 export async function executeSteps(ctx, capability, params, { secrets = null } = {}) {
-  const masks = secretValues(capability, secrets);
   const outputs = {};
   const stepResults = [];
   const recoveries = [];
-  const driftWarnings = [];
-  const observedFingerprints = {};
 
   for (const step of capability.steps) {
     const record = { index: step.index, intent: step.intent, action: step.action };
@@ -252,9 +206,7 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
           outputs,
           steps: stepResults,
           recoveries,
-          drift_warnings: driftWarnings,
-          observed_fingerprints: observedFingerprints,
-          failure: null,
+              failure: null,
         };
       }
 
@@ -282,9 +234,7 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
           outputs,
           steps: stepResults,
           recoveries,
-          drift_warnings: driftWarnings,
-          observed_fingerprints: observedFingerprints,
-          business_outcome: null,
+              business_outcome: null,
           failure: {
             step: step.index,
             intent: step.intent,
@@ -296,10 +246,6 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
           },
         };
       }
-
-      // --- drift: only reached once the checkpoint above has already held; never what
-      // decides SUCCESS vs failure, purely a side-channel warning for a human ----------
-      await recordDrift(ctx, capability, step, driftWarnings, observedFingerprints, masks);
 
       // --- bind declared outputs -------------------------------------------
       if (step.extract_as) {
@@ -334,9 +280,7 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
             outputs,
             steps: stepResults,
             recoveries,
-            drift_warnings: driftWarnings,
-            observed_fingerprints: observedFingerprints,
-            failure: null,
+                    failure: null,
           };
         }
       }
@@ -353,8 +297,6 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
         outputs,
         steps: stepResults,
         recoveries,
-        drift_warnings: driftWarnings,
-        observed_fingerprints: observedFingerprints,
         business_outcome: null,
         failure: {
           step: step.index,
@@ -380,8 +322,6 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
       outputs,
       steps: stepResults,
       recoveries,
-      drift_warnings: driftWarnings,
-      observed_fingerprints: observedFingerprints,
       business_outcome: null,
       failure: {
         step: 'success_checkpoint',
@@ -399,8 +339,6 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
     outputs,
     steps: stepResults,
     recoveries,
-    drift_warnings: driftWarnings,
-    observed_fingerprints: observedFingerprints,
     business_outcome: null,
     failure: null,
   };
@@ -447,8 +385,6 @@ export async function replayCapability({
       outputs: null,
       steps: [],
       recoveries: [],
-      drift_warnings: [],
-      observed_fingerprints: {},
       business_outcome: null,
       failure: { step: 'pre-flight', error_type: err.name, message: err.message, errors: err.errors },
       duration_ms: Date.now() - startedAt,
@@ -466,8 +402,6 @@ export async function replayCapability({
       outputs: null,
       steps: [],
       recoveries: [],
-      drift_warnings: [],
-      observed_fingerprints: {},
       business_outcome: null,
       failure: { step: 'pre-flight', error_type: err.name, message: err.message },
       duration_ms: Date.now() - startedAt,
@@ -492,13 +426,6 @@ export async function replayCapability({
     // to, and telemetry must never turn a completed replay into a failure.
     try {
       recordReplayOutcome(capability.id, capability.version, result.outcome);
-
-      // Only a run that walked every step start to finish has a complete set of
-      // fingerprints worth freezing as the reference — SUCCESS and RECOVERABLE both
-      // qualify, BUSINESS_OUTCOME and HARD_FAILURE both exit early. See engine/drift.js.
-      if (['SUCCESS', 'RECOVERABLE'].includes(result.outcome)) {
-        establishDriftBaseline(capability.id, capability.version, result.observed_fingerprints);
-      }
     } catch {
       /* see above — telemetry never fails a completed replay */
     }
@@ -512,8 +439,6 @@ export async function replayCapability({
       outputs: null,
       steps: [],
       recoveries: [],
-      drift_warnings: [],
-      observed_fingerprints: {},
       business_outcome: null,
       failure: {
         step: 'infrastructure',
