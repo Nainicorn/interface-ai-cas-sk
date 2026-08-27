@@ -1,0 +1,25 @@
+{
+  "id": "legacy_bank/replay/2026-08-27_005944",
+  "kind": "replay",
+  "app_id": "legacy_bank",
+  "goal": null,
+  "status": "BUSINESS_OUTCOME",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "get-member-account-count",
+    "version": 1,
+    "outcome": "BUSINESS_OUTCOME",
+    "outputs": null,
+    "business_outcome": {
+      "code": "MEMBER_NOT_FOUND",
+      "message": "No member exists with the given member ID.",
+      "step": 4,
+      "intent": "Submit the member search"
+    },
+    "failed_step": null
+  },
+  "started_at": "2026-08-27T00:59:44.849Z",
+  "updated_at": "2026-08-27T00:59:48.664Z"
+}

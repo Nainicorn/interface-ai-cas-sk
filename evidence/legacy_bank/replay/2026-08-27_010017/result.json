@@ -1,0 +1,24 @@
+{
+  "id": "legacy_bank/replay/2026-08-27_010017",
+  "kind": "replay",
+  "app_id": "legacy_bank",
+  "goal": null,
+  "status": "SUCCESS",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "open-sub-account",
+    "version": 1,
+    "outcome": "SUCCESS",
+    "outputs": {
+      "reference_number": "REQ-10001-03",
+      "new_account_number": "SAV-10001-03",
+      "opening_balance": "$100.00"
+    },
+    "business_outcome": null,
+    "failed_step": null
+  },
+  "started_at": "2026-08-27T01:00:17.984Z",
+  "updated_at": "2026-08-27T01:00:30.418Z"
+}

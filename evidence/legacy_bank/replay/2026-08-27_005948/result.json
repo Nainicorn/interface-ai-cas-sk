@@ -1,0 +1,26 @@
+{
+  "id": "legacy_bank/replay/2026-08-27_005948",
+  "kind": "replay",
+  "app_id": "legacy_bank",
+  "goal": null,
+  "status": "HARD_FAILURE",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "get-member-account-count",
+    "version": 1,
+    "outcome": "HARD_FAILURE",
+    "outputs": null,
+    "business_outcome": null,
+    "failed_step": {
+      "step": "pre-flight",
+      "intent": null,
+      "message": "Invalid parameters: \"member_id\" is required; \"bogus\" is not an accepted parameter",
+      "url": null,
+      "screenshot": null
+    }
+  },
+  "started_at": "2026-08-27T00:59:48.973Z",
+  "updated_at": "2026-08-27T00:59:48.974Z"
+}
