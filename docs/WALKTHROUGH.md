@@ -430,13 +430,16 @@ A per-call credential is threaded through the replay context, but the fallback s
 users in one server would race. The fix is contained — `resolveStepValue` is the only
 function that reads it.
 
-### Older committed evidence predates the redaction fix
+### One username is baked into a recorded selector
 
-`evidence/heroku_app/` was recorded before credential values were masked out of captured
-page text, so that demo site's public password is still visible in those transcripts. New
-runs are clean; those would need regenerating.
+The model recorded a checkpoint as `input[value='teller01'], input` — embedding this
+run's username in the selector. The system prompt explicitly forbids that ("never build a
+recorded locator from the concrete value it extracts"), and the trailing `, input`
+fallback makes the check nearly meaningless anyway. It's a username for a localhost
+fixture, not a password, but it's the same recording-quality weakness that produces
+unverified locators.
 
 ### Dead code
 
-`redactObject` and `RunLogger.saveResult` are exported and tested but have no production
-caller.
+`RunLogger.saveResult` is exported but has no production caller — `result.json` is written
+by `evidence/runs.js` instead.

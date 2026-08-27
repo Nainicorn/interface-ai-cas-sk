@@ -9,6 +9,7 @@
 
 import { replayCapability } from '../engine/replay.js';
 import { createRun, updateRun } from '../evidence/runs.js';
+import { redactObject } from '../policy/redact.js';
 import { RunLogger, newRunId } from '../evidence/logger.js';
 import { ApprovalRequired, checkUnattendedAllowed } from '../policy/risk.js';
 
@@ -105,8 +106,15 @@ export async function runReplay(
       capability: capability.id,
       version: capability.version,
       outcome: result.outcome,
-      // The run row carries what the caller got, so the Runs view is self-sufficient.
-      outputs: result.outputs && Object.keys(result.outputs).length ? result.outputs : null,
+      // The run row carries what the caller got, so the Runs view is self-sufficient —
+      // but redacted on the way in. A capability is free to declare an output that reads
+      // a sensitive field, and nothing stopped that value being written here in the
+      // clear. The CALLER still receives it in full below; only the persisted copy is
+      // reduced to a shape, because evidence outlives the request that asked for it.
+      outputs:
+        result.outputs && Object.keys(result.outputs).length
+          ? redactObject(result.outputs, capability.redaction_policy)
+          : null,
       business_outcome: result.business_outcome ?? null,
       failed_step: describeFailure(result.failure),
     },
