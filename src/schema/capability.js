@@ -75,6 +75,19 @@ export const BusinessOutcomeRuleSchema = z.object({
   message: z.string().min(1).describe('Human-readable explanation for the caller'),
 
   /**
+   * Whether reaching this state needs a person rather than telling the caller.
+   *
+   * "No such member" is an answer; "a supervisor must authorise this" is not — the work
+   * is real and unfinished, and no amount of retrying by the same caller will finish it.
+   * Both are states the recording anticipated, so they are declared the same way; this
+   * flag is what separates an answer from a handover.
+   */
+  escalate: z
+    .boolean()
+    .default(false)
+    .describe('Reaching this state stops the run and hands it to a human'),
+
+  /**
    * Optionally read the app's OWN wording for this outcome off the page.
    *
    * Detection wants a stable, generic anchor — this target renders one rejection banner

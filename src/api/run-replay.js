@@ -53,7 +53,7 @@ export const CALLERS = ['operator', 'agent', 'cli'];
  * @param {object} params caller-supplied inputs
  * @param {{headless?: boolean, runId?: string, caller?: 'operator'|'agent'|'cli',
  *   tenantId?: string|null}} [options]
- * @returns {Promise<object>} the four-way result, tagged with run_id / capability / version
+ * @returns {Promise<object>} the result contract, tagged with run_id / capability / version
  * @throws {ApprovalRequired} when a risky capability has not been approved
  */
 export async function runReplay(
@@ -116,6 +116,9 @@ export async function runReplay(
           ? redactObject(result.outputs, capability.redaction_policy)
           : null,
       business_outcome: result.business_outcome ?? null,
+      // An escalation is the run's whole point when it happens: it is what a person
+      // opens the run to read, so it belongs on the row rather than only in the result.
+      escalation: result.escalation ?? null,
       failed_step: describeFailure(result.failure),
     },
   });

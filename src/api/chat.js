@@ -21,7 +21,7 @@
  *
  *   event: text        the model said something
  *   event: tool_start  it chose a capability; args included
- *   event: tool_end    the replay finished; the four-way result included
+ *   event: tool_end    the replay finished; the result contract included
  *   event: done        the turn is over; the updated transcript comes back
  *   event: error       the turn died
  *
@@ -49,10 +49,11 @@ const SYSTEM = [
   'you report must have come back from a capability call.',
   '',
   'Report the outcome a call returns exactly as given — SUCCESS, BUSINESS_OUTCOME,',
-  'RECOVERABLE, or HARD_FAILURE. Those four words describe what the recorded flow found;',
-  'never apply them to your own reasoning. A BUSINESS_OUTCOME such as "no such member" is',
-  'a real answer, not a failure. A refusal ("needs approval") is not a failure either —',
-  'say who has to approve it and stop.',
+  'RECOVERABLE, HARD_FAILURE, or ESCALATED. Those words describe what the recorded flow',
+  'found; never apply them to your own reasoning. A BUSINESS_OUTCOME such as "no such member" is',
+  'a real answer, not a failure. An ESCALATED run is not a failure either: the flow hit',
+  'something only a person with more authority can do — say plainly what is needed and',
+  'who has to do it, and stop. A refusal ("needs approval") is likewise not a failure.',
   '',
   'Answer in two or three sentences. The console shows the run, its status and its',
   'evidence beside you, so do not restate them as a list.',
@@ -70,6 +71,9 @@ const summarize = (result) => ({
   outcome: result.outcome,
   outputs: result.outputs ?? null,
   business_outcome: result.business_outcome ?? null,
+  // What a person would need to take this over. The panel renders it and the model
+  // explains it; withholding it would leave "it stopped" with no way to say why.
+  escalation: result.escalation ?? null,
   failure: result.failure ? { step: result.failure.step, reason: result.failure.message ?? 'checkpoint did not hold' } : null,
   recoveries: result.recoveries?.map((r) => r.code) ?? [],
   run_id: result.run_id,

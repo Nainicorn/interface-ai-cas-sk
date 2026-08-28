@@ -111,7 +111,7 @@ router.get('/:id', async (req, res, next) => {
 /**
  * Invoke by name with typed args. Body: { params: {...} }
  *
- * The four-way result goes back verbatim: BUSINESS_OUTCOME is a 200, because "no such
+ * The result goes back verbatim: BUSINESS_OUTCOME is a 200, because "no such
  * member" is the answer the caller asked for, not an error it should retry.
  */
 router.post('/:id/invoke', async (req, res, next) => {

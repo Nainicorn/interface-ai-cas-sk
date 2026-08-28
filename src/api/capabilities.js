@@ -41,7 +41,7 @@ router.get('/:id', async (req, res, next) => {
 /**
  * Deterministic replay. Body: { params: {...}, secrets?: {...}, version?: n,
  * tenant_id?: string }
- * Responds with the full four-way outcome — BUSINESS_OUTCOME is a 200, because it is
+ * Responds with the full outcome contract — BUSINESS_OUTCOME is a 200, because it is
  * an answer, not an error.
  *
  * `tenant_id`, when it matches an entry in the capability's own tenant_overrides, patches

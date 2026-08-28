@@ -45,7 +45,7 @@ export const RISK_LEVELS = ['safe', 'risky'];
 export const CAPABILITY_STATUSES = ['draft', 'approved'];
 
 /**
- * The four-way replay result contract.
+ * The replay result contract.
  *
  * The distinction that matters most in this system is BUSINESS_OUTCOME vs HARD_FAILURE.
  * "No such member" is a legitimate answer the caller asked for — collapsing it into an
@@ -61,6 +61,13 @@ export const OUTCOME_TYPES = [
   'RECOVERABLE',
   /** Nothing matched. Stop and surface step, expectation, observation, screenshot. */
   'HARD_FAILURE',
+  /**
+   * The flow reached a state a person has to resolve — a supervisor override, an
+   * authority this operator does not hold. Distinct from HARD_FAILURE because nothing
+   * is broken, and from BUSINESS_OUTCOME because it is not an answer the caller can act
+   * on: the work is real and unfinished, and someone else has to finish it.
+   */
+  'ESCALATED',
 ];
 
 /** Who performed an action. Every evidence line carries one of these. */

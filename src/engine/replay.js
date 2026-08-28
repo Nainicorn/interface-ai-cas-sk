@@ -185,7 +185,7 @@ async function matchBusinessOutcome(ctx, step, expected = step.expected_outcome)
  * the explanatory line must never turn that classification back into a failure.
  */
 async function withDetail(ctx, rule) {
-  const outcome = { code: rule.code, message: rule.message };
+  const outcome = { code: rule.code, message: rule.message, escalate: rule.escalate === true };
   if (!rule.detail) return outcome;
 
   try {
@@ -196,6 +196,38 @@ async function withDetail(ctx, rule) {
     // The reason line moved or is not on this page. The code still stands.
   }
   return outcome;
+}
+
+/**
+ * A matched rule, turned into the result envelope its kind calls for.
+ *
+ * Both kinds are states the recording anticipated, so both are declared the same way and
+ * neither is a failure. They part company in what the caller can do about it: a business
+ * outcome is an answer, while an escalation is unfinished work that needs an authority
+ * this run does not have. An escalation therefore carries what a person needs to pick it
+ * up — where it stopped and what the screen looked like — and a business outcome does
+ * not, because there is nothing for anyone to pick up.
+ */
+async function settle(ctx, matched, where, base) {
+  const { escalate, ...outcome } = matched;
+
+  if (!escalate) {
+    return { outcome: 'BUSINESS_OUTCOME', business_outcome: { ...outcome, ...where }, ...base, failure: null };
+  }
+
+  const state = await captureState(ctx.page, { screenshot: true }).catch(() => ({}));
+  return {
+    outcome: 'ESCALATED',
+    escalation: {
+      ...outcome,
+      ...where,
+      url: state.url ?? null,
+      screenshot: ctx.logger?.saveScreenshot(state.screenshotBase64, 'escalated') ?? null,
+    },
+    ...base,
+    business_outcome: null,
+    failure: null,
+  };
 }
 
 /**
@@ -267,18 +299,15 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
       // --- 1. declared business outcomes, BEFORE the checkpoint -------------
       const business = await matchBusinessOutcome(ctx, step, expected);
       if (business) {
-        record.outcome = 'BUSINESS_OUTCOME';
+        record.outcome = business.escalate ? 'ESCALATED' : 'BUSINESS_OUTCOME';
         record.business_outcome = business;
         record.duration_ms = Date.now() - started;
         stepResults.push(record);
-        return {
-          outcome: 'BUSINESS_OUTCOME',
-          business_outcome: { ...business, step: step.index, intent: step.intent },
+        return settle(ctx, business, { step: step.index, intent: step.intent }, {
           outputs,
           steps: stepResults,
           recoveries,
-              failure: null,
-        };
+        });
       }
 
       // --- 2. the success checkpoint ---------------------------------------
@@ -298,18 +327,15 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
       if (!check.ok) {
         const flow = await matchFlowOutcome(ctx, capability);
         if (flow) {
-          record.outcome = 'BUSINESS_OUTCOME';
+          record.outcome = flow.escalate ? 'ESCALATED' : 'BUSINESS_OUTCOME';
           record.business_outcome = flow;
           record.duration_ms = Date.now() - started;
           stepResults.push(record);
-          return {
-            outcome: 'BUSINESS_OUTCOME',
-            business_outcome: { ...flow, step: step.index, intent: step.intent },
+          return settle(ctx, flow, { step: step.index, intent: step.intent }, {
             outputs,
             steps: stepResults,
             recoveries,
-            failure: null,
-          };
+          });
         }
       }
 
@@ -364,18 +390,15 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
           (await matchBusinessOutcome(ctx, step, expected)) ??
           (await matchFlowOutcome(ctx, capability));
         if (business) {
-          record.outcome = 'BUSINESS_OUTCOME';
+          record.outcome = business.escalate ? 'ESCALATED' : 'BUSINESS_OUTCOME';
           record.business_outcome = business;
           record.duration_ms = Date.now() - started;
           stepResults.push(record);
-          return {
-            outcome: 'BUSINESS_OUTCOME',
-            business_outcome: { ...business, step: step.index, intent: step.intent },
+          return settle(ctx, business, { step: step.index, intent: step.intent }, {
             outputs,
             steps: stepResults,
             recoveries,
-                    failure: null,
-          };
+          });
         }
       }
 
@@ -415,14 +438,11 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
     // legitimate is the likeliest reason, so ask before calling it a failure.
     const flow = await matchFlowOutcome(ctx, capability);
     if (flow) {
-      return {
-        outcome: 'BUSINESS_OUTCOME',
-        business_outcome: { ...flow, step: 'success_checkpoint', intent: 'Overall goal verification' },
+      return settle(ctx, flow, { step: 'success_checkpoint', intent: 'Overall goal verification' }, {
         outputs,
         steps: stepResults,
         recoveries,
-        failure: null,
-      };
+      });
     }
 
     const state = await captureState(ctx.page, { screenshot: true });
