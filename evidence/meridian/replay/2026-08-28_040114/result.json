@@ -1,0 +1,26 @@
+{
+  "id": "meridian/replay/2026-08-28_040114",
+  "kind": "replay",
+  "app_id": "meridian",
+  "goal": null,
+  "status": "HARD_FAILURE",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "member-inquiry-shares-lookup",
+    "version": 1,
+    "outcome": "HARD_FAILURE",
+    "outputs": null,
+    "business_outcome": null,
+    "failed_step": {
+      "step": 9,
+      "intent": "Open the matching member's record",
+      "message": "Could not resolve \"Select link for the matched member row\" — all 1 candidate(s) failed",
+      "url": "https://web-sample.interface-hiring.com/members?by=number&q=999999",
+      "screenshot": "000-hard-failure.png"
+    }
+  },
+  "started_at": "2026-08-28T04:01:14.072Z",
+  "updated_at": "2026-08-28T04:01:22.910Z"
+}

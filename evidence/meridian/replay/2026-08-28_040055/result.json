@@ -1,0 +1,23 @@
+{
+  "id": "meridian/replay/2026-08-28_040055",
+  "kind": "replay",
+  "app_id": "meridian",
+  "goal": null,
+  "status": "SUCCESS",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "member-inquiry-shares-lookup",
+    "version": 1,
+    "outcome": "SUCCESS",
+    "outputs": {
+      "member_name": "<string:13>",
+      "shares_balances_block": "Share ID\tType\tBalance\tStatus\n100234-S0001\tRegular Shares\t$2,499.00\tHOLD [HOLD]\n100234-S0070\tShare Draft (Checking)\t$1,240.55\tHOLD [HOLD]\n100234-MMKT-3\tMoney Market\t$16.00\tOPEN\n100234-MMKT-4\tMoney Market\t$25.00\tHOLD [HOLD]\n100234-S0001-5\tRegular Shares\t$23.00\tOPEN\n100234-S0001-6\tRegular Shares\t$41.00\tOPEN\n100234-MMKT-7\tMoney Market\t$25.00\tHOLD [HOLD]\n100234-MMKT-8\tMoney Market\t$15.00\tHOLD [HOLD]\n100234-MMKT-9\tMoney Market\t$201.00\tHOLD [HOLD]\n100234-MMKT-10\tMoney Market\t$20.00\tHOLD [HOLD]\n100234-MMKT-11\tMoney Market\t$20.00\tOPEN\n100234-S0001-12\tRegular Shares\t$50.00\tOPEN\n100234-S0001-13\tRegular Shares\t$10.00\tOPEN"
+    },
+    "business_outcome": null,
+    "failed_step": null
+  },
+  "started_at": "2026-08-28T04:00:55.257Z",
+  "updated_at": "2026-08-28T04:01:07.189Z"
+}

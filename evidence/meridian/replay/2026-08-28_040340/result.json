@@ -1,0 +1,25 @@
+{
+  "id": "meridian/replay/2026-08-28_040340",
+  "kind": "replay",
+  "app_id": "meridian",
+  "goal": null,
+  "status": "BUSINESS_OUTCOME",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "member-inquiry-shares-lookup",
+    "version": 1,
+    "outcome": "BUSINESS_OUTCOME",
+    "outputs": null,
+    "business_outcome": {
+      "code": "MEMBER_NOT_FOUND",
+      "message": "No member record matches that member number.",
+      "step": 9,
+      "intent": "Open the matching member's record"
+    },
+    "failed_step": null
+  },
+  "started_at": "2026-08-28T04:03:40.631Z",
+  "updated_at": "2026-08-28T04:03:49.311Z"
+}

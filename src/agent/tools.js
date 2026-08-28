@@ -12,6 +12,7 @@
 
 import { z } from 'zod';
 import {
+  BusinessOutcomeRuleSchema,
   ConditionSchema,
   LocatorStrategySchema,
   StepSchema,
@@ -52,6 +53,14 @@ export const EmissionSchema = z.object({
     .min(1)
     .describe('The CLEAN replayable path: parameterized, dead ends dropped, indexes from 0'),
   success_checkpoint: ConditionSchema.describe('Overall proof the goal was reached'),
+  business_outcomes: z
+    .array(BusinessOutcomeRuleSchema)
+    .default([])
+    .describe(
+      'Flow-level non-happy-paths: legitimate endings that can surface at more than one ' +
+        'step, or one step later than the step that caused them. Checked only when a step ' +
+        'is about to be reported as a failure.',
+    ),
 });
 
 /** Inputs for the `type` tool. Exactly one value source; the harness resolves it. */

@@ -174,6 +174,24 @@ async function matchBusinessOutcome(page, step, expected = step.expected_outcome
 }
 
 /**
+ * Flow-level business outcomes, checked at the moment a step is about to be called a
+ * failure.
+ *
+ * No disambiguation against the step's own checkpoint here, unlike the step-level
+ * version: that checkpoint has already failed, so there is nothing left to be ambiguous
+ * with. This runs last precisely so it can never mask a step that succeeded.
+ *
+ * @returns {Promise<{code: string, message: string}|null>}
+ */
+async function matchFlowOutcome(page, capability) {
+  for (const rule of capability.business_outcomes ?? []) {
+    const { ok } = await evaluateCondition(page, rule.detect);
+    if (ok) return { code: rule.code, message: rule.message };
+  }
+  return null;
+}
+
+/**
  * Execute a capability's steps against an already-open page.
  *
  * Separated from browser lifecycle so escalation can reuse it on a live session that is
@@ -230,7 +248,26 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
         }
       }
 
-      // --- 4. still failing => hard failure ---------------------------------
+      // --- 4. a flow-level business outcome, before anything is called a failure ---
+      if (!check.ok) {
+        const flow = await matchFlowOutcome(ctx.page, capability);
+        if (flow) {
+          record.outcome = 'BUSINESS_OUTCOME';
+          record.business_outcome = flow;
+          record.duration_ms = Date.now() - started;
+          stepResults.push(record);
+          return {
+            outcome: 'BUSINESS_OUTCOME',
+            business_outcome: { ...flow, step: step.index, intent: step.intent },
+            outputs,
+            steps: stepResults,
+            recoveries,
+            failure: null,
+          };
+        }
+      }
+
+      // --- 5. still failing => hard failure ---------------------------------
       if (!check.ok) {
         const state = await captureState(ctx.page, { screenshot: true });
         record.outcome = 'HARD_FAILURE';
@@ -275,7 +312,11 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
       // Deliberately narrow. A MalformedStep is a fault in us, never
       // a business answer, and must never be reclassified this way.
       if (err instanceof LocatorResolutionError) {
-        const business = await matchBusinessOutcome(ctx.page, step, expected);
+        // The step's own rules first, then the flow's — a rule naming this step is the
+        // more specific statement, so it wins when both match.
+        const business =
+          (await matchBusinessOutcome(ctx.page, step, expected)) ??
+          (await matchFlowOutcome(ctx.page, capability));
         if (business) {
           record.outcome = 'BUSINESS_OUTCOME';
           record.business_outcome = business;
@@ -324,6 +365,20 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
   const finalCheckpoint = resolveCondition(capability.success_checkpoint, params);
   const finalCheck = await evaluateCondition(ctx.page, finalCheckpoint);
   if (!finalCheck.ok) {
+    // Every step passed and the goal still was not reached — a flow that ended somewhere
+    // legitimate is the likeliest reason, so ask before calling it a failure.
+    const flow = await matchFlowOutcome(ctx.page, capability);
+    if (flow) {
+      return {
+        outcome: 'BUSINESS_OUTCOME',
+        business_outcome: { ...flow, step: 'success_checkpoint', intent: 'Overall goal verification' },
+        outputs,
+        steps: stepResults,
+        recoveries,
+        failure: null,
+      };
+    }
+
     const state = await captureState(ctx.page, { screenshot: true });
     return {
       outcome: 'HARD_FAILURE',

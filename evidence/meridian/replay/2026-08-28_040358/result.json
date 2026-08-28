@@ -1,0 +1,23 @@
+{
+  "id": "meridian/replay/2026-08-28_040358",
+  "kind": "replay",
+  "app_id": "meridian",
+  "goal": null,
+  "status": "SUCCESS",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "member-inquiry-shares-lookup",
+    "version": 1,
+    "outcome": "SUCCESS",
+    "outputs": {
+      "member_name": "<string:13>",
+      "shares_balances_block": "Share ID\tType\tBalance\tStatus\n101555-S0001\tRegular Shares\t$18,015.00\tOPEN\n101555-CERT\tCertificate\t$25,000.00\tHOLD [HOLD]\n101555-S0001-3\tRegular Shares\t$85.00\tHOLD [HOLD]\n101555-CERT-4\tCertificate\t$1,000.00\tOPEN"
+    },
+    "business_outcome": null,
+    "failed_step": null
+  },
+  "started_at": "2026-08-28T04:03:58.635Z",
+  "updated_at": "2026-08-28T04:04:09.323Z"
+}

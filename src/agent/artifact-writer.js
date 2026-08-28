@@ -173,6 +173,7 @@ export async function writeCapability({ emission, target, runId, model }) {
     risk_level: emission.risk_level,
     steps: emission.steps,
     success_checkpoint: emission.success_checkpoint,
+    business_outcomes: emission.business_outcomes ?? [],
 
     created_from: { run_id: runId, model, recorded_at: new Date().toISOString() },
 

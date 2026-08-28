@@ -1,0 +1,377 @@
+{
+  "schema_version": 1,
+  "id": "member-inquiry-shares-lookup",
+  "name": "Member Inquiry - Shares & Balances Lookup",
+  "version": 1,
+  "status": "draft",
+  "description": "Signs on to Meridian Core, searches Member Inquiry by member number, opens the matching member record, and reports the member's name plus their full Shares/Balances block (share id, type, balance, status for every share). Handles the case where the member number does not exist.",
+  "target": {
+    "app_id": "meridian",
+    "entry_route": "/signon",
+    "tenant_overrides": []
+  },
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "member_number": {
+        "type": "string",
+        "description": "The member number to search for in Member Inquiry"
+      }
+    },
+    "required": [
+      "member_number"
+    ],
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "member_name": {
+        "type": "string",
+        "description": "The full name of the member (Last, First) as shown on the Member Record page"
+      },
+      "shares_balances_block": {
+        "type": "string",
+        "description": "The full Shares/Balances table text listing every share id, type, balance and status for the member"
+      }
+    },
+    "required": [
+      "member_name",
+      "shares_balances_block"
+    ],
+    "additionalProperties": false
+  },
+  "risk_level": "safe",
+  "steps": [
+    {
+      "index": 0,
+      "intent": "Go to the sign-on page",
+      "action": "navigate",
+      "url": "/signon",
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "OPERATOR SIGN ON",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 1,
+      "intent": "Click the Operator ID field to focus it",
+      "action": "click",
+      "locator": {
+        "description": "Operator ID input box",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "input[type='text']",
+            "exact": false,
+            "confidence": 0.5
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[type='text']:focus",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 2,
+      "intent": "Type the operator username",
+      "action": "type",
+      "locator": {
+        "description": "Operator ID input box",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "input[type='text']",
+            "exact": false,
+            "confidence": 0.5
+          }
+        ]
+      },
+      "value_from_env": "MERIDIAN_USERNAME",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[type='text']",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 3,
+      "intent": "Type the operator password",
+      "action": "type",
+      "locator": {
+        "description": "Password input box",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "input[type='password']",
+            "exact": false,
+            "confidence": 0.6
+          }
+        ]
+      },
+      "value_from_env": "MERIDIAN_PASSWORD",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[type='password']",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 4,
+      "intent": "Submit the sign-on form",
+      "action": "click",
+      "locator": {
+        "description": "Sign On button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Sign On",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "MAIN MENU",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [
+        {
+          "code": "INVALID_CREDENTIALS",
+          "detect": {
+            "type": "text_visible",
+            "value": "Invalid operator ID or password",
+            "timeout_ms": 5000
+          },
+          "message": "The supplied operator credentials were rejected."
+        }
+      ],
+      "risk": "safe"
+    },
+    {
+      "index": 5,
+      "intent": "Go to Member Inquiry / Selection page",
+      "action": "navigate",
+      "url": "/members",
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "MEMBER INQUIRY / SELECTION",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 6,
+      "intent": "Click the search value textbox",
+      "action": "click",
+      "locator": {
+        "description": "Value textbox for member search",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "input[type='text']",
+            "exact": false,
+            "confidence": 0.6
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[type='text']",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 7,
+      "intent": "Type the member number to search for",
+      "action": "type",
+      "locator": {
+        "description": "Value textbox for member search",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "input[type='text']",
+            "exact": false,
+            "confidence": 0.6
+          }
+        ]
+      },
+      "value_from": "member_number",
+      "expected_outcome": {
+        "type": "value_equals",
+        "value": "input[type='text']={{member_number}}",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 8,
+      "intent": "Submit the member search",
+      "action": "click",
+      "locator": {
+        "description": "Search button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Search",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "url_contains",
+        "value": "by=number",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [
+        {
+          "code": "MEMBER_NOT_FOUND",
+          "detect": {
+            "type": "text_visible",
+            "value": "No member records matched your search.",
+            "timeout_ms": 5000
+          },
+          "message": "No member record exists for the supplied member number."
+        }
+      ],
+      "risk": "safe"
+    },
+    {
+      "index": 9,
+      "intent": "Open the matching member's record",
+      "action": "click",
+      "locator": {
+        "description": "Select link for the matched member row",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Select",
+            "role": "link",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "MEMBER RECORD",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 10,
+      "intent": "Read the member's full name from the record header",
+      "action": "read",
+      "locator": {
+        "description": "Member name value",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "table[border='0'] > tbody > tr:nth-child(1) > td:nth-child(4)",
+            "exact": false,
+            "confidence": 0.6
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "MEMBER RECORD",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "member_name",
+      "risk": "safe"
+    },
+    {
+      "index": 11,
+      "intent": "Read the full Shares / Balances table showing every share id, type, balance and status",
+      "action": "read",
+      "locator": {
+        "description": "Shares and balances table",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "table[border='1']",
+            "exact": false,
+            "confidence": 0.6
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "SHARES / BALANCES",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "shares_balances_block",
+      "risk": "safe"
+    }
+  ],
+  "success_checkpoint": {
+    "type": "text_visible",
+    "value": "SHARES / BALANCES",
+    "timeout_ms": 5000
+  },
+  "business_outcomes": [
+    {
+      "code": "MEMBER_NOT_FOUND",
+      "detect": {
+        "type": "text_visible",
+        "value": "No member records matched your search.",
+        "timeout_ms": 3000
+      },
+      "message": "No member record matches that member number."
+    }
+  ],
+  "created_from": {
+    "run_id": "meridian/discovery/2026-08-28_035915",
+    "model": "claude-sonnet-5",
+    "recorded_at": "2026-08-28T04:00:49.797Z"
+  },
+  "redaction_policy": {
+    "redact_fields": [
+      "member_name",
+      "email",
+      "phone",
+      "address",
+      "dob",
+      "account_number",
+      "share_number",
+      "MERIDIAN_USERNAME",
+      "username",
+      "MERIDIAN_PASSWORD",
+      "password",
+      "MERIDIAN_SUPERVISOR_USERNAME",
+      "supervisor_username",
+      "MERIDIAN_SUPERVISOR_PASSWORD",
+      "supervisor_password"
+    ]
+  },
+  "confidence": {
+    "runs": 4,
+    "successes": 3,
+    "last_outcome": "SUCCESS",
+    "updated_at": "2026-08-28T04:04:09.306Z"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "meridian/discovery/2026-08-28_035915",
+  "kind": "discovery",
+  "app_id": "meridian",
+  "goal": "Sign on, then use Member Inquiry to search by member number for the caller-supplied parameter member_number, open that member's record, and read their shares. Report the member name and the full SHARES / BALANCES block showing every share id, type, balance and status. If the member number does not exist, that is a legitimate business outcome, not a failure.",
+  "status": "recorded",
+  "detail": {
+    "artifact": {
+      "id": "member-inquiry-shares-lookup",
+      "version": 1,
+      "path": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/meridian/discovery/2026-08-28_035915/goal.json"
+    },
+    "turns": 24,
+    "usage": {
+      "input_tokens": 48,
+      "output_tokens": 5926,
+      "cache_read_input_tokens": 809189,
+      "cache_creation_input_tokens": 67531
+    },
+    "model": "claude-sonnet-5",
+    "evidence_dir": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/meridian/discovery/2026-08-28_035915",
+    "escalation": null,
+    "finished_at": "2026-08-28T04:00:49.819Z"
+  },
+  "started_at": "2026-08-28T03:59:15.297Z",
+  "updated_at": "2026-08-28T04:00:49.819Z"
+}

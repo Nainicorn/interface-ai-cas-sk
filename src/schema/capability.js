@@ -172,6 +172,23 @@ export const CapabilitySchema = z.object({
   steps: z.array(StepSchema).min(1),
   success_checkpoint: ConditionSchema.describe('Overall proof the goal was reached'),
 
+  /**
+   * Non-happy-paths that belong to the FLOW rather than to one step.
+   *
+   * A step-level rule has to name the step where the alternative shows, and that is
+   * often not knowable when recording: "no such member" surfaces one step later than the
+   * search, and an injected maintenance page or an expired session can land on any step
+   * at all. Worse, a step-level rule is suppressed whenever that step's own checkpoint
+   * also holds — which is exactly what a weak checkpoint like "the url still says
+   * by=number" does on a page that found nothing.
+   *
+   * These are checked only when a step is about to be reported HARD_FAILURE, so they
+   * cannot mask a step that succeeded, and they turn "the recording stopped working"
+   * into "the app said no" wherever the flow can legitimately end early.
+   */
+  business_outcomes: z.array(BusinessOutcomeRuleSchema).default([])
+    .describe('Flow-level non-happy-paths, checked before any step is called a failure'),
+
   created_from: z.object({
     run_id: z.string().min(1).describe('Links to evidence/{run_id}/, does not embed it'),
     model: z.string().nullable().default(null),
