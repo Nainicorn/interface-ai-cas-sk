@@ -24,6 +24,7 @@
 import { resolveUrl } from '../config/app-config.js';
 import { checkAllowed } from '../policy/allowlist.js';
 import { redact } from '../policy/redact.js';
+import { LocatorResolutionError } from './errors.js';
 import { resolveLocator } from './locator.js';
 
 /**
@@ -74,6 +75,52 @@ export async function click(ctx, { locator: strategy }) {
 }
 
 /**
+ * A trailing parenthetical is annotation, not identity: "100987-S0001 - Regular Shares
+ * ($24.00)". The figure inside it changes every time money moves, so a recording that
+ * matched the whole label works on the run that recorded it and breaks on the next one.
+ */
+const stripVolatile = (label) => label.replace(/\s*\([^()]*\)\s*$/, '').trim();
+
+/**
+ * Choose one <option>, deterministically.
+ *
+ * A ladder rather than one matcher, because a recording can name an option three
+ * defensible ways — by its underlying value, by its full visible label, or by a label
+ * whose trailing annotation has since moved. Every rung is exact-or-unique: a rung
+ * matching two options is skipped rather than guessed between, so the same input picks
+ * the same option on every replay or picks none at all. Nothing here is fuzzy scoring.
+ *
+ * A miss throws LocatorResolutionError rather than surfacing a bare Playwright timeout,
+ * and that is load-bearing: "this member holds no such share" arrives at replay as an
+ * option that cannot be resolved, and replay gives a LocatorResolutionError one more
+ * chance to match a declared business outcome before calling it a hard failure.
+ */
+async function chooseOption(locator, text, description) {
+  const options = await locator.evaluate((el) =>
+    [...el.options].map((option) => ({ value: option.value, label: (option.textContent ?? '').trim() })));
+
+  const wanted = stripVolatile(text);
+  const onlyOne = (matches) => (matches.length === 1 ? matches[0] : null);
+
+  const chosen =
+    options.find((o) => o.value === text) ??
+    options.find((o) => o.label === text) ??
+    onlyOne(options.filter((o) => stripVolatile(o.label) === wanted)) ??
+    onlyOne(options.filter((o) => stripVolatile(o.label).startsWith(wanted)));
+
+  if (!chosen) {
+    throw new LocatorResolutionError(
+      `option "${text}" in ${description}`,
+      options.map((o) => ({ candidate: { kind: 'option', value: o.value }, matchCount: 0, reason: `offered "${o.label}"` })),
+    );
+  }
+
+  // By value once resolved. The label was only ever how we identified it.
+  await locator.selectOption(chosen.value);
+  return chosen;
+}
+
+/**
  * Type into a field.
  *
  * `value` reaches the live page verbatim and the evidence trail only through redact():
@@ -102,10 +149,9 @@ export async function typeText(ctx, { locator: strategy, value, fieldName }) {
   const text = String(value ?? '');
 
   const tagName = await locator.evaluate((el) => el.tagName?.toLowerCase() ?? '').catch(() => '');
+  let chosenOption = null;
   if (tagName === 'select') {
-    // By visible label first, since that is what a recording describes and what a person
-    // sees; by underlying value as a fallback, for a form whose labels and values differ.
-    await locator.selectOption({ label: text }).catch(() => locator.selectOption(text));
+    chosenOption = await chooseOption(locator, text, strategy.description);
   } else {
     await locator.fill(text);
   }
@@ -121,6 +167,9 @@ export async function typeText(ctx, { locator: strategy, value, fieldName }) {
       // Recorded so a reviewer can tell a dropdown selection from typed characters
       // without inferring it from the page.
       control: tagName === 'select' ? 'select' : 'text',
+      // Which option actually got picked, not just what was asked for. On a legacy
+      // form these differ whenever the label carries a volatile annotation.
+      option_value: chosenOption?.value ?? null,
     },
     locatorUsed: candidate,
     candidatesTried: attempts.length,
