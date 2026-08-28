@@ -29,6 +29,11 @@ export const CONDITION_TYPES = [
   // dropdown step with no way to prove it worked. Exact string comparison against
   // inputValue(), so it stays as deterministic as the rest of the vocabulary.
   'value_equals',
+  // The status line of the document on screen. A legacy target states a runtime fault
+  // twice — in the status and in the page — and the status is the better of the two to
+  // classify on: it cannot be matched by accident the way a phrase can, and it does not
+  // move when the wording does. Value is one code, or several separated by commas.
+  'http_status',
 ];
 
 /** How a locator candidate finds its element, ordered here by preferred robustness. */

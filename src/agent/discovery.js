@@ -34,6 +34,7 @@ import {
   unregisterSession,
 } from './escalation.js';
 import { EmissionSchema, TOOLS } from './tools.js';
+import { trackDocumentStatus } from '../engine/http-status.js';
 
 export const DISCOVERY_MODEL = 'claude-sonnet-5';
 
@@ -210,7 +211,7 @@ export async function runDiscovery({
 
   const browser = await chromium.launch({ headless });
   const context = await browser.newContext({ viewport: target.viewport ?? { width: 1024, height: 768 } });
-  const page = await context.newPage();
+  const page = trackDocumentStatus(await context.newPage());
   const ctx = { page, target, logger, actor: 'llm' };
   const session = registerSession({ runId, goal, appId, params, browser, context, page, target, logger });
 

@@ -35,7 +35,11 @@ import { LocatorResolutionError, MalformedStep, MissingCredential } from './erro
 import { captureState, evaluateCondition, resolveCondition } from './perception.js';
 import { PolicyViolation } from '../policy/allowlist.js';
 import { classifyRisk } from '../policy/risk.js';
-import { attemptRecovery } from './recovery-table.js';
+import { attemptRecovery, faultsFor } from './recovery-table.js';
+
+/** The host's non-standard code for "your operator session is gone". */
+const SESSION_EXPIRED = 440;
+import { sawDocumentStatus, trackDocumentStatus } from './http-status.js';
 
 /**
  * Merge a tenant's declared differences onto the base recording, if any exist.
@@ -245,6 +249,16 @@ async function matchFlowOutcome(ctx, capability) {
     const { ok } = await evaluateCondition(ctx.page, rule.detect);
     if (ok) return withDetail(ctx, rule);
   }
+
+  // Then the host's own runtime faults. Second, so a recording that has something more
+  // specific to say about a status still wins — the target answers 400 both for a
+  // transfer it refused and for an injected fault, and the recording knows which of
+  // those it was looking at.
+  for (const rule of faultsFor(ctx.target.app_id, capability.risk_level)) {
+    const { ok } = await evaluateCondition(ctx.page, rule.detect);
+    if (ok) return { code: rule.code, message: rule.message, escalate: rule.outcome === 'ESCALATED' };
+  }
+
   return null;
 }
 
@@ -539,14 +553,54 @@ export async function replayCapability({
 
   const browser = await chromium.launch({ headless });
   try {
-    const page = await browser.newPage({ viewport: target.viewport ?? { width: 1024, height: 768 } });
+    const page = trackDocumentStatus(
+      await browser.newPage({ viewport: target.viewport ?? { width: 1024, height: 768 } }),
+    );
     const ctx = { page, target, logger, actor: 'replay' };
 
     await page.goto(resolveUrl(target, capability.target.entry_route), {
       waitUntil: 'domcontentloaded',
     });
 
-    const result = await executeSteps(ctx, capability, params, { secrets });
+    let result = await executeSteps(ctx, capability, params, { secrets });
+
+    // A read-only flow whose session expired is simply run again from the top.
+    //
+    // The host drops an idle session with 440 and every subsequent page becomes the
+    // sign-on screen, which reaches the checkpoint logic as a step that inexplicably
+    // stopped working. Re-running is the honest fix and it is only honest here: a flow
+    // that changes nothing can be repeated with no consequence, whereas a transfer
+    // cannot tell whether its post landed before the session dropped, and repeating it
+    // could duplicate an irreversible transaction. That case escalates instead — see
+    // SESSION_EXPIRED_MID_TRANSACTION in engine/recovery-table.js.
+    //
+    // Once. A host that expires sessions faster than a flow can complete is not
+    // something to keep hammering.
+    if (
+      result.outcome === 'HARD_FAILURE' &&
+      capability.risk_level === 'safe' &&
+      sawDocumentStatus(page, SESSION_EXPIRED)
+    ) {
+      logger?.logStep({
+        actor: 'replay',
+        action: 'recover',
+        detail: { code: 'SESSION_EXPIRED_RESTART', description: 'Session expired; re-running the read-only flow from the top.' },
+        result: 'ok',
+      });
+      await page.goto(resolveUrl(target, capability.target.entry_route), { waitUntil: 'domcontentloaded' });
+      const retried = await executeSteps(ctx, capability, params, { secrets });
+      result = {
+        ...retried,
+        recoveries: [
+          ...(result.recoveries ?? []),
+          { step: 'session', applied: [{ code: 'SESSION_EXPIRED_RESTART', description: 'Re-ran the flow after the session expired.' }] },
+          ...(retried.recoveries ?? []),
+        ],
+      };
+      // The restart IS the recovery, so a run that then succeeded is RECOVERABLE rather
+      // than SUCCESS: something went wrong and was handled, and the report should say so.
+      if (result.outcome === 'SUCCESS') result.outcome = 'RECOVERABLE';
+    }
 
     // Fold this outcome into the artifact's rolling confidence signal. Only runs that
     // actually exercised the recording count — pre-flight refusals and infrastructure

@@ -14,6 +14,8 @@
  */
 
 /** Cap on visible-text length fed back to the model, to keep per-step tokens bounded. */
+import { lastDocumentStatus } from './http-status.js';
+
 const MAX_TEXT_CHARS = 4000;
 
 /**
@@ -203,6 +205,17 @@ export async function evaluateCondition(page, condition) {
         if (Date.now() >= deadline) return { ok: false, observed };
         await page.waitForTimeout(100).catch(() => {});
       }
+    }
+
+    // The status of the document on screen, as one code or a comma-separated list.
+    // Not polled: the status arrived with the page, so if it is not there yet no amount
+    // of waiting produces it.
+    case 'http_status': {
+      const observed = lastDocumentStatus(page);
+      const wanted = String(value).split(',').map((code) => code.trim());
+      return wanted.includes(String(observed))
+        ? { ok: true, observed: `HTTP ${observed}` }
+        : { ok: false, observed: `HTTP ${observed || 'not observed'}, expected ${wanted.join(' or ')}` };
     }
 
     default:
