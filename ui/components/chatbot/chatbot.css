@@ -41,8 +41,20 @@
   stroke-linejoin: round;
 }
 .chat-launcher-label { font-size: 13.5px; letter-spacing: 0.01em; }
-/* Open, the launcher would be a second control for a panel already on screen. */
-.chat-launcher[aria-expanded='true'] { opacity: 0; pointer-events: none; }
+/* Open, it stays put and inverts: it is the toggle for the panel, not a way in to it,
+   so it has to read as pressed rather than vanish. Losing the control you just used is
+   what made this feel broken — the only way back out was the X in the corner. */
+.chat-launcher[aria-expanded='true'] {
+  background: var(--card);
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 2px 10px var(--shadow);
+}
+.chat-launcher[aria-expanded='true']:hover {
+  background: var(--brand-wash);
+  transform: none;
+  box-shadow: 0 2px 10px var(--shadow);
+}
 
 /* --- panel -------------------------------------------------------------------
    Inset from the top so the theme toggle stays reachable while the panel is open,
@@ -52,7 +64,7 @@
   position: fixed;
   right: 18px;
   top: 62px;
-  bottom: 18px;
+  bottom: 72px; /* clears the launcher below it, which stays on screen as the toggle */
   z-index: 44;
   width: min(440px, calc(100vw - 36px));
   display: flex;
@@ -64,6 +76,11 @@
   overflow: hidden;
   animation: chat-in 0.2s ease;
 }
+/* Without this the panel is never hidden: an author `display: flex` beats the browser's
+   own `[hidden] { display: none }` whatever the specificity, so the panel showed at page
+   load and the close button did nothing visible. */
+.chat-panel[hidden] { display: none; }
+
 @keyframes chat-in {
   from { opacity: 0; transform: translateY(10px) scale(0.985); }
   to { opacity: 1; transform: none; }
@@ -333,7 +350,7 @@
 /* On a narrow screen the panel is the screen: a 440px column beside nothing is worse
    than a sheet, and the console below it is not usable while you are typing anyway. */
 @media (max-width: 620px) {
-  .chat-panel { right: 8px; left: 8px; bottom: 8px; width: auto; }
+  .chat-panel { right: 8px; left: 8px; bottom: 62px; width: auto; }
   .chat-launcher-label { display: none; }
   .chat-launcher { padding: 12px; }
 }

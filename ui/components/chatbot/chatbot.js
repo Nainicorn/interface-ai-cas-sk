@@ -246,18 +246,20 @@ export async function mount(root) {
     }
   }
 
+  const close = () => {
+    panel.hidden = true;
+    launcher.setAttribute('aria-expanded', 'false');
+  };
   const open = () => {
     panel.hidden = false;
     launcher.setAttribute('aria-expanded', 'true');
     input.focus();
     scrollToEnd(thread);
   };
-  const close = () => {
-    panel.hidden = true;
-    launcher.setAttribute('aria-expanded', 'false');
-  };
 
-  launcher.addEventListener('click', open);
+  // The launcher is the toggle, not just the way in: it stays on screen while the panel
+  // is open, inverted, and the same click closes it again.
+  launcher.addEventListener('click', () => (panel.hidden ? open() : close()));
   root.querySelector('[data-close]').addEventListener('click', close);
   root.querySelector('[data-clear]').addEventListener('click', () => {
     messages = [];
