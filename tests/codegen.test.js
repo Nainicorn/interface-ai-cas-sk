@@ -16,6 +16,7 @@ import path from 'node:path';
 
 import { parseCapability } from '../src/schema/capability.js';
 import { generatePlaywrightTest } from '../src/agent/codegen.js';
+import { splitValueEquals } from '../src/engine/perception.js';
 
 /** One capability exercising all five actions, including extraction and a fallback candidate. */
 const capability = () =>
@@ -124,5 +125,36 @@ describe('code generation', () => {
   test('the unused locator candidate survives as a fallback comment, not silently dropped', () => {
     const code = generatePlaywrightTest(capability());
     assert.match(code, /fallback if this breaks: css "#member-id"/);
+  });
+});
+
+describe('value_equals separator', () => {
+  // A legacy target has no test ids, so every selector is an attribute selector and
+  // every one of them contains an "=". Splitting on the first one truncated the
+  // selector to "input[name" and every dropdown checkpoint failed to parse at replay.
+  test('splits on the separator, not on an "=" inside the selector', () => {
+    assert.deepEqual(splitValueEquals("select[name='branch']=MAIN-001"), {
+      selector: "select[name='branch']",
+      expected: 'MAIN-001',
+    });
+  });
+
+  test('ignores "=" nested inside a functional pseudo-class', () => {
+    assert.deepEqual(splitValueEquals("tr:has(td[data-role='id'])=100987"), {
+      selector: "tr:has(td[data-role='id'])",
+      expected: '100987',
+    });
+  });
+
+  test('an expected value may itself contain "="', () => {
+    assert.deepEqual(splitValueEquals("input[name='q']=a=b"), { selector: "input[name='q']", expected: 'a=b' });
+  });
+
+  test('an empty expected value is a real, parseable expectation', () => {
+    assert.deepEqual(splitValueEquals("input[name='q']="), { selector: "input[name='q']", expected: '' });
+  });
+
+  test('no separator at all is reported rather than guessed at', () => {
+    assert.equal(splitValueEquals('input[name=\'q\']'), null);
   });
 });

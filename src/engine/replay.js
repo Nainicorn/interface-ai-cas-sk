@@ -32,7 +32,7 @@ import { recordReplayOutcome } from '../schema/store.js';
 import { validateParams } from '../schema/validate-params.js';
 import { performAction, click } from './actions.js';
 import { LocatorResolutionError, MalformedStep, MissingCredential } from './errors.js';
-import { captureState, evaluateCondition } from './perception.js';
+import { captureState, evaluateCondition, resolveCondition } from './perception.js';
 import { attemptRecovery } from './recovery-table.js';
 
 /**
@@ -155,15 +155,17 @@ function argsForStep(step, params, secrets) {
  *
  * @returns {Promise<{code: string, message: string}|null>} the first rule that matched
  */
-async function matchBusinessOutcome(page, step) {
+async function matchBusinessOutcome(page, step, expected = step.expected_outcome) {
   for (const rule of step.business_outcomes ?? []) {
     const { ok } = await evaluateCondition(page, rule.detect);
     if (!ok) continue;
 
-    if (step.expected_outcome) {
+    if (expected) {
       // Short timeout: the detector already matched, so this only asks "did the step also
-      // plainly succeed", and a slow answer here means it did not.
-      const success = await evaluateCondition(page, { ...step.expected_outcome, timeout_ms: 500 });
+      // plainly succeed", and a slow answer here means it did not. The caller passes the
+      // PARAMETER-RESOLVED expectation: an unresolved {{token}} could never match, and
+      // this branch would then read a plainly successful step as an exceptional state.
+      const success = await evaluateCondition(page, { ...expected, timeout_ms: 500 });
       if (success.ok) continue; // ambiguous detector, not an exceptional state
     }
     return { code: rule.code, message: rule.message };
@@ -188,13 +190,18 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
   for (const step of capability.steps) {
     const record = { index: step.index, intent: step.intent, action: step.action };
     const started = Date.now();
+    // Resolved against the caller's inputs, so a step driven by a parameter can be
+    // checkpointed on the value THIS run was asked for. Hoisted above the try because
+    // a failure reported from the catch must name the same expectation as one reported
+    // from the checkpoint branch.
+    const expected = resolveCondition(step.expected_outcome, params);
 
     try {
       // --- act -------------------------------------------------------------
       const actionResult = await performAction(ctx, step.action, argsForStep(step, params, secrets));
 
       // --- 1. declared business outcomes, BEFORE the checkpoint -------------
-      const business = await matchBusinessOutcome(ctx.page, step);
+      const business = await matchBusinessOutcome(ctx.page, step, expected);
       if (business) {
         record.outcome = 'BUSINESS_OUTCOME';
         record.business_outcome = business;
@@ -211,14 +218,14 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
       }
 
       // --- 2. the success checkpoint ---------------------------------------
-      let check = await evaluateCondition(ctx.page, step.expected_outcome);
+      let check = await evaluateCondition(ctx.page, expected);
 
       // --- 3. bounded recovery, then re-check exactly once ------------------
       if (!check.ok) {
         const applied = await attemptRecovery(ctx, { evaluateCondition, click });
         if (applied.length > 0) {
           recoveries.push({ step: step.index, applied });
-          check = await evaluateCondition(ctx.page, step.expected_outcome);
+          check = await evaluateCondition(ctx.page, expected);
           if (check.ok) record.outcome = 'RECOVERABLE';
         }
       }
@@ -239,7 +246,7 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
             step: step.index,
             intent: step.intent,
             action: step.action,
-            expected: step.expected_outcome,
+            expected,
             observed: check.observed,
             url: state.url,
             screenshot: ctx.logger?.saveScreenshot(state.screenshotBase64, 'hard-failure') ?? null,
@@ -268,7 +275,7 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
       // Deliberately narrow. A MalformedStep is a fault in us, never
       // a business answer, and must never be reclassified this way.
       if (err instanceof LocatorResolutionError) {
-        const business = await matchBusinessOutcome(ctx.page, step);
+        const business = await matchBusinessOutcome(ctx.page, step, expected);
         if (business) {
           record.outcome = 'BUSINESS_OUTCOME';
           record.business_outcome = business;
@@ -304,7 +311,7 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
           action: step.action,
           error_type: err.name,
           message: err.message,
-          expected: step.expected_outcome,
+          expected,
           observed: err instanceof LocatorResolutionError ? err.attempts : (err.detail ?? null),
           url: state.url ?? null,
           screenshot: ctx.logger?.saveScreenshot(state.screenshotBase64, 'hard-failure') ?? null,
@@ -314,7 +321,8 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
   }
 
   // --- overall success checkpoint ------------------------------------------
-  const finalCheck = await evaluateCondition(ctx.page, capability.success_checkpoint);
+  const finalCheckpoint = resolveCondition(capability.success_checkpoint, params);
+  const finalCheck = await evaluateCondition(ctx.page, finalCheckpoint);
   if (!finalCheck.ok) {
     const state = await captureState(ctx.page, { screenshot: true });
     return {
@@ -326,7 +334,7 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
       failure: {
         step: 'success_checkpoint',
         intent: 'Overall goal verification',
-        expected: capability.success_checkpoint,
+        expected: finalCheckpoint,
         observed: finalCheck.observed,
         url: state.url,
         screenshot: ctx.logger?.saveScreenshot(state.screenshotBase64, 'hard-failure') ?? null,

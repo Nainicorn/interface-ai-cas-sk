@@ -13,6 +13,7 @@
 
 import { safeParseCapability } from '../schema/capability.js';
 import { nextVersion, saveCapabilityToRun } from '../schema/store.js';
+import { splitValueEquals } from '../engine/perception.js';
 
 /** Build the flat input_schema replay's parameter validator understands. */
 function buildInputSchema(inputs) {
@@ -70,6 +71,30 @@ function crossCheck(emission, target) {
           `${at}: value_from_env "${step.value_from_env}" is not a credential this target declares ` +
             `(known: ${[...credentialEnvNames].join(', ')})`,
         );
+      }
+    }
+
+    // A checkpoint is only worth recording if it can actually hold. Two ways it cannot:
+    // it names a parameter that does not exist, or it asserts a control is empty right
+    // after the step filled it. Both record as a green step and fail on the first replay.
+    for (const condition of [step.expected_outcome].filter(Boolean)) {
+      for (const [, name] of String(condition.value ?? '').matchAll(/\{\{\s*([\w.-]+)\s*\}\}/g)) {
+        if (!inputNames.has(name)) {
+          problems.push(`${at}: checkpoint refers to {{${name}}}, which is not a declared input`);
+        }
+      }
+
+      if (condition.type === 'value_equals') {
+        const split = splitValueEquals(condition.value ?? '');
+        if (!split) {
+          problems.push(`${at}: value_equals checkpoint needs "<selector>=<expected>", got "${condition.value}"`);
+        } else if (split.expected === '' && step.action === 'type') {
+          problems.push(
+            `${at}: value_equals checkpoint expects an empty value immediately after typing ` +
+              'into the control, so it can never hold. Assert the value the step sets — ' +
+              'use {{parameter_name}} when that value comes from the caller.',
+          );
+        }
       }
     }
 

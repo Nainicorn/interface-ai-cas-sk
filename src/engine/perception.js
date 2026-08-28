@@ -51,6 +51,64 @@ export async function captureState(page, { screenshot = true } = {}) {
 }
 
 /**
+ * Substitute {{param}} references in a condition's value from the caller's inputs.
+ *
+ * A checkpoint on a parameterized control has nothing static to assert. "The branch the
+ * caller asked for is selected" can only be proven against THAT caller's value, and
+ * without this the model is pushed into inventing a checkpoint that passes whatever
+ * happened — which is how a step that was never really verified gets recorded looking
+ * verified. On this target every mutating form is driven by parameterized dropdowns, so
+ * that gap covers most of the surface.
+ *
+ * Parameters only, never credentials. A checkpoint is written into the evidence trail,
+ * and a secret interpolated into one would be persisted there in the clear.
+ *
+ * An unknown token is left standing rather than blanked, so a mismatch reports the token
+ * that could not be resolved instead of an empty string nobody can trace back.
+ */
+export function resolveCondition(condition, params = {}) {
+  if (!condition?.value?.includes('{{')) return condition;
+  const value = condition.value.replace(/\{\{\s*([\w.-]+)\s*\}\}/g, (token, name) =>
+    (Object.hasOwn(params, name) ? String(params[name]) : token));
+  return { ...condition, value };
+}
+
+/**
+ * Split a value_equals condition into its selector and expected value.
+ *
+ * The separator is the first "=" that is not inside brackets or quotes. Taking the
+ * first "=" outright looks fine until the selector is an attribute selector, and on a
+ * legacy target with no test ids every selector is one: "input[name='q']=100987" split
+ * naively yields the selector "input[name" and a CSS parse error at replay. Scanning for
+ * depth-zero, unquoted "=" costs a dozen lines and makes the condition usable at all here.
+ *
+ * Exported because agent/codegen.js emits the same split into standalone Playwright, and
+ * two implementations of it would be free to disagree.
+ *
+ * @returns {{selector: string, expected: string} | null} null when there is no separator
+ */
+export function splitValueEquals(value) {
+  let depth = 0;
+  let quote = null;
+
+  for (let i = 0; i < value.length; i += 1) {
+    const ch = value[i];
+    if (quote) {
+      if (ch === quote) quote = null;
+    } else if (ch === "'" || ch === '"') {
+      quote = ch;
+    } else if (ch === '[' || ch === '(') {
+      depth += 1;
+    } else if (ch === ']' || ch === ')') {
+      depth -= 1;
+    } else if (ch === '=' && depth === 0 && i > 0) {
+      return { selector: value.slice(0, i).trim(), expected: value.slice(i + 1).trim() };
+    }
+  }
+  return null;
+}
+
+/**
  * Evaluate one checkpoint condition against the live page.
  *
  * Exact, closed-vocabulary matching only — see schema/enums.js CONDITION_TYPES for why.
@@ -126,12 +184,11 @@ export async function evaluateCondition(page, condition) {
     // Polls, because the value is usually asserted immediately after the action that set
     // it. Exact comparison after trimming, so it stays as deterministic as the rest.
     case 'value_equals': {
-      const eq = value.indexOf('=');
-      if (eq < 1) {
+      const split = splitValueEquals(value);
+      if (!split) {
         return { ok: false, observed: `value_equals needs "<selector>=<expected>", got "${value}"` };
       }
-      const selector = value.slice(0, eq).trim();
-      const expected = value.slice(eq + 1).trim();
+      const { selector, expected } = split;
 
       const deadline = Date.now() + timeoutMs;
       let observed = `"${selector}" was never successfully read`;

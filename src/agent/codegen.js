@@ -15,6 +15,8 @@
  * Hands off to: api/capabilities.js (GET .../codegen), cli/generate.js.
  */
 
+import { splitValueEquals } from '../engine/perception.js';
+
 const jsonLiteral = (value) => JSON.stringify(value);
 
 /** One candidate as a Playwright locator expression, matching engine/locator.js exactly. */
@@ -49,26 +51,40 @@ function locatorExpr(strategy) {
   return { line, fallback };
 }
 
+/**
+ * A condition's value as a JS expression, interpolating {{param}} against INPUTS exactly
+ * as engine/perception.js's resolveCondition does at replay. A checkpoint on a
+ * parameterized control has no static value to assert, so the generated script has to
+ * carry the same substitution or it would assert the recording run's inputs forever.
+ */
+function conditionLiteral(value) {
+  if (!String(value).includes('{{')) return jsonLiteral(value);
+  const body = String(value)
+    .replace(/`/g, '\\`')
+    .replace(/\$\{/g, '\\${')
+    .replace(/\{\{\s*([\w.-]+)\s*\}\}/g, (_, name) => `\${INPUTS[${jsonLiteral(name)}]}`);
+  return `\`${body}\``;
+}
+
 /** A checkpoint Condition as a Playwright wait, matching engine/perception.js's evaluateCondition. */
 function conditionExpr(condition) {
   const { type, value, timeout_ms: timeoutMs } = condition;
   switch (type) {
     case 'url_contains':
-      return `await page.waitForURL((u) => u.toString().includes(${jsonLiteral(value)}), { timeout: ${timeoutMs} });`;
+      return `await page.waitForURL((u) => u.toString().includes(${conditionLiteral(value)}), { timeout: ${timeoutMs} });`;
     case 'text_visible':
-      return `await page.getByText(${jsonLiteral(value)}).first().waitFor({ state: 'visible', timeout: ${timeoutMs} });`;
+      return `await page.getByText(${conditionLiteral(value)}).first().waitFor({ state: 'visible', timeout: ${timeoutMs} });`;
     case 'text_absent':
-      return `await page.getByText(${jsonLiteral(value)}).waitFor({ state: 'detached', timeout: ${timeoutMs} }).catch(() => {});`;
+      return `await page.getByText(${conditionLiteral(value)}).waitFor({ state: 'detached', timeout: ${timeoutMs} }).catch(() => {});`;
     case 'element_exists':
-      return `await page.locator(${jsonLiteral(value)}).first().waitFor({ state: 'visible', timeout: ${timeoutMs} });`;
+      return `await page.locator(${conditionLiteral(value)}).first().waitFor({ state: 'visible', timeout: ${timeoutMs} });`;
     case 'value_equals': {
-      // Same "<selector>=<expected>" split engine/perception.js does, resolved here at
-      // generation time so the emitted line reads as ordinary Playwright.
-      const eq = value.indexOf('=');
-      if (eq < 1) return `// malformed value_equals checkpoint ${jsonLiteral(value)}`;
-      const selector = value.slice(0, eq).trim();
-      const expected = value.slice(eq + 1).trim();
-      return `await expectValue(page, ${jsonLiteral(selector)}, ${jsonLiteral(expected)}, ${timeoutMs});`;
+      // The same split engine/perception.js applies, imported rather than repeated so
+      // the generated script cannot disagree with the engine about what a checkpoint means.
+      const split = splitValueEquals(value);
+      if (!split) return `// malformed value_equals checkpoint ${jsonLiteral(value)}`;
+      const { selector, expected } = split;
+      return `await expectValue(page, ${jsonLiteral(selector)}, ${conditionLiteral(expected)}, ${timeoutMs});`;
     }
     default:
       return `// unknown checkpoint type "${type}"`;
