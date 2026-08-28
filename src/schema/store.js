@@ -139,6 +139,26 @@ export function listCapabilities() {
 export function updateCapability(id, version, patch) {
   const record = findRecording(id, version);
   const merged = parseCapability({ ...record.capability, ...patch });
+
+  // Refuse to write a recording that lost a field on the way through.
+  //
+  // Parsing drops what the schema does not know, so a process running older code will
+  // happily rewrite an artifact minus every field added since it started — and it looks
+  // like a successful status change, not like data loss. That is exactly what happened
+  // when a long-running server approved a capability recorded after the server booted:
+  // its flow-level business outcomes were silently erased, and the next replay reported
+  // a hard failure for a member who simply did not exist.
+  //
+  // Marking status is not a licence to rewrite the recording, so anything missing is a
+  // stop rather than a warning.
+  const lost = Object.keys(record.capability).filter((key) => !(key in merged));
+  if (lost.length) {
+    throw new Error(
+      `Refusing to update "${id}": this build's schema does not know ${lost.join(', ')}, ` +
+        'so writing would erase it from the recording. Restart with current code.',
+    );
+  }
+
   writeFileSync(record.file, `${JSON.stringify(merged, null, 2)}\n`, 'utf8');
   return { path: record.file, capability: merged };
 }
