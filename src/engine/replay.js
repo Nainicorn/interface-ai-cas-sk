@@ -30,9 +30,11 @@ import { chromium } from 'playwright';
 import { getTarget, resolveUrl } from '../config/app-config.js';
 import { recordReplayOutcome } from '../schema/store.js';
 import { validateParams } from '../schema/validate-params.js';
-import { performAction, click } from './actions.js';
+import { click, performAction, readText } from './actions.js';
 import { LocatorResolutionError, MalformedStep, MissingCredential } from './errors.js';
 import { captureState, evaluateCondition, resolveCondition } from './perception.js';
+import { PolicyViolation } from '../policy/allowlist.js';
+import { classifyRisk } from '../policy/risk.js';
 import { attemptRecovery } from './recovery-table.js';
 
 /**
@@ -155,9 +157,9 @@ function argsForStep(step, params, secrets) {
  *
  * @returns {Promise<{code: string, message: string}|null>} the first rule that matched
  */
-async function matchBusinessOutcome(page, step, expected = step.expected_outcome) {
+async function matchBusinessOutcome(ctx, step, expected = step.expected_outcome) {
   for (const rule of step.business_outcomes ?? []) {
-    const { ok } = await evaluateCondition(page, rule.detect);
+    const { ok } = await evaluateCondition(ctx.page, rule.detect);
     if (!ok) continue;
 
     if (expected) {
@@ -165,12 +167,35 @@ async function matchBusinessOutcome(page, step, expected = step.expected_outcome
       // plainly succeed", and a slow answer here means it did not. The caller passes the
       // PARAMETER-RESOLVED expectation: an unresolved {{token}} could never match, and
       // this branch would then read a plainly successful step as an exceptional state.
-      const success = await evaluateCondition(page, { ...expected, timeout_ms: 500 });
+      const success = await evaluateCondition(ctx.page, { ...expected, timeout_ms: 500 });
       if (success.ok) continue; // ambiguous detector, not an exceptional state
     }
-    return { code: rule.code, message: rule.message };
+    return withDetail(ctx, rule);
   }
   return null;
+}
+
+/**
+ * Attach the app's own wording for a matched outcome, when the rule says where to find it.
+ *
+ * Read through the ordinary `read` primitive, so this is gated and logged like every
+ * other page access rather than being a private back door for diagnostics.
+ *
+ * Best-effort on purpose: a rule that already matched has classified the run, and losing
+ * the explanatory line must never turn that classification back into a failure.
+ */
+async function withDetail(ctx, rule) {
+  const outcome = { code: rule.code, message: rule.message };
+  if (!rule.detail) return outcome;
+
+  try {
+    const read = await readText(ctx, { locator: rule.detail.locator, pattern: rule.detail.pattern });
+    const said = (read.extracted ?? read.raw ?? '').trim();
+    if (said) outcome.detail = said;
+  } catch {
+    // The reason line moved or is not on this page. The code still stands.
+  }
+  return outcome;
 }
 
 /**
@@ -183,10 +208,10 @@ async function matchBusinessOutcome(page, step, expected = step.expected_outcome
  *
  * @returns {Promise<{code: string, message: string}|null>}
  */
-async function matchFlowOutcome(page, capability) {
+async function matchFlowOutcome(ctx, capability) {
   for (const rule of capability.business_outcomes ?? []) {
-    const { ok } = await evaluateCondition(page, rule.detect);
-    if (ok) return { code: rule.code, message: rule.message };
+    const { ok } = await evaluateCondition(ctx.page, rule.detect);
+    if (ok) return withDetail(ctx, rule);
   }
   return null;
 }
@@ -215,11 +240,32 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
     const expected = resolveCondition(step.expected_outcome, params);
 
     try {
+      // --- the step may not be riskier than the capability admits to being ---
+      //
+      // risk_level is declared by whoever recorded the capability, and everything
+      // downstream trusts it: an unapproved risky capability cannot replay unattended,
+      // and only approved ones reach the agent catalog. Nothing re-derived that claim
+      // from the app's own config, so a flow recorded as "safe" that in fact posts an
+      // irreversible transaction would have replayed unattended on its own say-so.
+      //
+      // Checked against the LIVE url rather than the recorded one, because the route an
+      // action lands on is what determines whether it mutates, and a legacy flow reaches
+      // /transfer/review by submitting a form rather than by navigating to it.
+      const stepRisk = classifyRisk({ target: ctx.target, action: step.action, url: ctx.page.url() });
+      if (stepRisk.level === 'risky' && capability.risk_level !== 'risky') {
+        throw new PolicyViolation(
+          `Step ${step.index} is risky (${stepRisk.reason}) but capability ` +
+            `"${capability.id}" is recorded as "${capability.risk_level}".`,
+          { capability: capability.id, step: step.index, action: step.action, reason: stepRisk.reason },
+        );
+      }
+      record.risk = stepRisk.level;
+
       // --- act -------------------------------------------------------------
       const actionResult = await performAction(ctx, step.action, argsForStep(step, params, secrets));
 
       // --- 1. declared business outcomes, BEFORE the checkpoint -------------
-      const business = await matchBusinessOutcome(ctx.page, step, expected);
+      const business = await matchBusinessOutcome(ctx, step, expected);
       if (business) {
         record.outcome = 'BUSINESS_OUTCOME';
         record.business_outcome = business;
@@ -250,7 +296,7 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
 
       // --- 4. a flow-level business outcome, before anything is called a failure ---
       if (!check.ok) {
-        const flow = await matchFlowOutcome(ctx.page, capability);
+        const flow = await matchFlowOutcome(ctx, capability);
         if (flow) {
           record.outcome = 'BUSINESS_OUTCOME';
           record.business_outcome = flow;
@@ -315,8 +361,8 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
         // The step's own rules first, then the flow's — a rule naming this step is the
         // more specific statement, so it wins when both match.
         const business =
-          (await matchBusinessOutcome(ctx.page, step, expected)) ??
-          (await matchFlowOutcome(ctx.page, capability));
+          (await matchBusinessOutcome(ctx, step, expected)) ??
+          (await matchFlowOutcome(ctx, capability));
         if (business) {
           record.outcome = 'BUSINESS_OUTCOME';
           record.business_outcome = business;
@@ -367,7 +413,7 @@ export async function executeSteps(ctx, capability, params, { secrets = null } =
   if (!finalCheck.ok) {
     // Every step passed and the goal still was not reached — a flow that ended somewhere
     // legitimate is the likeliest reason, so ask before calling it a failure.
-    const flow = await matchFlowOutcome(ctx.page, capability);
+    const flow = await matchFlowOutcome(ctx, capability);
     if (flow) {
       return {
         outcome: 'BUSINESS_OUTCOME',

@@ -73,6 +73,22 @@ export const BusinessOutcomeRuleSchema = z.object({
   code: z.string().min(1).describe('Stable machine code, e.g. MEMBER_NOT_FOUND'),
   detect: ConditionSchema,
   message: z.string().min(1).describe('Human-readable explanation for the caller'),
+
+  /**
+   * Optionally read the app's OWN wording for this outcome off the page.
+   *
+   * Detection wants a stable, generic anchor — this target renders one rejection banner
+   * for every kind of invalid transaction — but a caller that is only told
+   * TRANSACTION_REJECTED cannot act on it or explain it to anyone. The anchor classifies;
+   * this says which line of the page carries the reason.
+   *
+   * Best-effort by construction: a detail that cannot be read is dropped, never allowed
+   * to turn a classified outcome back into a failure.
+   */
+  detail: z
+    .object({ locator: LocatorStrategySchema, pattern: z.string().optional() })
+    .optional()
+    .describe("Where the app states its own reason for this outcome"),
 });
 
 /**
