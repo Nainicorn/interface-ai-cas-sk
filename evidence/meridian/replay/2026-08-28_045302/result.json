@@ -1,0 +1,27 @@
+{
+  "id": "meridian/replay/2026-08-28_045302",
+  "kind": "replay",
+  "app_id": "meridian",
+  "goal": null,
+  "status": "HARD_FAILURE",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "member-inquiry-shares-lookup",
+    "version": 1,
+    "outcome": "HARD_FAILURE",
+    "outputs": null,
+    "business_outcome": null,
+    "escalation": null,
+    "failed_step": {
+      "step": 5,
+      "intent": "Go to Member Inquiry / Selection page",
+      "message": "expected {\"type\":\"text_visible\",\"value\":\"MEMBER INQUIRY / SELECTION\",\"timeout_ms\":5000}, observed \"\\\"MEMBER INQUIRY / SELECTION\\\" not visible within 5000ms\"",
+      "url": "https://web-sample.interface-hiring.com/signon",
+      "screenshot": "001-hard-failure.png"
+    }
+  },
+  "started_at": "2026-08-28T04:53:02.476Z",
+  "updated_at": "2026-08-28T04:53:31.530Z"
+}

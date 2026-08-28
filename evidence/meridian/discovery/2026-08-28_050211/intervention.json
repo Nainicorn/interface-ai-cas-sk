@@ -1,0 +1,9 @@
+{
+  "run_id": "meridian/discovery/2026-08-28_050211",
+  "goal": "Place an account hold. Sign on with the ORDINARY operator credential env vars (MERIDIAN_USERNAME / MERIDIAN_PASSWORD), not the supervisor ones — this capability represents a teller-operated agent. Find the member by member number (parameter member_number), open their record, click Place Account Hold, fill the form from parameters share, reason and notes, continue to the review screen and post the hold. Report the confirmation number and the share held. The app answers SUPERVISOR OVERRIDE REQUIRED when the signed-on operator lacks authority: declare that as a flow-level rule with escalate set to true, because it needs a person with more authority, not a retry. Also declare a flow-level business outcome for no matching member.",
+  "app_id": "meridian",
+  "reason": "Placing the account hold with ordinary operator credentials (teller1) triggers \"SUPERVISOR OVERRIDE REQUIRED\" — operator profile lacks authority for this restricted function. A supervisor needs to authorize/override before the hold can be posted and a confirmation number obtained.",
+  "url": "https://web-sample.interface-hiring.com/members/103001/hold/review",
+  "screenshot": "012-escalation.png",
+  "created_at": "2026-08-28T05:03:26.213Z"
+}

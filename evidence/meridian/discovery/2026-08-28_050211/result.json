@@ -1,0 +1,26 @@
+{
+  "id": "meridian/discovery/2026-08-28_050211",
+  "kind": "discovery",
+  "app_id": "meridian",
+  "goal": "Place an account hold. Sign on with the ORDINARY operator credential env vars (MERIDIAN_USERNAME / MERIDIAN_PASSWORD), not the supervisor ones — this capability represents a teller-operated agent. Find the member by member number (parameter member_number), open their record, click Place Account Hold, fill the form from parameters share, reason and notes, continue to the review screen and post the hold. Report the confirmation number and the share held. The app answers SUPERVISOR OVERRIDE REQUIRED when the signed-on operator lacks authority: declare that as a flow-level rule with escalate set to true, because it needs a person with more authority, not a retry. Also declare a flow-level business outcome for no matching member.",
+  "status": "escalated",
+  "detail": {
+    "artifact": null,
+    "turns": 14,
+    "usage": {
+      "input_tokens": 28,
+      "output_tokens": 3652,
+      "cache_read_input_tokens": 305488,
+      "cache_creation_input_tokens": 40089
+    },
+    "model": "claude-sonnet-5",
+    "evidence_dir": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/meridian/discovery/2026-08-28_050211",
+    "escalation": {
+      "reason": "Placing the account hold with ordinary operator credentials (teller1) triggers \"SUPERVISOR OVERRIDE REQUIRED\" — operator profile lacks authority for this restricted function. A supervisor needs to authorize/override before the hold can be posted and a confirmation number obtained.",
+      "attempted": "Signed on as teller1 (ordinary operator), searched for member 103001, opened Place Account Hold, filled share=103001-S0001, reason=FRAUD, notes=demo hold, clicked Continue. Got taken to /members/103001/hold/review which displays \"SUPERVISOR OVERRIDE REQUIRED - Operator profile teller1 is not authorized to perform this function. A supervisor must sign on to complete this request.\" with only a \"Return to previous screen\" link, no inline override field."
+    },
+    "finished_at": "2026-08-28T05:03:26.230Z"
+  },
+  "started_at": "2026-08-28T05:02:11.533Z",
+  "updated_at": "2026-08-28T05:03:26.230Z"
+}

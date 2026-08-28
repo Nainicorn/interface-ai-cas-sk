@@ -3,7 +3,7 @@
   "id": "member-inquiry-shares-lookup",
   "name": "Member Inquiry - Shares & Balances Lookup",
   "version": 1,
-  "status": "draft",
+  "status": "approved",
   "description": "Signs on to Meridian Core, searches Member Inquiry by member number, opens the matching member record, and reports the member's name plus their full Shares/Balances block (share id, type, balance, status for every share). Handles the case where the member number does not exist.",
   "target": {
     "app_id": "meridian",
@@ -156,7 +156,8 @@
             "value": "Invalid operator ID or password",
             "timeout_ms": 5000
           },
-          "message": "The supplied operator credentials were rejected."
+          "message": "The supplied operator credentials were rejected.",
+          "escalate": false
         }
       ],
       "risk": "safe"
@@ -250,7 +251,8 @@
             "value": "No member records matched your search.",
             "timeout_ms": 5000
           },
-          "message": "No member record exists for the supplied member number."
+          "message": "No member record exists for the supplied member number.",
+          "escalate": false
         }
       ],
       "risk": "safe"
@@ -341,7 +343,8 @@
         "value": "No member records matched your search.",
         "timeout_ms": 3000
       },
-      "message": "No member record matches that member number."
+      "message": "No member record matches that member number.",
+      "escalate": false
     }
   ],
   "created_from": {
@@ -369,9 +372,9 @@
     ]
   },
   "confidence": {
-    "runs": 5,
-    "successes": 4,
+    "runs": 8,
+    "successes": 5,
     "last_outcome": "SUCCESS",
-    "updated_at": "2026-08-28T04:07:38.392Z"
+    "updated_at": "2026-08-28T05:00:42.119Z"
   }
 }

@@ -3,7 +3,7 @@
   "id": "meridian-signon",
   "name": "Meridian Core Sign On",
   "version": 1,
-  "status": "draft",
+  "status": "approved",
   "description": "Signs on to Meridian Core with operator credentials and a caller-supplied branch code, confirms the main menu is reached, and reports the operator id and branch code shown in the status bar.",
   "target": {
     "app_id": "meridian",
@@ -164,7 +164,8 @@
             "value": "Invalid operator ID or password",
             "timeout_ms": 3000
           },
-          "message": "The operator id/password combination was rejected by Meridian Core."
+          "message": "The operator id/password combination was rejected by Meridian Core.",
+          "escalate": false
         }
       ],
       "risk": "safe"
@@ -225,6 +226,7 @@
     "value": "MAIN MENU",
     "timeout_ms": 5000
   },
+  "business_outcomes": [],
   "created_from": {
     "run_id": "meridian/discovery/2026-08-28_035056",
     "model": "claude-sonnet-5",

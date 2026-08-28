@@ -486,9 +486,9 @@
     ]
   },
   "confidence": {
-    "runs": 4,
-    "successes": 4,
-    "last_outcome": "SUCCESS",
-    "updated_at": "2026-08-28T04:34:50.286Z"
+    "runs": 5,
+    "successes": 5,
+    "last_outcome": "ESCALATED",
+    "updated_at": "2026-08-28T04:57:09.616Z"
   }
 }
