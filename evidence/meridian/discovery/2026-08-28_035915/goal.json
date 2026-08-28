@@ -372,9 +372,9 @@
     ]
   },
   "confidence": {
-    "runs": 17,
-    "successes": 14,
+    "runs": 18,
+    "successes": 15,
     "last_outcome": "SUCCESS",
-    "updated_at": "2026-08-28T14:39:39.309Z"
+    "updated_at": "2026-08-28T15:55:24.253Z"
   }
 }

@@ -1,18 +1,5 @@
 # Walkthrough — demo script
 
-One numbered run, top to bottom. Each step: what to do, and one or two sentences
-to say. ~12 minutes.
-
----
-
-## Before they arrive
-
-- `npm start`, open `localhost:3000`, click **MERIDIAN CORE**
-- `npm run replay -- --id member-inquiry-shares-lookup --param member_number=100987`
-  → note two shares showing **OPEN**; you'll type those in step 17
-- Have `docs/DESIGN.md` open on GitHub in a tab (diagrams render there)
-- Target signed in already at `web-sample.interface-hiring.com` (`teller1`/`password`)
-
 ---
 
 # Part 1 — The take-home MVP (4 min)

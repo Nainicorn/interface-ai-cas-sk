@@ -1,12 +1,9 @@
 /**
  * Deterministic replay — the production execution path.
  *
- * This file NEVER calls an LLM. Not to pick a locator, not to recover from an error,
- * not to classify a result. That is the central claim of the whole system: the model
- * discovers once, and everything after that is a typed function call. If an import of
- * the Anthropic SDK ever appears in this file, the thesis is broken.
+ * This file NEVER calls an LLM.
  *
- * Every step resolves to exactly one of four outcomes, and the ordering of the checks
+ * Every step resolves to exactly one of five outcomes, and the ordering of the checks
  * below is the part worth reading closely:
  *
  *   1. Declared business outcomes are checked FIRST. When "no such member" happens, the
@@ -15,7 +12,10 @@
  *      inversion is the most common way this problem gets got wrong.
  *   2. Then the success checkpoint.
  *   3. Only if a checkpoint fails do we try the bounded recovery table, then re-check.
- *   4. Anything still unresolved is a HARD_FAILURE carrying step, expectation,
+ *   4. Then the flow-level rules and the host's own runtime faults. Either can end the
+ *      run as a BUSINESS_OUTCOME, or as ESCALATED when finishing needs an authority
+ *      this run does not have.
+ *   5. Anything still unresolved is a HARD_FAILURE carrying step, expectation,
  *      observation, and every locator candidate that was tried.
  *
  * An optional tenant_id (see applyTenantOverride below) patches individual steps'
