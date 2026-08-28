@@ -130,8 +130,7 @@ export async function mount(root) {
     scope.hidden = !appId; // an empty pill beside the title is worse than no pill
     thread.innerHTML = entries.length
       ? `<div class="chat-empty">
-           <p>Ask in plain English.</p>
-           <p class="chat-empty-sub">I can only run the capabilities a human has approved — these ones. Say what you need and I will pick the right one, fill in its arguments and replay it. If none of them fits, I will tell you so rather than improvise.</p>
+           <p>I can run capabilities that have been approved! Give me a task.</p>
            <div class="chat-suggestions">
              ${entries
                .slice(0, 3)

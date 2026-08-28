@@ -311,12 +311,13 @@
 /* --- empty state -------------------------------------------------------------
    The suggestions are not decoration: a reader who has never seen this cannot guess
    what a recorded capability is able to do, and the catalog is right there to say. */
-/* Pushed to the bottom rather than centred: a conversation starts at the composer and
-   grows upward, so the invitation belongs where the first message will appear. */
-.chat-empty { margin-top: auto; text-align: left; }
-.chat-empty p { margin: 0 0 4px; color: var(--ink-2); font-size: 13px; }
-.chat-empty .chat-empty-sub { color: var(--ink-3); font-size: 12px; margin-bottom: 12px; }
-.chat-suggestions { display: flex; flex-direction: column; gap: 7px; align-items: flex-start; }
+.chat-empty { margin: auto 0; text-align: center; }
+.chat-empty p { margin: 0 0 14px; color: var(--ink-2); font-size: 13px; }
+.chat-empty .chat-empty-sub { color: var(--ink-3); font-size: 12px; margin-bottom: 0; }
+/* The chips hug their own text rather than filling the column: they are the shape of
+   what each capability is called, and stretching them to a common width would imply the
+   list is a set of equal-weight options rather than whatever happens to be approved. */
+.chat-suggestions { display: flex; flex-direction: column; gap: 7px; align-items: center; }
 .chat-suggestion {
   margin: 0;
   padding: 7px 12px;
