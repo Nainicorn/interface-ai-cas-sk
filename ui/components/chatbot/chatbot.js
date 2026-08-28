@@ -131,7 +131,7 @@ export async function mount(root) {
     thread.innerHTML = entries.length
       ? `<div class="chat-empty">
            <p>Ask in plain English.</p>
-           <p class="chat-empty-sub">I pick a recorded capability, replay it against the app, and show you what came back — with the evidence behind it.</p>
+           <p class="chat-empty-sub">I can only run the capabilities a human has approved — these ones. Say what you need and I will pick the right one, fill in its arguments and replay it. If none of them fits, I will tell you so rather than improvise.</p>
            <div class="chat-suggestions">
              ${entries
                .slice(0, 3)
@@ -261,7 +261,6 @@ export async function mount(root) {
   // The launcher is the toggle, not just the way in: it stays on screen while the panel
   // is open, inverted, and the same click closes it again.
   launcher.addEventListener('click', () => (panel.hidden ? open() : close()));
-  root.querySelector('[data-close]').addEventListener('click', close);
   root.querySelector('[data-clear]').addEventListener('click', () => {
     messages = [];
     renderEmpty();
