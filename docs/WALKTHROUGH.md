@@ -138,7 +138,7 @@ you have approved."* → that's the scoping proof.
 > "Not a failure. Nothing broke — the app was asked and answered. That's the
 > distinction the whole system is organised around."
 
-**3.** `Transfer $5 from share 100234-S0001 to 100234-MMKT-3 for member 100234, memo demo.`
+**3.** `Transfer $5 from share 100234-S0001 to 100234-S0001-5 for member 100234, memo demo.`
 → **BUSINESS_OUTCOME**, *"Source share is HOLD and cannot be debited."*
 > "One rule detects the generic rejection banner, a second locator reads the specific
 > reason — so one rule covers held shares, insufficient funds and bad amounts, and
@@ -197,6 +197,39 @@ npm run replay -- --id place-account-hold --param member_number=102777 \
 > the hold as a teller, it hit the supervisor gate and refused to emit a recording
 > for something it couldn't finish. That settles a design question rather than being
 > a bug: a teller-operated hold capability *cannot exist*."
+
+### All seven, from the console
+
+If they ask to see every capability run — §2.1 wants one per function — this is the
+order. **Capabilities** tab, the circular-arrow **Replay** icon on each row, type the
+values, hit **Replay**. Each takes 20–40 seconds.
+
+| # | Capability | Type this | You get |
+| --- | --- | --- | --- |
+| 1 | Meridian Core Sign On | `branch` **MAIN-001** | SUCCESS — `TELLER1` / `MAIN-001` |
+| 2 | Search Members by Last Name | `last_name` **Hopper** | SUCCESS — 101555, Hopper, Grace |
+| 3 | Member Inquiry — Shares & Balances | `member_number` **100987** | SUCCESS — the shares table |
+| 4 | Post Member Funds Transfer | **100987** · from **100987-S0001** · to **100987-MMKT-5** · **1.00** · memo **demo** | SUCCESS — a confirmation number |
+| 5 | Post Member Funds Transfer *(again)* | **100234** · from **100234-S0001** · to **100234-S0001-5** · **5.00** · memo **held** | BUSINESS_OUTCOME — *"Source share is HOLD and cannot be debited."* |
+| 6 | Open New Share for Member | **103001** · `share_type` **MMKT** · `deposit` **50.00** | SUCCESS — a new share id |
+| 7 | Update Member Contact Information | **103001** · email **grace@example.com** · phone **555-0142** · address **1 Demo Street** | SUCCESS — CHANGES SAVED |
+| 8 | Place Account Hold *(teller)* | **102777** · share **102777-MMKT-3** · reason **FRAUD** · notes anything · **+ teller1 / password** in "Run as a different user" | ESCALATED |
+| 9 | Place Account Hold *(supervisor)* | same, credential fields **blank** | SUCCESS — a confirmation number |
+
+Rows 4–9 change real data on the host. That's the point — they're the irreversible
+ones — but it means the values drift as you use them.
+
+**Check before you present.** The shared host resets on redeploy and other people
+are using it, so a share that's OPEN today may be on HOLD tomorrow. One command
+tells you everything you need:
+
+```bash
+npm run replay -- --id member-inquiry-shares-lookup --param member_number=100987
+```
+
+Read the status column. Row 4 needs **two OPEN shares** on 100987. Row 5 needs the
+*source* on **HOLD** (check 100234). Row 8 needs an **OPEN** share on 102777 — if
+102777-MMKT-3 is already held, pick another OPEN one from the same table.
 
 ### The six injected faults
 
