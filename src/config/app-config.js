@@ -65,6 +65,10 @@ export class UnknownApp extends Error {
  * into process.env under derived names, and only the NAMES travel into the prompt and
  * the recording. The model chooses where a password goes; it never learns what it is.
  *
+ * A `roles` block adds further named identities (`{"supervisor": {"username", "password"}}`)
+ * for targets that gate some actions behind a second operator. They are ordinary
+ * credentials with a role-qualified key, so nothing downstream special-cases them.
+ *
  * Those derived names are also unioned into `redact_fields`, because the name is what
  * the replay path passes to the logger — so the value behind it is redacted by the same
  * rule whether it was called "password" or "MY_APP_PASSWORD".
@@ -75,12 +79,24 @@ function toTarget(appId, raw) {
   const credentials = {};
   const credentialFields = [];
 
-  for (const field of ['username', 'password']) {
-    if (!raw[field]) continue;
-    const envName = `${envPrefix}_${field.toUpperCase()}`;
-    process.env[envName] ??= raw[field];
-    credentials[field] = envName;
-    credentialFields.push(envName, field);
+  /** Register one credential under a derived env name, so only the NAME ever travels. */
+  const addCredential = (role, field, value) => {
+    if (!value) return;
+    const key = role ? `${role}_${field}` : field;
+    const envName = `${envPrefix}_${key.toUpperCase()}`;
+    process.env[envName] ??= value;
+    credentials[key] = envName;
+    credentialFields.push(envName, key);
+  };
+
+  for (const field of ['username', 'password']) addCredential(null, field, raw[field]);
+
+  // Extra sign-on identities the target itself distinguishes. MERIDIAN CORE gates Place
+  // Hold behind a supervisor, so a recording has to be able to name WHICH operator it
+  // needs rather than assuming there is only ever one. Same indirection as the default
+  // pair: the model learns MERIDIAN_SUPERVISOR_PASSWORD exists, never what it holds.
+  for (const [role, creds] of Object.entries(raw.roles ?? {})) {
+    for (const field of ['username', 'password']) addCredential(slugify(role), field, creds?.[field]);
   }
 
   return {

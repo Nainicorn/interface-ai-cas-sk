@@ -1,0 +1,43 @@
+{
+  "name": "MERIDIAN CORE",
+  "url": "https://web-sample.interface-hiring.com/signon",
+  "goal": "Sign on as a teller and read a member's share balances",
+  "username": "teller1",
+  "password": "password",
+  "roles": {
+    "supervisor": {
+      "username": "super1",
+      "password": "password"
+    }
+  },
+  "allowlist": {
+    "route_prefixes": [
+      "/signon",
+      "/signoff",
+      "/menu",
+      "/members"
+    ],
+    "action_types": [
+      "navigate",
+      "click",
+      "type",
+      "read",
+      "wait_for"
+    ]
+  },
+  "risky_route_patterns": [
+    "/transfer",
+    "/open-share",
+    "/hold",
+    "/update"
+  ],
+  "redact_fields": [
+    "member_name",
+    "email",
+    "phone",
+    "address",
+    "dob",
+    "account_number",
+    "share_number"
+  ]
+}
