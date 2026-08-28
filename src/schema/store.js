@@ -130,6 +130,31 @@ export function listCapabilities() {
 }
 
 /**
+ * Every path present in `before` that did not survive into `after`.
+ *
+ * Recursive, because the fields a schema gains are as often nested as top-level: the
+ * flag marking an anticipated state as needing a human sits inside each rule inside an
+ * array, and a shallow key comparison walks straight past it while the flag itself is
+ * silently dropped.
+ */
+function missingPaths(before, after, trail = '') {
+  if (before === null || typeof before !== 'object') return [];
+
+  if (Array.isArray(before)) {
+    if (!Array.isArray(after)) return [trail || '(root)'];
+    return before.flatMap((item, i) => missingPaths(item, after[i], `${trail}[${i}]`));
+  }
+
+  if (after === null || typeof after !== 'object' || Array.isArray(after)) return [trail || '(root)'];
+
+  return Object.keys(before).flatMap((key) => {
+    const path = trail ? `${trail}.${key}` : key;
+    if (!(key in after)) return [path];
+    return missingPaths(before[key], after[key], path);
+  });
+}
+
+/**
  * Apply a partial update to a stored recording, in place.
  *
  * Only for fields that legitimately change after recording — `status` (the approval
@@ -149,9 +174,10 @@ export function updateCapability(id, version, patch) {
   // its flow-level business outcomes were silently erased, and the next replay reported
   // a hard failure for a member who simply did not exist.
   //
-  // Marking status is not a licence to rewrite the recording, so anything missing is a
-  // stop rather than a warning.
-  const lost = Object.keys(record.capability).filter((key) => !(key in merged));
+  // Checked all the way down, not just at the top: the fields a schema gains are as
+  // often nested as not. Marking status is not a licence to rewrite the recording, so
+  // anything missing is a stop rather than a warning.
+  const lost = missingPaths(record.capability, merged);
   if (lost.length) {
     throw new Error(
       `Refusing to update "${id}": this build's schema does not know ${lost.join(', ')}, ` +

@@ -1,0 +1,494 @@
+{
+  "schema_version": 1,
+  "id": "place-account-hold",
+  "name": "Place Account Hold (Supervisor)",
+  "version": 1,
+  "status": "approved",
+  "description": "Signs on as a supervisor, locates a member by member number, places a hold on a specified share with a reason code and notes, reviews and posts the hold, and reports the confirmation number and the share held.",
+  "target": {
+    "app_id": "meridian",
+    "entry_route": "/signon",
+    "tenant_overrides": []
+  },
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "member_number": {
+        "type": "string",
+        "description": "Member number to search for"
+      },
+      "share": {
+        "type": "string",
+        "description": "Share identifier to place on hold (e.g. 101555-S0001)"
+      },
+      "reason": {
+        "type": "string",
+        "description": "Reason code label prefix for the hold (e.g. FRAUD)"
+      },
+      "notes": {
+        "type": "string",
+        "description": "Free-text notes to record with the hold"
+      }
+    },
+    "required": [
+      "member_number",
+      "share",
+      "reason",
+      "notes"
+    ],
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "confirmation_number": {
+        "type": "string",
+        "description": "Confirmation number issued for the posted hold"
+      },
+      "held_share": {
+        "type": "string",
+        "description": "The share number that was placed on hold"
+      }
+    },
+    "required": [
+      "confirmation_number",
+      "held_share"
+    ],
+    "additionalProperties": false
+  },
+  "risk_level": "risky",
+  "steps": [
+    {
+      "index": 0,
+      "intent": "Go to sign-on page",
+      "action": "navigate",
+      "url": "/signon",
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "OPERATOR SIGN ON",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 1,
+      "intent": "Enter supervisor operator ID",
+      "action": "type",
+      "locator": {
+        "description": "Operator ID textbox",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "table tr:nth-child(1) td input[type=text]",
+            "exact": false,
+            "confidence": 0.4
+          }
+        ]
+      },
+      "value_from_env": "MERIDIAN_SUPERVISOR_USERNAME",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "table tr:nth-child(1) td input[type=text]",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 2,
+      "intent": "Enter supervisor password",
+      "action": "type",
+      "locator": {
+        "description": "Password textbox",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "input[type=password]",
+            "exact": false,
+            "confidence": 0.5
+          }
+        ]
+      },
+      "value_from_env": "MERIDIAN_SUPERVISOR_PASSWORD",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[type=password]",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 3,
+      "intent": "Submit sign on",
+      "action": "click",
+      "locator": {
+        "description": "Sign On button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Sign On",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "MAIN MENU",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 4,
+      "intent": "Navigate to Place Account Hold flow via member search",
+      "action": "click",
+      "locator": {
+        "description": "Place Account Hold link",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Place Account Hold",
+            "role": "link",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "MEMBER INQUIRY / SELECTION",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 5,
+      "intent": "Enter the member number to search",
+      "action": "type",
+      "locator": {
+        "description": "Member number value textbox",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "input[type=text]",
+            "exact": false,
+            "confidence": 0.5
+          }
+        ]
+      },
+      "value_from": "member_number",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[type=text]",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 6,
+      "intent": "Execute member search",
+      "action": "click",
+      "locator": {
+        "description": "Search button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Search",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Select",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [
+        {
+          "code": "MEMBER_NOT_FOUND",
+          "detect": {
+            "type": "text_visible",
+            "value": "No member records matched your search.",
+            "timeout_ms": 5000
+          },
+          "message": "No member record matched the given member number.",
+          "escalate": false
+        }
+      ],
+      "risk": "safe"
+    },
+    {
+      "index": 7,
+      "intent": "Select the found member to open the Place Account Hold form",
+      "action": "click",
+      "locator": {
+        "description": "Select link for member row",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Select",
+            "role": "link",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "PLACE ACCOUNT HOLD",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 8,
+      "intent": "Select the share to place on hold",
+      "action": "type",
+      "locator": {
+        "description": "Share select dropdown",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "select[name='share']",
+            "exact": false,
+            "confidence": 0.8
+          }
+        ]
+      },
+      "value_from": "share",
+      "expected_outcome": {
+        "type": "value_equals",
+        "value": "select[name='share']={{share}}",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 9,
+      "intent": "Select the reason code for the hold",
+      "action": "type",
+      "locator": {
+        "description": "Reason Code select dropdown",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "select[name='reason']",
+            "exact": false,
+            "confidence": 0.8
+          }
+        ]
+      },
+      "value_from": "reason",
+      "expected_outcome": {
+        "type": "value_equals",
+        "value": "select[name='reason']={{reason}}",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 10,
+      "intent": "Enter notes for the hold",
+      "action": "type",
+      "locator": {
+        "description": "Notes textbox",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "input[name='notes']",
+            "exact": false,
+            "confidence": 0.7
+          }
+        ]
+      },
+      "value_from": "notes",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[name='notes']",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 11,
+      "intent": "Continue to the review/confirmation screen",
+      "action": "click",
+      "locator": {
+        "description": "Continue button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Continue",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "CONFIRM ACCOUNT HOLD",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 12,
+      "intent": "Post the hold",
+      "action": "click",
+      "locator": {
+        "description": "Apply Hold button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Apply Hold",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "ACCOUNT HOLD APPLIED",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "risky"
+    },
+    {
+      "index": 13,
+      "intent": "Extract the confirmation number issued for the hold",
+      "action": "read",
+      "locator": {
+        "description": "Confirmation number cell",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "div.box table tr:nth-child(1) td:nth-child(2)",
+            "exact": false,
+            "confidence": 0.6
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "HOLD RECORDED",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "confirmation_number",
+      "extract_pattern": "(CN\\d+)",
+      "risk": "safe"
+    },
+    {
+      "index": 14,
+      "intent": "Extract the share that was placed on hold",
+      "action": "read",
+      "locator": {
+        "description": "Share held cell",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "div.box table tr:nth-child(2) td:nth-child(2)",
+            "exact": false,
+            "confidence": 0.6
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "HOLD RECORDED",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "held_share",
+      "extract_pattern": "([\\w-]+) is now",
+      "risk": "safe"
+    }
+  ],
+  "success_checkpoint": {
+    "type": "text_visible",
+    "value": "HOLD RECORDED",
+    "timeout_ms": 5000
+  },
+  "business_outcomes": [
+    {
+      "code": "MEMBER_NOT_FOUND",
+      "detect": {
+        "type": "text_visible",
+        "value": "No member records matched your search.",
+        "timeout_ms": 5000
+      },
+      "message": "No member record matched the given member number.",
+      "escalate": false
+    },
+    {
+      "code": "SUPERVISOR_OVERRIDE_REQUIRED",
+      "detect": {
+        "type": "text_visible",
+        "value": "SUPERVISOR OVERRIDE REQUIRED",
+        "timeout_ms": 5000
+      },
+      "message": "The signed-on operator lacks the authority to place an account hold; a supervisor override is required.",
+      "escalate": true,
+      "detail": {
+        "locator": {
+          "description": "Restricted function banner",
+          "candidates": [
+            {
+              "kind": "text",
+              "value": "RESTRICTED FUNCTION - SUPERVISOR OVERRIDE REQUIRED",
+              "exact": true,
+              "confidence": 0.6
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "created_from": {
+    "run_id": "meridian/discovery/2026-08-28_042850",
+    "model": "claude-sonnet-5",
+    "recorded_at": "2026-08-28T04:31:58.823Z"
+  },
+  "redaction_policy": {
+    "redact_fields": [
+      "member_name",
+      "email",
+      "phone",
+      "address",
+      "dob",
+      "account_number",
+      "share_number",
+      "MERIDIAN_USERNAME",
+      "username",
+      "MERIDIAN_PASSWORD",
+      "password",
+      "MERIDIAN_SUPERVISOR_USERNAME",
+      "supervisor_username",
+      "MERIDIAN_SUPERVISOR_PASSWORD",
+      "supervisor_password"
+    ]
+  },
+  "confidence": {
+    "runs": 4,
+    "successes": 4,
+    "last_outcome": "SUCCESS",
+    "updated_at": "2026-08-28T04:34:50.286Z"
+  }
+}

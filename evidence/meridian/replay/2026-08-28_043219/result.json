@@ -1,0 +1,29 @@
+{
+  "id": "meridian/replay/2026-08-28_043219",
+  "kind": "replay",
+  "app_id": "meridian",
+  "goal": null,
+  "status": "BUSINESS_OUTCOME",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [
+      "MERIDIAN_SUPERVISOR_USERNAME",
+      "MERIDIAN_SUPERVISOR_PASSWORD"
+    ],
+    "capability": "place-account-hold",
+    "version": 1,
+    "outcome": "BUSINESS_OUTCOME",
+    "outputs": null,
+    "business_outcome": {
+      "code": "SUPERVISOR_OVERRIDE_REQUIRED",
+      "message": "The signed-on operator lacks the authority to place an account hold; a supervisor override is required.",
+      "step": 11,
+      "intent": "Continue to the review/confirmation screen"
+    },
+    "escalation": null,
+    "failed_step": null
+  },
+  "started_at": "2026-08-28T04:32:19.513Z",
+  "updated_at": "2026-08-28T04:32:40.162Z"
+}

@@ -1,0 +1,27 @@
+{
+  "id": "meridian/discovery/2026-08-28_042850",
+  "kind": "discovery",
+  "app_id": "meridian",
+  "goal": "Place an account hold. This action requires a supervisor, so sign on using the SUPERVISOR credential env vars, not the ordinary operator ones. Find the member by member number (parameter member_number), open their record, click Place Account Hold, fill the form from parameters share, reason and notes, continue to the review screen and post the hold. Report the confirmation number and the share that was held. Declare a flow-level rule with escalate set to true for the page headed SUPERVISOR OVERRIDE REQUIRED, which is what the app shows when the signed-on operator lacks authority — that needs a person, not a retry. Also declare a flow-level business outcome for no matching member.",
+  "status": "recorded",
+  "detail": {
+    "artifact": {
+      "id": "place-account-hold",
+      "version": 1,
+      "path": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/meridian/discovery/2026-08-28_042850/goal.json"
+    },
+    "turns": 34,
+    "usage": {
+      "input_tokens": 68,
+      "output_tokens": 12460,
+      "cache_read_input_tokens": 1517523,
+      "cache_creation_input_tokens": 87249
+    },
+    "model": "claude-sonnet-5",
+    "evidence_dir": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/meridian/discovery/2026-08-28_042850",
+    "escalation": null,
+    "finished_at": "2026-08-28T04:31:58.846Z"
+  },
+  "started_at": "2026-08-28T04:28:50.102Z",
+  "updated_at": "2026-08-28T04:31:58.846Z"
+}

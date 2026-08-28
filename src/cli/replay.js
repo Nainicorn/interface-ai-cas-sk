@@ -77,6 +77,7 @@ try {
   console.log(`\nOutcome:  ${result.outcome}`);
   if (result.outputs) console.log(`Outputs:  ${JSON.stringify(result.outputs)}`);
   if (result.business_outcome) console.log(`Business: ${JSON.stringify(result.business_outcome)}`);
+  if (result.escalation) console.log(`Escalated: ${JSON.stringify(result.escalation, null, 2)}`);
   if (result.failure) console.log(`Failure:  ${JSON.stringify(result.failure, null, 2)}`);
   console.log(`Evidence: ${result.evidence_dir}`);
 
