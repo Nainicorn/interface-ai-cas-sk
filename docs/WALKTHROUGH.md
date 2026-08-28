@@ -1,34 +1,5 @@
 # Walkthrough — demo script
 
-12 minutes, three parts: **what I built first → what I added after the callback →
-the challenge.** Part 3 is what they set. If time runs short, cut Part 2.
-
-**Before they walk in:** `npm start` · open `localhost:3000` · select **MERIDIAN
-CORE** · second terminal in the repo · target's System Settings showing no forced
-injection · backup recording ready.
-
----
-
-## What they're scoring, and where I prove it
-
-Their criteria, in their order of weight. One line each — this is the checklist.
-
-| # | They're scoring | I prove it by | My one-line answer |
-| --- | --- | --- | --- |
-| 1 | **Adaptation quality** | `cat apps/meridian/config.example.json` | "The adapter is one config file. No new primitive, no second replay path, no target-specific branch." |
-| 2 | **Correctness of the core loop** | A live replay + all 7 functions in the catalog | "All seven functions recorded and replaying deterministically, with typed results." |
-| 3 | **Robustness & error handling** | The chatbot's HOLD rejection + the fault table | "Five outcomes. Business outcome, recoverable and hard failure are separated by declared rules, not guesswork." |
-| 4 | **Capability API / contract** | `curl /api/catalog` | "Typed in, typed out, invocable by name. Becomes a Claude tool definition with three renames." |
-| 5 | **Demoability** | Chatbot + Runs tab, happy and unhappy | "Anyone can drive it and watch it, including when it goes wrong." |
-| 6 | **Safety & data handling** | The allowlist, the risk gate, redaction | "One gate opens every action. Risky needs approval. Evidence never keeps PII." |
-| 7 | **Escalation** | The teller-credential run | "Stop, don't guess — with the step, the URL and a screenshot for whoever picks it up." |
-| 8 | **Communication** | `ADAPTATION.md` / `REPORT.md` | "Every trade-off and every cut is written down with the reason." |
-
-**Deliverables, all in the repo:** source + README with the demo path ·
-`ADAPTATION.md` (this round) · `REPORT.md` (the core, their seven headings) ·
-`evidence/meridian/` with discovery and replay runs, including failures and
-escalations.
-
 ---
 
 ## Part 1 — What I built first (4 min)
