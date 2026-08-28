@@ -1,0 +1,27 @@
+{
+  "id": "meridian/replay/2026-08-28_044416",
+  "kind": "replay",
+  "app_id": "meridian",
+  "goal": null,
+  "status": "BUSINESS_OUTCOME",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "open-new-share",
+    "version": 1,
+    "outcome": "BUSINESS_OUTCOME",
+    "outputs": null,
+    "business_outcome": {
+      "code": "DEPOSIT_BELOW_MINIMUM",
+      "message": "The initial deposit is below the minimum required opening deposit for this share type.",
+      "detail": "A minimum opening deposit of $5.00 is required.",
+      "step": 9,
+      "intent": "Continue to review screen"
+    },
+    "escalation": null,
+    "failed_step": null
+  },
+  "started_at": "2026-08-28T04:44:16.320Z",
+  "updated_at": "2026-08-28T04:44:38.498Z"
+}

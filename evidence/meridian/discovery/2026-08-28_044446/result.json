@@ -1,0 +1,27 @@
+{
+  "id": "meridian/discovery/2026-08-28_044446",
+  "kind": "discovery",
+  "app_id": "meridian",
+  "goal": "Sign on, go to Member Inquiry / Selection, switch the Search by dropdown to Last Name, and search for the caller-supplied parameter last_name. Report the list of matching members exactly as the results table shows them, with member number and name for each match. Do NOT open a member record — this capability answers 'which members match this surname'. Declare a flow-level business outcome for a surname that matches nothing.",
+  "status": "recorded",
+  "detail": {
+    "artifact": {
+      "id": "member-inquiry-search-by-last-name",
+      "version": 1,
+      "path": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/meridian/discovery/2026-08-28_044446/goal.json"
+    },
+    "turns": 18,
+    "usage": {
+      "input_tokens": 36,
+      "output_tokens": 6157,
+      "cache_read_input_tokens": 423000,
+      "cache_creation_input_tokens": 43501
+    },
+    "model": "claude-sonnet-5",
+    "evidence_dir": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/meridian/discovery/2026-08-28_044446",
+    "escalation": null,
+    "finished_at": "2026-08-28T04:46:05.391Z"
+  },
+  "started_at": "2026-08-28T04:44:46.113Z",
+  "updated_at": "2026-08-28T04:46:05.391Z"
+}

@@ -1,0 +1,498 @@
+{
+  "schema_version": 1,
+  "id": "open-new-share",
+  "name": "Open New Share for Member",
+  "version": 1,
+  "status": "approved",
+  "description": "Signs on to Meridian Core, finds a member by member number, opens a new share of the given type with an initial deposit, reviews and posts it, and returns the confirmation number and new share ID.",
+  "target": {
+    "app_id": "meridian",
+    "entry_route": "/signon",
+    "tenant_overrides": []
+  },
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "member_number": {
+        "type": "string",
+        "description": "The member number to search for and open a share on"
+      },
+      "share_type": {
+        "type": "string",
+        "description": "Visible label of the share type to open, e.g. 'MMKT - Money Market'"
+      },
+      "deposit": {
+        "type": "string",
+        "description": "Initial deposit amount, e.g. 50.00"
+      }
+    },
+    "required": [
+      "member_number",
+      "share_type",
+      "deposit"
+    ],
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "confirmation_number": {
+        "type": "string",
+        "description": "The confirmation number for the new share transaction"
+      },
+      "new_share_id": {
+        "type": "string",
+        "description": "The ID assigned to the newly opened share"
+      }
+    },
+    "required": [
+      "confirmation_number",
+      "new_share_id"
+    ],
+    "additionalProperties": false
+  },
+  "risk_level": "risky",
+  "steps": [
+    {
+      "index": 0,
+      "intent": "Sign on with operator credentials",
+      "action": "type",
+      "locator": {
+        "description": "Operator ID field",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Operator ID",
+            "role": "textbox",
+            "exact": false,
+            "confidence": 0.5
+          },
+          {
+            "kind": "css",
+            "value": "table tr:nth-child(1) input[type='text']",
+            "exact": false,
+            "confidence": 0.4
+          }
+        ]
+      },
+      "value_from_env": "MERIDIAN_USERNAME",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "table tr:nth-child(1) input[type='text']",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 1,
+      "intent": "Enter password",
+      "action": "type",
+      "locator": {
+        "description": "Password field",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Password",
+            "role": "textbox",
+            "exact": false,
+            "confidence": 0.5
+          },
+          {
+            "kind": "css",
+            "value": "table tr:nth-child(2) input[type='password']",
+            "exact": false,
+            "confidence": 0.4
+          }
+        ]
+      },
+      "value_from_env": "MERIDIAN_PASSWORD",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "table tr:nth-child(2) input[type='password']",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 2,
+      "intent": "Submit sign on",
+      "action": "click",
+      "locator": {
+        "description": "Sign On button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Sign On",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "MAIN MENU",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 3,
+      "intent": "Navigate to Open New Share flow, which starts with member search",
+      "action": "navigate",
+      "url": "/members?next=open-share",
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "MEMBER INQUIRY / SELECTION",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 4,
+      "intent": "Enter member number to search for",
+      "action": "type",
+      "locator": {
+        "description": "Member number value field",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Value",
+            "role": "textbox",
+            "exact": false,
+            "confidence": 0.7
+          },
+          {
+            "kind": "css",
+            "value": "input[type='text']",
+            "exact": false,
+            "confidence": 0.5
+          }
+        ]
+      },
+      "value_from": "member_number",
+      "expected_outcome": {
+        "type": "value_equals",
+        "value": "input[type='text']={{member_number}}",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 5,
+      "intent": "Execute the search",
+      "action": "click",
+      "locator": {
+        "description": "Search button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Search",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Select",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [
+        {
+          "code": "MEMBER_NOT_FOUND",
+          "detect": {
+            "type": "text_visible",
+            "value": "No member records matched your search.",
+            "timeout_ms": 5000
+          },
+          "message": "No member record matches the given member number.",
+          "escalate": false
+        }
+      ],
+      "risk": "safe"
+    },
+    {
+      "index": 6,
+      "intent": "Select the matched member record to open a new share",
+      "action": "click",
+      "locator": {
+        "description": "Select link for matched member record",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Select",
+            "role": "link",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "OPEN NEW SHARE",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 7,
+      "intent": "Choose the share type from the dropdown",
+      "action": "type",
+      "locator": {
+        "description": "Share Type select dropdown",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Share Type",
+            "role": "combobox",
+            "exact": false,
+            "confidence": 0.6
+          },
+          {
+            "kind": "css",
+            "value": "select",
+            "exact": false,
+            "confidence": 0.4
+          }
+        ]
+      },
+      "value_from": "share_type",
+      "expected_outcome": {
+        "type": "value_equals",
+        "value": "select={{share_type}}",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 8,
+      "intent": "Enter the initial deposit amount",
+      "action": "type",
+      "locator": {
+        "description": "Initial deposit amount field",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Initial Deposit",
+            "role": "textbox",
+            "exact": false,
+            "confidence": 0.6
+          },
+          {
+            "kind": "css",
+            "value": "input[type='text']",
+            "exact": false,
+            "confidence": 0.4
+          }
+        ]
+      },
+      "value_from": "deposit",
+      "expected_outcome": {
+        "type": "value_equals",
+        "value": "input[type='text']={{deposit}}",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 9,
+      "intent": "Continue to review screen",
+      "action": "click",
+      "locator": {
+        "description": "Continue button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Continue",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "CONFIRM NEW SHARE",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [
+        {
+          "code": "DEPOSIT_BELOW_MINIMUM",
+          "detect": {
+            "type": "text_visible",
+            "value": "The request could not be validated:",
+            "timeout_ms": 5000
+          },
+          "message": "The initial deposit is below the minimum required opening deposit for this share type.",
+          "escalate": false,
+          "detail": {
+            "locator": {
+              "description": "Validation error detail message",
+              "candidates": [
+                {
+                  "kind": "css",
+                  "value": "ul li",
+                  "exact": false,
+                  "confidence": 0.5
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "risk": "safe"
+    },
+    {
+      "index": 10,
+      "intent": "Post the new share by confirming on the review screen",
+      "action": "click",
+      "locator": {
+        "description": "Open Share button on confirm screen",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Open Share",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "NEW SHARE ESTABLISHED",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "risky"
+    },
+    {
+      "index": 11,
+      "intent": "Extract the confirmation number",
+      "action": "read",
+      "locator": {
+        "description": "Confirmation number value",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "td:has-text('Confirmation:') + td",
+            "exact": false,
+            "confidence": 0.6
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "NEW SHARE ESTABLISHED",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "confirmation_number",
+      "risk": "safe"
+    },
+    {
+      "index": 12,
+      "intent": "Extract the new share ID",
+      "action": "read",
+      "locator": {
+        "description": "New Share ID value",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "td:has-text('New Share ID:') + td",
+            "exact": false,
+            "confidence": 0.6
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "NEW SHARE ESTABLISHED",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "new_share_id",
+      "risk": "safe"
+    }
+  ],
+  "success_checkpoint": {
+    "type": "text_visible",
+    "value": "NEW SHARE ESTABLISHED",
+    "timeout_ms": 5000
+  },
+  "business_outcomes": [
+    {
+      "code": "MEMBER_NOT_FOUND",
+      "detect": {
+        "type": "text_visible",
+        "value": "No member records matched your search.",
+        "timeout_ms": 5000
+      },
+      "message": "No member record matches the given member number.",
+      "escalate": false
+    },
+    {
+      "code": "DEPOSIT_BELOW_MINIMUM",
+      "detect": {
+        "type": "text_visible",
+        "value": "The request could not be validated:",
+        "timeout_ms": 5000
+      },
+      "message": "The initial deposit is below the minimum required opening deposit for this share type.",
+      "escalate": false,
+      "detail": {
+        "locator": {
+          "description": "Validation error detail message",
+          "candidates": [
+            {
+              "kind": "css",
+              "value": "ul li",
+              "exact": false,
+              "confidence": 0.5
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "created_from": {
+    "run_id": "meridian/discovery/2026-08-28_043852",
+    "model": "claude-sonnet-5",
+    "recorded_at": "2026-08-28T04:43:38.754Z"
+  },
+  "redaction_policy": {
+    "redact_fields": [
+      "member_name",
+      "email",
+      "phone",
+      "address",
+      "dob",
+      "account_number",
+      "share_number",
+      "MERIDIAN_USERNAME",
+      "username",
+      "MERIDIAN_PASSWORD",
+      "password",
+      "MERIDIAN_SUPERVISOR_USERNAME",
+      "supervisor_username",
+      "MERIDIAN_SUPERVISOR_PASSWORD",
+      "supervisor_password"
+    ]
+  },
+  "confidence": {
+    "runs": 2,
+    "successes": 2,
+    "last_outcome": "BUSINESS_OUTCOME",
+    "updated_at": "2026-08-28T04:44:38.476Z"
+  }
+}

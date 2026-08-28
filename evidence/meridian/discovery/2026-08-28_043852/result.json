@@ -1,0 +1,27 @@
+{
+  "id": "meridian/discovery/2026-08-28_043852",
+  "kind": "discovery",
+  "app_id": "meridian",
+  "goal": "Sign on, find the member by member number (parameter member_number), open their record and click Open New Share. Choose the share type from parameter share_type and enter the initial deposit from parameter deposit, continue to the review screen and post it. Report the confirmation number and the new share id. Before emitting, deliberately submit a deposit below the minimum so you can read the app's real rejection wording — note the form carries permanent help text about the minimum on every screen including successful ones, so detect on the rejection banner the app renders when it actually refuses, never on that help text. Declare that as a flow-level business outcome with a detail locator, plus one for no matching member.",
+  "status": "recorded",
+  "detail": {
+    "artifact": {
+      "id": "open-new-share",
+      "version": 1,
+      "path": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/meridian/discovery/2026-08-28_043852/goal.json"
+    },
+    "turns": 38,
+    "usage": {
+      "input_tokens": 76,
+      "output_tokens": 12969,
+      "cache_read_input_tokens": 1949187,
+      "cache_creation_input_tokens": 98901
+    },
+    "model": "claude-sonnet-5",
+    "evidence_dir": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/meridian/discovery/2026-08-28_043852",
+    "escalation": null,
+    "finished_at": "2026-08-28T04:43:38.776Z"
+  },
+  "started_at": "2026-08-28T04:38:52.919Z",
+  "updated_at": "2026-08-28T04:43:38.776Z"
+}

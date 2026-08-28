@@ -1,0 +1,303 @@
+{
+  "schema_version": 1,
+  "id": "member-inquiry-search-by-last-name",
+  "name": "Search Members by Last Name",
+  "version": 1,
+  "status": "approved",
+  "description": "Signs on to Meridian Core, navigates to Member Inquiry / Selection, switches Search by to Last Name, searches for a caller-supplied last name, and returns the list of matching members (member number and name) exactly as shown in the results table.",
+  "target": {
+    "app_id": "meridian",
+    "entry_route": "/signon",
+    "tenant_overrides": []
+  },
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "last_name": {
+        "type": "string",
+        "description": "Surname to search for in Member Inquiry / Selection"
+      }
+    },
+    "required": [
+      "last_name"
+    ],
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "results_table_text": {
+        "type": "string",
+        "description": "Raw text of the results table listing Member No., Name, Shares for each matching member"
+      }
+    },
+    "required": [
+      "results_table_text"
+    ],
+    "additionalProperties": false
+  },
+  "risk_level": "safe",
+  "steps": [
+    {
+      "index": 0,
+      "intent": "Enter operator ID",
+      "action": "type",
+      "locator": {
+        "description": "Operator ID field",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "input[name='operator']",
+            "exact": false,
+            "confidence": 0.95
+          }
+        ]
+      },
+      "value_from_env": "MERIDIAN_USERNAME",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[name='operator']",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 1,
+      "intent": "Enter operator password",
+      "action": "type",
+      "locator": {
+        "description": "Password field",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "input[name='password']",
+            "exact": false,
+            "confidence": 0.95
+          }
+        ]
+      },
+      "value_from_env": "MERIDIAN_PASSWORD",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[name='password']",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 2,
+      "intent": "Submit sign on",
+      "action": "click",
+      "locator": {
+        "description": "Sign On button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Sign On",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.95
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "url_contains",
+        "value": "/menu",
+        "timeout_ms": 8000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 3,
+      "intent": "Navigate to Member Inquiry / Selection",
+      "action": "click",
+      "locator": {
+        "description": "Member Inquiry / Selection link",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Member Inquiry / Selection",
+            "role": "link",
+            "exact": true,
+            "confidence": 0.95
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "MEMBER INQUIRY / SELECTION",
+        "timeout_ms": 8000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 4,
+      "intent": "Switch Search by dropdown to Last Name",
+      "action": "type",
+      "locator": {
+        "description": "Search by dropdown",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "select",
+            "exact": false,
+            "confidence": 0.7
+          }
+        ]
+      },
+      "value_literal": "Last Name",
+      "expected_outcome": {
+        "type": "value_equals",
+        "value": "select=name",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 5,
+      "intent": "Enter the surname to search for",
+      "action": "type",
+      "locator": {
+        "description": "Value search text field",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "input[type='text']",
+            "exact": false,
+            "confidence": 0.7
+          }
+        ]
+      },
+      "value_from": "last_name",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[type='text']",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 6,
+      "intent": "Submit the search",
+      "action": "click",
+      "locator": {
+        "description": "Search button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Search",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "url_contains",
+        "value": "by=name",
+        "timeout_ms": 8000
+      },
+      "business_outcomes": [
+        {
+          "code": "NO_MEMBERS_MATCHED",
+          "detect": {
+            "type": "text_visible",
+            "value": "No member records matched your search.",
+            "timeout_ms": 5000
+          },
+          "message": "No member records match the given last name.",
+          "escalate": false
+        }
+      ],
+      "risk": "safe"
+    },
+    {
+      "index": 7,
+      "intent": "Read the results table listing matching members' number and name",
+      "action": "read",
+      "locator": {
+        "description": "Results table body",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "table[border='1']",
+            "exact": false,
+            "confidence": 0.85
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Member No.",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [
+        {
+          "code": "NO_MEMBERS_MATCHED",
+          "detect": {
+            "type": "text_visible",
+            "value": "No member records matched your search.",
+            "timeout_ms": 5000
+          },
+          "message": "No member records match the given last name.",
+          "escalate": false
+        }
+      ],
+      "extract_as": "results_table_text",
+      "risk": "safe"
+    }
+  ],
+  "success_checkpoint": {
+    "type": "text_visible",
+    "value": "Member No.",
+    "timeout_ms": 5000
+  },
+  "business_outcomes": [
+    {
+      "code": "NO_MEMBERS_MATCHED",
+      "detect": {
+        "type": "text_visible",
+        "value": "No member records matched your search.",
+        "timeout_ms": 5000
+      },
+      "message": "No member records match the given last name.",
+      "escalate": false
+    }
+  ],
+  "created_from": {
+    "run_id": "meridian/discovery/2026-08-28_044446",
+    "model": "claude-sonnet-5",
+    "recorded_at": "2026-08-28T04:46:05.370Z"
+  },
+  "redaction_policy": {
+    "redact_fields": [
+      "member_name",
+      "email",
+      "phone",
+      "address",
+      "dob",
+      "account_number",
+      "share_number",
+      "MERIDIAN_USERNAME",
+      "username",
+      "MERIDIAN_PASSWORD",
+      "password",
+      "MERIDIAN_SUPERVISOR_USERNAME",
+      "supervisor_username",
+      "MERIDIAN_SUPERVISOR_PASSWORD",
+      "supervisor_password"
+    ]
+  },
+  "confidence": {
+    "runs": 2,
+    "successes": 2,
+    "last_outcome": "BUSINESS_OUTCOME",
+    "updated_at": "2026-08-28T04:46:26.450Z"
+  }
+}

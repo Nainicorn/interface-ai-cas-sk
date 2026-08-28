@@ -1,0 +1,500 @@
+{
+  "schema_version": 1,
+  "id": "update-member-contact-info",
+  "name": "Update Member Contact Information",
+  "version": 1,
+  "status": "approved",
+  "description": "Signs on to Meridian Core, finds a member by member number, opens their record, updates e-mail/phone/mailing address via Update Member Information, saves, and reports the member name plus a confirmation the update was accepted.",
+  "target": {
+    "app_id": "meridian",
+    "entry_route": "/signon",
+    "tenant_overrides": []
+  },
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "member_number": {
+        "type": "string",
+        "description": "The member number to search for and update"
+      },
+      "email": {
+        "type": "string",
+        "description": "New e-mail address to set on the member record"
+      },
+      "phone": {
+        "type": "string",
+        "description": "New phone number to set on the member record"
+      },
+      "address": {
+        "type": "string",
+        "description": "New mailing address to set on the member record"
+      }
+    },
+    "required": [
+      "member_number",
+      "email",
+      "phone",
+      "address"
+    ],
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "member_name": {
+        "type": "string",
+        "description": "The name of the member whose record was updated"
+      },
+      "confirmation_message": {
+        "type": "string",
+        "description": "The confirmation text shown after the update is saved"
+      }
+    },
+    "required": [
+      "member_name",
+      "confirmation_message"
+    ],
+    "additionalProperties": false
+  },
+  "risk_level": "risky",
+  "steps": [
+    {
+      "index": 0,
+      "intent": "Go to the sign-on page",
+      "action": "navigate",
+      "url": "/signon",
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "OPERATOR SIGN ON",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 1,
+      "intent": "Enter operator ID",
+      "action": "type",
+      "locator": {
+        "description": "Operator ID field",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "input[name='operator']",
+            "exact": false,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "value_from_env": "MERIDIAN_USERNAME",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[name='operator']",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 2,
+      "intent": "Enter operator password",
+      "action": "type",
+      "locator": {
+        "description": "Password field",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "input[name='password']",
+            "exact": false,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "value_from_env": "MERIDIAN_PASSWORD",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[name='password']",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 3,
+      "intent": "Submit sign on",
+      "action": "click",
+      "locator": {
+        "description": "Sign On button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Sign On",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "MAIN MENU",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 4,
+      "intent": "Navigate to Update Member Information via the main menu",
+      "action": "click",
+      "locator": {
+        "description": "Update Member Information link",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Update Member Information",
+            "role": "link",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "MEMBER INQUIRY / SELECTION",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 5,
+      "intent": "Type the member number to search for",
+      "action": "type",
+      "locator": {
+        "description": "Member number value textbox",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "input[type='text']",
+            "exact": false,
+            "confidence": 0.7
+          }
+        ]
+      },
+      "value_from": "member_number",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[type='text']",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 6,
+      "intent": "Execute the search",
+      "action": "click",
+      "locator": {
+        "description": "Search button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Search",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Select",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [
+        {
+          "code": "MEMBER_NOT_FOUND",
+          "detect": {
+            "type": "text_visible",
+            "value": "No member records matched your search.",
+            "timeout_ms": 5000
+          },
+          "message": "No member record exists for the given member number.",
+          "escalate": false
+        }
+      ],
+      "risk": "safe"
+    },
+    {
+      "index": 7,
+      "intent": "Select the found member to open the update form; extract the member's name",
+      "action": "click",
+      "locator": {
+        "description": "Select link for the found member",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Select",
+            "role": "link",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "UPDATE MEMBER INFORMATION",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "member_name",
+      "risk": "safe"
+    },
+    {
+      "index": 8,
+      "intent": "Read the member name from the update form heading",
+      "action": "read",
+      "locator": {
+        "description": "Member name text on update form",
+        "candidates": [
+          {
+            "kind": "text",
+            "value": "Member 103001 - Vaughan, Dorothy",
+            "exact": false,
+            "confidence": 0.3
+          },
+          {
+            "kind": "css",
+            "value": "td:has-text('Member') >> text=/Member \\d+ - .+/",
+            "exact": false,
+            "confidence": 0.3
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "text=UPDATE MEMBER INFORMATION",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "member_name",
+      "extract_pattern": "Member \\d+ - (.+)",
+      "risk": "safe"
+    },
+    {
+      "index": 9,
+      "intent": "Set the new e-mail address",
+      "action": "type",
+      "locator": {
+        "description": "E-mail field",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "input[name='email']",
+            "exact": false,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "value_from": "email",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[name='email']",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 10,
+      "intent": "Set the new phone number",
+      "action": "type",
+      "locator": {
+        "description": "Phone field",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "input[name='phone']",
+            "exact": false,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "value_from": "phone",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[name='phone']",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 11,
+      "intent": "Set the new mailing address",
+      "action": "type",
+      "locator": {
+        "description": "Mailing Address field",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "input[name='address']",
+            "exact": false,
+            "confidence": 0.85
+          }
+        ]
+      },
+      "value_from": "address",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[name='address']",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 12,
+      "intent": "Save the updated contact information",
+      "action": "click",
+      "locator": {
+        "description": "Save Changes button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Save Changes",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "CHANGES SAVED",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [
+        {
+          "code": "VALIDATION_REJECTED",
+          "detect": {
+            "type": "text_visible",
+            "value": "Please correct the following:",
+            "timeout_ms": 5000
+          },
+          "message": "The submitted e-mail and/or phone did not pass format validation.",
+          "escalate": false,
+          "detail": {
+            "locator": {
+              "description": "Validation error list items",
+              "candidates": [
+                {
+                  "kind": "css",
+                  "value": "ul li",
+                  "exact": false,
+                  "confidence": 0.6
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "risk": "risky"
+    },
+    {
+      "index": 13,
+      "intent": "Read the confirmation message shown after saving",
+      "action": "read",
+      "locator": {
+        "description": "Confirmation banner text",
+        "candidates": [
+          {
+            "kind": "text",
+            "value": "CHANGES SAVED",
+            "exact": false,
+            "confidence": 0.8
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "CHANGES SAVED",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "confirmation_message",
+      "risk": "safe"
+    }
+  ],
+  "success_checkpoint": {
+    "type": "text_visible",
+    "value": "CHANGES SAVED",
+    "timeout_ms": 5000
+  },
+  "business_outcomes": [
+    {
+      "code": "MEMBER_NOT_FOUND",
+      "detect": {
+        "type": "text_visible",
+        "value": "No member records matched your search.",
+        "timeout_ms": 5000
+      },
+      "message": "No member record exists for the given member number.",
+      "escalate": false
+    },
+    {
+      "code": "VALIDATION_REJECTED",
+      "detect": {
+        "type": "text_visible",
+        "value": "Please correct the following:",
+        "timeout_ms": 5000
+      },
+      "message": "The submitted e-mail and/or phone did not pass format validation.",
+      "escalate": false,
+      "detail": {
+        "locator": {
+          "description": "Validation error list items",
+          "candidates": [
+            {
+              "kind": "css",
+              "value": "ul li",
+              "exact": false,
+              "confidence": 0.6
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "created_from": {
+    "run_id": "meridian/discovery/2026-08-28_043509",
+    "model": "claude-sonnet-5",
+    "recorded_at": "2026-08-28T04:38:04.267Z"
+  },
+  "redaction_policy": {
+    "redact_fields": [
+      "member_name",
+      "email",
+      "phone",
+      "address",
+      "dob",
+      "account_number",
+      "share_number",
+      "MERIDIAN_USERNAME",
+      "username",
+      "MERIDIAN_PASSWORD",
+      "password",
+      "MERIDIAN_SUPERVISOR_USERNAME",
+      "supervisor_username",
+      "MERIDIAN_SUPERVISOR_PASSWORD",
+      "supervisor_password"
+    ]
+  },
+  "confidence": {
+    "runs": 2,
+    "successes": 2,
+    "last_outcome": "BUSINESS_OUTCOME",
+    "updated_at": "2026-08-28T04:38:43.782Z"
+  }
+}

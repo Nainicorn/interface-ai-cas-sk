@@ -1,0 +1,26 @@
+{
+  "id": "meridian/replay/2026-08-28_044622",
+  "kind": "replay",
+  "app_id": "meridian",
+  "goal": null,
+  "status": "BUSINESS_OUTCOME",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "member-inquiry-search-by-last-name",
+    "version": 1,
+    "outcome": "BUSINESS_OUTCOME",
+    "outputs": null,
+    "business_outcome": {
+      "code": "NO_MEMBERS_MATCHED",
+      "message": "No member records match the given last name.",
+      "step": 7,
+      "intent": "Read the results table listing matching members' number and name"
+    },
+    "escalation": null,
+    "failed_step": null
+  },
+  "started_at": "2026-08-28T04:46:22.385Z",
+  "updated_at": "2026-08-28T04:46:26.474Z"
+}

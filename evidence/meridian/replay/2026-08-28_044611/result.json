@@ -1,0 +1,23 @@
+{
+  "id": "meridian/replay/2026-08-28_044611",
+  "kind": "replay",
+  "app_id": "meridian",
+  "goal": null,
+  "status": "SUCCESS",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "member-inquiry-search-by-last-name",
+    "version": 1,
+    "outcome": "SUCCESS",
+    "outputs": {
+      "results_table_text": "Member No.\tName\tShares\t \n101555\tHopper, Grace\t4\tSelect"
+    },
+    "business_outcome": null,
+    "escalation": null,
+    "failed_step": null
+  },
+  "started_at": "2026-08-28T04:46:11.488Z",
+  "updated_at": "2026-08-28T04:46:22.075Z"
+}

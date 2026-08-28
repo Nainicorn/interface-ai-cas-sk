@@ -1,0 +1,29 @@
+{
+  "id": "meridian/replay/2026-08-28_043835",
+  "kind": "replay",
+  "app_id": "meridian",
+  "goal": null,
+  "status": "BUSINESS_OUTCOME",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "update-member-contact-info",
+    "version": 1,
+    "outcome": "BUSINESS_OUTCOME",
+    "outputs": {
+      "member_name": "<string:16>"
+    },
+    "business_outcome": {
+      "code": "VALIDATION_REJECTED",
+      "message": "The submitted e-mail and/or phone did not pass format validation.",
+      "detail": "E-mail address is not in a valid format.",
+      "step": 12,
+      "intent": "Save the updated contact information"
+    },
+    "escalation": null,
+    "failed_step": null
+  },
+  "started_at": "2026-08-28T04:38:35.229Z",
+  "updated_at": "2026-08-28T04:38:43.806Z"
+}

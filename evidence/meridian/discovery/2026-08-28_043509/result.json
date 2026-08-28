@@ -1,0 +1,27 @@
+{
+  "id": "meridian/discovery/2026-08-28_043509",
+  "kind": "discovery",
+  "app_id": "meridian",
+  "goal": "Sign on, find the member by member number (parameter member_number), open their record and click Update Member Information. Set the e-mail, phone and mailing address from parameters email, phone and address, and save. Report the member name and a confirmation that the update was accepted. Before emitting, deliberately submit an invalid e-mail and an invalid phone so you can read the app's real rejection wording, and declare a flow-level business outcome that detects it with a detail locator on the specific reason. Also declare a flow-level business outcome for no matching member.",
+  "status": "recorded",
+  "detail": {
+    "artifact": {
+      "id": "update-member-contact-info",
+      "version": 1,
+      "path": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/meridian/discovery/2026-08-28_043509/goal.json"
+    },
+    "turns": 40,
+    "usage": {
+      "input_tokens": 80,
+      "output_tokens": 9603,
+      "cache_read_input_tokens": 2023137,
+      "cache_creation_input_tokens": 100671
+    },
+    "model": "claude-sonnet-5",
+    "evidence_dir": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/meridian/discovery/2026-08-28_043509",
+    "escalation": null,
+    "finished_at": "2026-08-28T04:38:04.284Z"
+  },
+  "started_at": "2026-08-28T04:35:09.691Z",
+  "updated_at": "2026-08-28T04:38:04.284Z"
+}
