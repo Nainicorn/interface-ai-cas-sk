@@ -1,18 +1,34 @@
-# WALKTHROUGH.md — the whole system in plain language
+# WALKTHROUGH.md
 
-A companion to [REPORT.md](../REPORT.md) (the design write-up) and
-[DESIGN.md](DESIGN.md) (the diagrams). This one explains the same system without
-assuming you already know how it's built.
+## my notes
+- computer use automation system for legacy bank apps
+- legacy apps followed server-rendering style
+- needed a way to add an app to test (url, name, goal, fields, etc.)
+- needed a way to save each apps config
+- needed a way to test the agent against each app
+- the req was to take a user specified goal in natural language and create an agentic loop (understand, plan, etc.) and record the successful discovery run, escalate to a human when needed, and replay it to be deterministic, while staying within guardrails
+- I needed to first understand how to implement the mvp, which meant doing some learning and refreshing some technologies. once I understood what I needed to accomplish, I then scaffolded and at first I got it wrong, obviously I used claude code but again if you as a developer arent a good driver then no matter how now the car is you won't get where you want to go. So i went back and tried to understand how to build the system end to end, the full flow, even if i had to be excruciatingly detailed with my plan
+- once i heard computer use automation, my mind went to playwright, i had played around with it a couple months ago but i needed a refresh however I had a feeling I would need to use it for this system. The agent needed browser tools to actually interact with the app its given (in the mvp it was only the legacy bank app)
+- once I had my stack down, I had a better idea of how everything would flow together. I stuck with js after i picked node to be my runtime and wanted to use zod for the schema validation and versioning
+- the structured artifact is where I knew zod would come in handy as it needed to be especially because it would eventually be used to do a deterministic run
+- i had never actually implemented human in the loop before but i designed the rough flow for another project so i thought about how i could fit that logic into this app, obviously hitl would mainly be used for discovery runs as replays were deterministic
+- I also really wanted a "live play" feature because I love UI and i love being able to SEE what i built rather than just rely on a success note from the CLI. is the CLI beautiful and fast on its own, of course, but I still wanted to create a console to see my runs in progress and any other features I wanted to build on top
+- I time boxed myself by giving myself a week or half a sprint to complete the work because I didnt want to rush it but also didnt want to take too long or implement too many things because I wanted to actually have a full understanding of what I built even if its not perfect
+- I also didnt want my stack to be heavy, this was just a prototype essentially but if I were to further build this out I would spend more time understanding each piece in detail rather than just implementing a ton of features without taking the time to see if they were useful or not.
+- once i finished the mvp, the app could be configured, discovery run worked, replay tested, and human in the loop fired, I wanted to tackle the multi-tenant part. Although I did scope myself only to web apps for the take home, in the future id love to work with other surfaces too. but i did want to test on legacy and spa not just one or the other, and i wanted to test different apps itself not just bank apps to see how my agent would perform in those cases
+- I appreciated that you provided us with the freedom to choose what tech stack we wanted and the option to mock a bank app because it gave me the flexibility to run all kinds of tests and edge cases that I could think of to test each feature (human in the loop, agentic capability, etc.) oh and I loved the glossary I agree if you don't know its fine but you should try to learn
+- I did cut a few things but I thought that it was best given my own time box and also since I wanted to prioritize the MVP and some features instead of 10 features I couldn't stand behind because it is difficult to own several lines of code if you don't know at the very least what it does and how it fits into your system
+- for my design writeup i focused on the decisions I made and had several conversations with claude about what was developed if I was unsure and definitely went back and forth a lot on whether I agreed or disagreed with the implementation choices
+- i noticed how the stretch goals kind of mesh together in a way if you really think about it
+- i want to walkthrough what i did initially, then how i implemented extra stretch goals after i got the demo callback, and finally the challenge thats how i want to structure my presentation along with all the requirements they are looking for sprinkled in (like for example sections 6, 7 and 8 from the assignment.pdf doc under docs)
 
-Run `./demo.sh` with no arguments to see every demo command.
+* update walkthrough as a presentation style setup based on my notes with easy-to-understand descriptions of every folder and file, & difference between legacy vs spa vs desktop, how guardrails, safety, error handling, failures, etc. were setup, next steps & main cuts
+
+* update readme.md with the addition.pdf features, short write-up
+
+* manual test from walkthrough, screen record the tests, edit documentation
 
 ---
-
-## Part 1 — How it all works
-
-> Imagine teaching someone to make a sandwich. The **first** time, they need to figure
-> it out — where's the bread, where's the knife. After that, you just hand them the
-> written steps. **The AI is the figuring-out. The recipe is what you keep.**
 
 ### The problem this solves
 

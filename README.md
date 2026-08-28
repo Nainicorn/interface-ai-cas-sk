@@ -6,10 +6,11 @@ If the agent is successful the flow gets saved as a typed, versioned "capability
 
 If either the agent or the replay gets stuck, a human can take over during the live session and can either hand back control, manually interact with the session, or give the agent some extra guidance.
 
-Diagrams of the entire flow of the application are in [docs/DESIGN.md](docs/DESIGN.md).
-A plain-language walkthrough of how it all works is in
-[docs/WALKTHROUGH.md](docs/WALKTHROUGH.md), and a full end-to-end demo of every feature —
-CLI and console — is in [docs/SCRIPT.md](docs/SCRIPT.md).
+Diagrams of the entire flow of the application are in [DESIGN.md](DESIGN.md), and a
+plain-language walkthrough of how it all works is in [WALKTHROUGH.md](WALKTHROUGH.md).
+
+**Pointing this at MERIDIAN CORE** — what changed, what broke, what was cut — is written
+up in [ADAPTATION.md](ADAPTATION.md). The demo path is below.
 
 ---
 
@@ -33,6 +34,89 @@ npx playwright install chromium
 cp .env.example .env      # add your ANTHROPIC_API_KEY
 npm start                 # starts the app on port 3000
 ```
+---
+
+## Demo: MERIDIAN CORE
+
+The live target is `web-sample.interface-hiring.com`. Its config is committed without
+credentials of its own — the demo operators are public, so copy the example and go:
+
+```bash
+cp apps/meridian/config.example.json apps/meridian/config.json
+npm start
+```
+
+Seven capabilities are already recorded and approved in `evidence/meridian/discovery/`,
+so nothing needs discovering to demo — a fresh clone can invoke straight away:
+
+```bash
+# every capability the agent can see
+curl localhost:3000/api/catalog?app_id=meridian | jq '.[].id'
+
+# a balance, by name, with typed args — the shape an outside agent uses
+curl -X POST localhost:3000/api/catalog/member-inquiry-shares-lookup/invoke \
+  -H 'content-type: application/json' -d '{"params":{"member_number":"100987"}}'
+```
+
+### The five outcomes, on the real target
+
+Each of these is one command, and each returns a different outcome:
+
+```bash
+# SUCCESS — money actually moves, and a confirmation number comes back
+npm run replay -- --id post-funds-transfer --param member_number=100987 \
+  --param from_share=100987-S0001 --param to_share=100987-S0070 \
+  --param amount=1.00 --param memo=demo
+
+# BUSINESS_OUTCOME — the source share is on HOLD, so the app refuses.
+# Not a failure: the answer comes back in the app's own words.
+npm run replay -- --id post-funds-transfer --param member_number=100234 \
+  --param from_share=100234-S0001 --param to_share=100234-MMKT-3 \
+  --param amount=5.00 --param memo=held
+
+# BUSINESS_OUTCOME — no such member
+npm run replay -- --id member-inquiry-shares-lookup --param member_number=999999
+
+# ESCALATED — a teller attempting a supervisor-only Place Hold. Same recording,
+# credentials swapped for this run only; the values are never written down.
+npm run replay -- --id place-account-hold --param member_number=102777 \
+  --param share=102777-S0001 --param reason=FRAUD --param notes="teller attempt" \
+  --secret MERIDIAN_SUPERVISOR_USERNAME=teller1 \
+  --secret MERIDIAN_SUPERVISOR_PASSWORD=password
+
+# ...and the same call without the override posts the hold as the supervisor.
+```
+
+A risky capability that has not been approved refuses before a browser opens — try any
+of the above with a fresh recording to see the gate rather than the flow.
+
+### Through the chatbot and the dashboard
+
+Open `localhost:3000`, pick **MERIDIAN CORE** in the sidebar, then **Ask** at the
+bottom right:
+
+- *"What are the share balances for member 100987?"* — a real replay, real balances.
+- *"Transfer $5 from share 100234-S0001 to 100234-MMKT-3 for member 100234."* — comes
+  back BUSINESS_OUTCOME with the app's sentence, "Source share is HOLD and cannot be
+  debited."
+
+Every run lands in the **Runs** tab with its status, and each row opens a report showing
+the inputs it was given, the structured result, the step-by-step trail and the
+screenshots. **Agent catalog** is the same list an outside agent sees, invocable inline.
+
+### Forcing a runtime fault
+
+Faults can be injected per request with `?inject=<kind>`, or globally from the target's
+own System Settings screen. Globally is the one to show, because it makes an ordinary
+capability meet the fault mid-flow:
+
+- `maintenance` (503) → RECOVERABLE, the run takes the host's Continue link and carries on
+- `permission` (403) → ESCALATED
+- `notfound` (404) → BUSINESS_OUTCOME
+- `timeout` (440) → a read-only flow re-runs once; a transfer stops and escalates
+
+Set it back to none afterwards — it is a shared host.
+
 
 ---
 
@@ -175,9 +259,14 @@ Approval is what decides what an agent is allowed to do.
 | `BUSINESS_OUTCOME` | A real, expected answer, like "no such member" | Treat it as an answer, not an error |
 | `RECOVERABLE` | Hit a known hiccup (like a cookie banner), handled it, kept going | Nothing, it just worked |
 | `HARD_FAILURE` | Something didn't match what was expected | Look at the screenshot, the step, and what it saw instead |
+| `ESCALATED` | The flow hit something only a person with more authority can do | Read what it needs and who has to do it, then finish it by hand |
 
 The important one is `BUSINESS_OUTCOME`. The system is built to tell "the app gave a
 normal answer" apart from "something actually broke."
+
+`ESCALATED` is the other one worth knowing. It is neither: nothing is broken, and no
+amount of retrying by the same caller will finish the work. A teller asking to place an
+account hold gets this, with the step, the page and a screenshot for whoever picks it up.
 
 ---
 

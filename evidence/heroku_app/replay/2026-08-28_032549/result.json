@@ -1,0 +1,22 @@
+{
+  "id": "heroku_app/replay/2026-08-28_032549",
+  "kind": "replay",
+  "app_id": "heroku_app",
+  "goal": null,
+  "status": "SUCCESS",
+  "detail": {
+    "caller": "agent",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "heroku-app-login",
+    "version": 1,
+    "outcome": "SUCCESS",
+    "outputs": {
+      "confirmation_message": "You logged into a secure area!"
+    },
+    "business_outcome": null,
+    "failed_step": null
+  },
+  "started_at": "2026-08-28T03:25:49.115Z",
+  "updated_at": "2026-08-28T03:26:01.473Z"
+}

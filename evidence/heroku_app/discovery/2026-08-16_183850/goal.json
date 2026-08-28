@@ -178,7 +178,7 @@
       },
       "business_outcomes": [],
       "extract_as": "confirmation_message",
-      "extract_pattern": "([^\\n\u00d7]+)",
+      "extract_pattern": "([^\\n×]+)",
       "risk": "safe"
     }
   ],
@@ -201,9 +201,9 @@
     ]
   },
   "confidence": {
-    "runs": 21,
-    "successes": 21,
-    "last_outcome": "BUSINESS_OUTCOME",
-    "updated_at": "2026-08-26T22:52:27.388Z"
+    "runs": 22,
+    "successes": 22,
+    "last_outcome": "SUCCESS",
+    "updated_at": "2026-08-28T03:26:01.453Z"
   }
 }
