@@ -33,10 +33,20 @@
 /* Each argument is ONE control with its name as an inline prefix, not a label stacked
    above a box: stacking made every row two lines tall and ragged against the badges in
    the column beside it. */
+/* Five parameters is ordinary on this target — a transfer takes member, from, to,
+   amount and memo — and five controls in a row are wider than the card. They wrap onto
+   a second line rather than pushing the table into a sideways scroll: the catalog is
+   read by scanning DOWN the capability column, and losing that costs more than a little
+   extra row height.
+
+   The row sets white-space:nowrap so the other columns keep their shape; this column
+   opts back out, which is the whole reason the controls can wrap at all. */
+#agent-catalog tbody tr[data-entry] td.args-cell { width: 52%; white-space: normal; }
+
 #agent-catalog .arg {
   display: inline-flex;
   align-items: stretch;
-  margin: 0 8px 0 0;
+  margin: 0 8px 6px 0;
   border: 1px solid var(--line-strong);
   border-radius: 8px;
   background: var(--card);
