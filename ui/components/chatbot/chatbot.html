@@ -17,9 +17,15 @@
       <p class="chat-sub">It can only do what you have approved.</p>
     </div>
     <div class="chat-head-actions">
-      <button class="icon" data-clear type="button" title="Start over">
-        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.6-3.7"/><path d="M13.2 2.2v3h-3"/></svg>
-        <span class="sr">Start over</span>
+      <!-- A compose mark, not a circular arrow: this starts a new conversation, and an
+           arrow chasing its tail reads as "retry that last thing". Not a trash can
+           either — that means "delete the evidence" everywhere else in the console. -->
+      <button class="icon" data-clear type="button" title="New conversation">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M13.5 8.6V12A1.5 1.5 0 0 1 12 13.5H4A1.5 1.5 0 0 1 2.5 12V4A1.5 1.5 0 0 1 4 2.5h3.4"/>
+          <path d="M11.2 2.5a1.25 1.25 0 0 1 1.8 1.8L8.7 8.6l-2.3.5.5-2.3 4.3-4.3Z"/>
+        </svg>
+        <span class="sr">New conversation</span>
       </button>
     </div>
   </header>
