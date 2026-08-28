@@ -24,432 +24,329 @@
 
 ---
 
-### The problem this solves
+# Demo script — 12 minutes
 
-Banks have old internal software with no way to plug into it. No API, no connection
-point. The only way in is to click around the screen like a person would.
+Three parts, the way I want to tell it: **what I built first → what I added after
+the callback → the challenge.** Part 3 is the one that counts; if I run short,
+cut Part 2, not Part 3.
 
-You could point an AI at it every single time — but that's slow, expensive, and it
-might do something slightly different on each run. In banking, "slightly different each
-time" is unacceptable.
+**Before anyone is watching:** `npm start`, open `localhost:3000`, click
+**MERIDIAN CORE** in the sidebar. Second terminal open in the repo. Target's
+System Settings showing no forced injection. Backup recording ready.
 
-So: let the AI work it out *once*, write down exactly what it did, and replay those
-written steps forever.
+---
 
-### Step by step, start to finish
+## Part 1 — What I built first (4 min)
 
-**1. You add an app.** Name, web address, and what you want done in plain English. Saved
-as a file at `apps/internet/config.json`.
+**Say:**
 
-If it needs a login, the password gets tucked into a hidden variable, and the AI is only
-ever told the *name* of that hiding spot — never the password itself.
+> "Banks have a long tail of internal apps with no API — the only way in is to
+> drive the screen like a person. You could put an AI in front of every one, but
+> then every transaction costs a model call, takes seconds, and can decide
+> something different today than yesterday. Not something you put near someone's
+> money.
+>
+> So: let the AI figure it out **once**, write down what it learned, and replay
+> that recording forever with no AI. The model discovers, the recording becomes a
+> reusable capability, deterministic replay is how a production agent calls it."
 
-**2. You hit Run. A folder gets made.** Named with the date and time. Everything from
-this run goes in it.
+**One rule everything hangs off:**
 
-**3. A real Chrome window opens** and goes to your app.
+> "The replay engine never imports the AI SDK. Not behind a flag, not as a
+> fallback. It's a test — add that import and the build fails."
 
-**4. The loop starts.** Over and over:
+**Run:** `node --test tests/invariants.test.js`
 
-- Take a picture of the page, send it to Claude
-- Claude picks **one** thing to do
-- That thing happens
-- Screenshot saved, note written in the log
-- Go again
+> "Four invariants. Replay imports no AI. The safety gate opens every action.
+> There's only one action layer. And the five primitives match the schema."
 
-It gets 24 turns, max.
+**The folders, quickly:**
 
-**5. It ends one of four ways:**
+| | |
+| --- | --- |
+| `src/schema/` | **The contract** — what a recording *is* |
+| `src/engine/` | **The hands** — the only five ways to touch a page |
+| `src/policy/` | **The rules** — allowlist, risk, redaction |
+| `src/agent/` | **The AI part** — the one place a model decides anything |
+| `src/api/` `src/cli/` | The surfaces: console, terminal, outside agents |
+| `src/evidence/` | What every run did, on disk |
+| `ui/` | The console, one folder per component |
 
-- **It worked** → writes down the recipe
-- **It's stuck** → pauses and asks a human (browser stays open)
-- **It's impossible** → says so and quits
-- **Out of turns** → stops
+> "Three files matter most. `schema/capability.js` — the typed shape of a
+> recording. `engine/actions.js` — the five things anything can do to a page;
+> the AI, the replay and a human operator all go through these same five, and the
+> safety gate is the first line of each. And `agent/discovery.js` — the only
+> place a model decides anything.
+>
+> Storage is files, no database. A recording should be readable in a code review,
+> and a row in SQLite isn't."
 
-**6. Before the recipe is accepted, it gets checked three ways.** Is it the right shape?
-Does the "I succeeded" thing Claude claims actually show on screen *right now*? Do the
-steps match the inputs and outputs it said it needed? All three must pass.
+**Live — the loop:**
 
-**7. The recipe is saved as `goal.json` — inside that same folder**, right next to the
-screenshots and log from the run that made it. It's marked **draft**.
+**Run:** `npm run replay -- --id member-inquiry-search-by-last-name --param last_name=Hopper`
 
-> **Why the recipe lives inside the run folder:** a folder with a `goal.json` is a run
-> that worked. A folder without one didn't. You can't have a recipe with no proof it
-> ran, and you can't lose the proof while keeping the recipe. There's no second place
-> for them to disagree.
+> "Fifteen seconds, no model, costs nothing. And that's a different surname than
+> it was recorded with — it's parameterised, not a fixed script."
 
-So after a successful run, one folder holds all of this:
+---
 
+## Part 2 — Stretch goals, after the callback (3 min)
+
+> "I went back and did five of the six. They mesh together more than you'd think."
+
+**Run:** `curl -s "localhost:3000/api/catalog?app_id=meridian" | jq '.[].id'`
+
+> "**Agent-facing catalog.** Only *approved* capabilities appear — a draft isn't
+> listed-and-refused, it's invisible, because a catalog an agent can't act on is
+> noise in its context. Turning an entry into a Claude tool definition is three
+> renames.
+>
+> **Confidence and approval** — every capability carries how often it held, and a
+> risky one can't run unattended until a human approves it.
+>
+> **Code generation** — turns a recording into a plain Playwright script.
+>
+> **Multi-tenant** — a recording is tied to an app id, not a URL. Two institutions
+> on the same vendor product share one recording; where they differ, an override
+> patches only the steps it names.
+>
+> **Stability** — replay N times, report what held."
+
+**The two I deleted — say this confidently, it's a strength:**
+
+> "**Assisted fallback** — letting the AI fix one broken step. It worked. I
+> removed it because I measured it: two recoveries out of four. So the honest
+> choice was a feature that works half the time or no feature. A replay that fails
+> deterministically — step, selector, everything it tried, screenshot — is more
+> useful than one that sometimes silently repairs itself.
+>
+> **A drift detector** — I removed it because the fingerprint was a set, and a set
+> can't count. Forty identical rows collapse to one line, so deleting thirty-nine
+> scores zero drift. A warning system that's quiet about what matters most is
+> worse than none."
+
+---
+
+## Part 3 — The challenge (6 min) ← the important one
+
+### Was it a rewrite or a config change?
+
+**Run:** `cat apps/meridian/config.example.json`
+
+> "That's the adapter. One file — the URL, the routes it may touch, the routes
+> that change data, the fields never written down, and the two operator
+> identities. No new primitive, no second replay path, no target-specific branch
+> in the engine. All seven functions recorded and replaying.
+>
+> Two decisions I'd defend: **System Settings is deliberately outside the
+> allowlist** — it sets a global error rate for everyone on that host, automation
+> has no business there. And **redaction covers PII but not balances**, because
+> reading balances is what the console is *for*."
+
+### What it broke — the useful part
+
+> "The shape held. Six assumptions inside my core didn't, and finding those is
+> the value of the exercise."
+
+| Broke | Why this target found it |
+| --- | --- |
+| Dropdowns matched exact label | Labels carry **live balances** — a recording broke after its own first transfer |
+| `value_equals` split on first `=` | No test IDs → every selector is `input[name='q']`, which contains an `=` |
+| Checkpoints couldn't use a parameter | So the model checkpointed on text that's there either way — unverified step recorded as verified |
+| Nothing checked an input was used | First recording demanded the *password* from the caller |
+| `classifyRisk()` had no callers | Risk was whatever the recorder claimed about itself |
+| Saving a capability rewrote it | Older code silently erased fields it didn't know — approving deleted the error rules |
+
+### Three things that are genuinely new
+
+> "**Error rules that belong to the flow, not a step** — 'no such member' shows up
+> one step *after* the search. They're only checked when a step is about to be
+> called a failure, so they can't mask a step that worked.
+>
+> **An `escalate` flag** — 'a supervisor must authorise this' is neither an answer
+> nor a fault. Same declaration, one flag, and it's a handover.
+>
+> **HTTP status as a checkable condition** — this host states every fault twice,
+> in the status and in the page. The status is better: a phrase gets matched by
+> accident and moves when someone rewords it."
+
+### Live — three runs
+
+**1. Chatbot:** `What are the share balances for member 100987?`
+
+> "The chatbot has no idea how any of this works — it got typed capabilities,
+> picked one, called it. That's a real browser on the real host. Every number came
+> back from the capability; the model can't invent one."
+
+**2. Chatbot:** `Transfer $5 from share 100234-S0001 to 100234-MMKT-3 for member 100234, memo demo.`
+
+> "That share is on HOLD. It comes back **BUSINESS_OUTCOME**, not a failure —
+> nothing broke, the app was asked and said no. And it carries the app's own
+> sentence: *'Source share is HOLD and cannot be debited.'* One rule detects the
+> generic rejection banner, a second locator reads the specific reason — so one
+> rule covers held shares, insufficient funds and bad amounts, and the caller
+> still learns which."
+
+**3. Run:**
+
+```bash
+npm run replay -- --id place-account-hold --param member_number=102777 \
+  --param share=102777-S0001 --param reason=FRAUD --param notes="teller attempt" \
+  --secret MERIDIAN_SUPERVISOR_USERNAME=teller1 \
+  --secret MERIDIAN_SUPERVISOR_PASSWORD=password
 ```
-evidence/internet/discovery/2026-08-17_032433/
-  000-entry.png        ← screenshots, in order
-  001-navigate.png
-  002-click.png
-  goal.json            ← THE RECIPE
-  result.json          ← the summary
-  transcript.jsonl     ← every action, one line each
+
+> "Holds need a supervisor. Same recording — I've only swapped credentials for
+> this run, and only the *names* get written down. Comes back **ESCALATED**: not a
+> failure, nothing's broken; not an answer either, the work is real and unfinished.
+> It carries the step, the URL and a screenshot so a person can pick it up.
+>
+> Drop the two `--secret` flags and it posts the hold and returns a confirmation
+> number. Same capability, different operator — and the run report says which
+> credential was swapped, because otherwise the same capability gives two
+> different answers for no visible reason."
+
+**One more, if there's time:**
+
+> "There's a run in evidence where **discovery itself escalated**. I told it to
+> record the hold as an ordinary teller; it hit the supervisor gate and refused to
+> emit a recording for a flow it couldn't finish. That settles a design question
+> rather than being a bug — a teller-operated hold capability *cannot exist*."
+
+### The six injected faults
+
+| Status | Treated as |
+| --- | --- |
+| 400 validation · 404 not found | `BUSINESS_OUTCOME` — the app answered |
+| 403 permission | `ESCALATED` — needs more authority |
+| 503 maintenance | `RECOVERABLE` — take the host's Continue link |
+| 500 server | `RECOVERABLE` once, then a hard failure |
+| 440 session expired | **Split by risk** |
+
+> "Declared once per app, not per recording — a runtime fault belongs to the host,
+> not to whichever flow was running.
+>
+> The 440 split is the call I'd most want to defend. Re-authenticating is safe for
+> a read and reckless for a transfer, because the run **cannot tell** whether its
+> post landed before the session dropped, and guessing wrong duplicates an
+> irreversible transaction. So reads re-run once; anything that moves money stops
+> and escalates."
+
+---
+
+## Legacy vs SPA vs desktop (1 min)
+
+> "**Legacy** — MERIDIAN and the mock bank I built. Full page load per click,
+> table layout, no test IDs, no `<label for>`. Worth saying: the per-transaction
+> hidden token needed **no special handling** — the form carries it and clicking
+> the real submit button submits it. That's the argument for driving the page
+> rather than its endpoints.
+>
+> **SPA** — I tested two. Nothing navigates, content appears when a fetch
+> finishes. That's why checkpoints are first-class instead of sleeps: every step
+> proves it worked rather than assuming the click landed.
+>
+> **Desktop** — designed, not built, and I'd rather say so. The seam is
+> `engine/perception.js`, which turns a surface into an accessibility tree.
+> Windows and macOS expose the same shape. The recording format, the five actions
+> and the replay engine wouldn't change — the driver under perception would. I'm
+> confident in that seam because I already don't read raw HTML, I read the
+> accessibility tree, so the abstraction is in use rather than declared."
+
+---
+
+## Guardrails, safety, failures (2 min)
+
+> "**The allowlist** is the first line of all five action functions — inside the
+> primitives, not in the callers, so nobody can forget it. The app's origin is a
+> hard boundary no route prefix widens.
+>
+> **Risk** — reads and navigation are always safe; clicks and typing depend on the
+> route. A risky capability can't replay unattended without approval, and nothing
+> at all is visible to an outside agent until approved. The honest bit: that
+> classifier existed and was **never called**. Replay now re-derives it per step
+> and checks the **live** URL, because a legacy flow reaches a posting screen by
+> submitting a form, not by navigating to it.
+>
+> **Redaction runs two directions.** By name, when a value would be logged —
+> obvious. And by *value*, in text nobody logged: a browser publishes a filled
+> input's value in the accessibility tree, so the moment the agent types a
+> password it's in every later snapshot — which is both what's written to the
+> transcript and what the model sees next turn. Without masking that, 'the model
+> never sees a password' is only true until it types one.
+>
+> **Where it stops** — the gate looks at the route, not what's in the form. If a
+> recording types the wrong *amount* into a legitimately-allowed transfer screen,
+> nothing catches it. I'd want field-level policy on money-moving steps before
+> this went near production."
+
+**The five outcomes, and why the order matters:**
+
+| | |
+| --- | --- |
+| `SUCCESS` | Worked, here are the outputs |
+| `BUSINESS_OUTCOME` | A real answer that isn't the happy path |
+| `RECOVERABLE` | Known problem, cleared it, carried on |
+| `HARD_FAILURE` | Didn't match — step, expectation, observation, screenshot |
+| `ESCALATED` | Needs a person with more authority |
+
+> "A step's declared rules are checked **before** its success check — because
+> checking success first treats 'no such member' as a broken step, and that's the
+> single most common mistake in this problem space. Then the success check, then a
+> fixed recovery list, then flow-level rules and host faults. Only then a hard
+> failure. And recovery is a lookup table, never the AI improvising — replay never
+> calls a model, including when it's stuck."
+
+---
+
+## Cuts and next (1 min)
+
+> "**Cut deliberately:** no mid-flow session resume for anything that changes data
+> — resuming safely needs an idempotency key this target doesn't offer. Transient
+> retry is one reload, no backoff. No stability sweep across the seven. The
+> chatbot has no confirm-before-risky step. Desktop designed, not built. Operator
+> console is a screenshot and buttons, not live co-browsing — which the brief
+> allowed.
+>
+> **Next, in order:** confirm-before-risky in the chatbot, because that's a real
+> hole in the wrapper rather than the core. Then sweep stability so the reliability
+> numbers mean something. Then field-level policy on money-moving steps."
+
+---
+
+## Questions I should expect
+
+- **"Why Playwright?"** Auto-waiting, direct accessibility-tree access, one API
+  across browsers. Selenium needs explicit waits everywhere — the flakiness I'm avoiding.
+- **"Why the accessibility tree?"** Legacy HTML is layout tables and noise;
+  screenshots need a vision model every step. The tree is roles and names — the
+  same shape desktop exposes, which is what makes desktop a driver swap.
+- **"Why five actions?"** Every action is a place the gate must be applied and the
+  model could invent something. A dropdown is a `type`, not a sixth primitive.
+- **"Rewrite or config?"** Config, one file — and it exposed six assumptions a
+  tidier target had never tested.
+- **"What breaks first at scale?"** Credentials are process-global. Per-call
+  overrides exist and are the right shape, but the default path would collide if
+  two tenants replayed concurrently in one process.
+- **If I don't know:** say so, then say how I'd find out. Their own glossary says
+  not knowing is fine and not looking it up isn't.
+
+---
+
+## Commands, in order
+
+```bash
+npm start                                   # before they walk in
+node --test tests/invariants.test.js        # Part 1
+npm run replay -- --id member-inquiry-search-by-last-name --param last_name=Hopper
+curl -s "localhost:3000/api/catalog?app_id=meridian" | jq '.[].id'   # Part 2
+cat apps/meridian/config.example.json       # Part 3
+# chatbot: balances for 100987 · transfer from 100234-S0001 (HOLD)
+npm run replay -- --id place-account-hold --param member_number=102777 \
+  --param share=102777-S0001 --param reason=FRAUD --param notes="teller attempt" \
+  --secret MERIDIAN_SUPERVISOR_USERNAME=teller1 \
+  --secret MERIDIAN_SUPERVISOR_PASSWORD=password
 ```
 
-### Now the useful part
-
-**8. You replay it.** Click replay. **No AI at all this time** — it just walks the saved
-steps and checks each one. About 5 seconds instead of a minute, and it costs nothing.
-
-**9. Each replay leaves its own receipt** — a new folder with its own log and result.
-But no `goal.json`, because it didn't learn anything new. It just followed instructions.
-
-**10. Each replay updates the recipe's score.** 8 runs, 8 successes. That number lives
-inside the recipe.
-
-**11. If you approve it**, an outside AI can now call it by name. Until you approve it,
-that AI can't even see it exists.
-
-> **Say this if nothing else:** discovery learns it once and writes the recipe. Replay
-> follows the recipe forever, with no AI. Everything else in the project is in service
-> of that one sentence.
-
-### The five things anyone can do
-
-The AI can't do anything it wants. There are exactly five moves: **go to a page, click,
-type, read, wait**. That's it.
-
-A dropdown is still one of the five — `type` means "put this value into this control", so
-choosing an option in a `<select>` records and replays as an ordinary type step. That
-matters: without it the five primitives simply cannot operate a dropdown, and any form
-with one escalates to a human every time.
-
-And here's the part that matters: **the AI, the replay, and a human taking over all use
-the same five moves.** Nobody gets a secret back door. There is only one piece of code
-that knows how to click — there's even a test that reads the source code and fails if a
-second one ever appears.
-
-### The five doors (the API)
-
-| Door | What's behind it |
-|---|---|
-| `/api/apps` | Your apps |
-| `/api/runs` | Everything that ever happened — discoveries *and* replays |
-| `/api/capabilities` | All your recipes, drafts included. Your view |
-| `/api/catalog` | Only approved recipes. An outside AI's view |
-| `/api/escalations` | When a human needs to take over |
-
-The last two are the *same files on disk*. Two different doors, because a person
-browsing and a robot calling need to see different things.
-
----
-
-## Part 2 — The stretch goals
-
-> The assignment listed six optional extras and said **"pick at most one or two."** This
-> project built all six plus a seventh of its own, then deliberately removed two of them
-> after measuring — #4 and #7. Those are cuts, not gaps, and the reasoning is the point.
-
-### 1. A catalog an outside AI can call
-
-*Asked: expose saved artifacts as a catalog of callable capabilities that an AI agent
-could discover and invoke by name.*
-
-1. An outside program asks for the list of approved recipes
-2. The list comes back **already shaped like AI tools** — three renamed fields, no
-   translation layer needed
-3. Claude reads the descriptions, picks one, fills in the arguments. **It never sees the
-   recorded steps**
-4. It calls it. A plain replay runs. No AI in the replay itself
-
-> **Why it proves something:** the demo script deliberately can't reach into the
-> codebase. It only talks over the network, like a real outside caller would. If it
-> could peek inside, it wouldn't prove anything.
-
-### 2. Turning a recipe into a normal script
-
-*Asked: emit a runnable test or automation snippet from an artifact.*
-
-1. Load the recipe
-2. Walk each step in order
-3. Take **only the best way** of finding each button, write it as plain code
-4. Keep the backup ways as a comment, so nothing's silently thrown away
-5. Copy the success checks across as real waits
-6. Wrap it: open browser, do steps, close browser
-7. Write the file
-
-**The thing to defend:** it doesn't copy the backup-finding logic into the script. That
-logic is what makes the *recipe* survive small changes. A generated script is a snapshot
-for a human to read or hand off — so duplicating that logic would just create a second
-copy nobody maintains.
-
-### 3. Scoring and approval
-
-*Asked: score artifacts by how reliably they replay, and gate unattended replay on an
-approval state.*
-
-1. Every recipe starts as a **draft** with a 0/0 score
-2. Every replay updates the score
-3. A *safe* draft can replay from the console — a human is watching
-4. But **nothing** unapproved is visible to an outside AI
-5. Un-approving is as easy as approving — a recipe going flaky should be pullable
-   instantly, without deleting its history
-6. An approved recipe can't be deleted. Un-approve it first
-
-### 4. Letting the AI help once, if a replay gets stuck — **built, then cut**
-
-*Asked: on replay failure, allow a bounded, policy-checked LLM recovery for a single
-step (never open-ended), and record it as evidence.*
-
-I built this and then took it out. It worked, and it stayed inside every bound: off
-unless you asked for it, one call per replay, only when a button genuinely couldn't be
-found, and it could suggest nothing except another way to find that same button.
-
-**Why it's gone:** I measured it. On a genuinely broken locator it fixed two runs out of
-four. That's not a bug to fix — it's one model call with one shot and no retries, and
-retrying until something sticks is exactly the open-ended loop the whole design avoids.
-
-So the choice was a feature that works half the time, or no feature. A replay that fails
-the same way every time — with the step, the selector, everything it tried, and a
-screenshot — is more useful to whoever has to fix it than one that sometimes quietly
-repairs itself. And it keeps the headline claim absolute instead of nearly true:
-**replay never calls a model.** No flag, no opt-in, no exception.
-
-**What I'd need to put it back:** a way to tell "the suggestion was wrong" apart from
-"the page was in a state no locator could match", so the one retry is spent where it
-would actually help.
-
-### 5. One recipe, many customers
-
-*Asked: normalize concrete routes into parameterized patterns, and/or demonstrate one
-artifact applied to a second, slightly different variant with per-variant overrides.*
-
-Hundreds of banks run the *same* software with different branding. You shouldn't
-re-record for each one.
-
-1. A customer can declare a small patch — "our Submit button says Send"
-2. The patch swaps **only** the steps it names, leaves everything else exactly as
-   recorded
-3. It's applied before replay starts, so **replay has no idea a patch happened**
-4. Separately, a tool spots web addresses that look customer-specific
-   (`/members/12345`) and suggests `/members/:id`
-
-**It only suggests.** A string of digits might genuinely be a fixed product code — that
-judgment belongs to a person, not a script.
-
-### 6. Is it actually reliable?
-
-*Asked: replay N times and report a stability/flakiness signal.*
-
-Run the recipe 5 times, report what percent held. **No special test mode** — it calls
-the exact same replay function 5 times, with the same approval checks and the same
-evidence trail, then adds up the results.
-
-### 7. Noticing when a page quietly changes — **built, then cut**
-
-The gap it aimed at is real: a hard failure tells you the page *broke*. Nothing tells you
-it's slowly *drifting* while still working.
-
-It worked. The first good replay photographed each page, later replays compared, and too
-much difference logged a warning without ever failing the run. I watched it fire live at
-0.37 on a deliberately redesigned page while the replay still reported `SUCCESS`.
-
-**Why it's gone:** the photograph is a *set of lines*, and a set can't count. Forty
-identical table rows collapse into one entry — so deleting thirty-nine of them scores
-**zero drift**. Rows vanishing is exactly what a bank operator would want flagged. It also
-throws away indentation, which is how the page tree encodes nesting, so moving a button
-from a popup into the footer reads as no change at all.
-
-A warning light that stays dark for the changes that matter most is worse than no warning
-light, because people start trusting it.
-
-**What I'd need to put it back:** compare structure instead of a bag of lines, and a
-threshold per capability rather than one number for everything.
-
----
-
-## Part 3 — Choices and trade-offs
-
-> For each of these, know **what was picked, what wasn't, and why.** That's the actual
-> interview question.
-
-### Playwright, not Selenium or Puppeteer
-
-- It can read the **accessibility tree** — the thing screen readers use. That's the
-  foundation of the whole approach
-- It waits for things automatically, so there's no scattering of sleeps
-- It finds buttons by *meaning* ("the button called Submit") rather than by CSS. Old
-  bank apps have no clean CSS to grab
-
-Selenium is older, heavier, more fragile, and much worse at the accessibility tree.
-Puppeteer is Chrome-only with no equivalent way of finding things.
-
-### Reading the accessibility tree, not the raw HTML or pixels
-
-The assignment says these are old apps built out of tables with no clean markup — and
-sometimes desktop apps, not websites at all. The accessibility tree is the one thing
-that exists across *all* of those. It's also far cheaper to send to the AI than a dump
-of HTML, and far more stable.
-
-**The payoff:** switching to desktop apps later means changing one file.
-
-### Exactly five moves, no more
-
-Not "let the AI do anything." It can't invent a sixth move, and neither can replay. That
-also means what gets recorded is exactly what gets replayed — no translation step in
-between that could drift.
-
-### Files on disk, no database
-
-A run *is* its folder. Folder names are timestamps, so they already sort correctly. The
-reason: a database index would be a second source of truth that could disagree with the
-folders.
-
-**Own the downside:** this doesn't scale, there's no protection against two things
-writing at once, and listing runs means walking the whole filesystem. Fine for proving
-the design. Not fine for production.
-
-### One process, no queue, no retries
-
-It could crash halfway and won't retry. That's a real problem if lots of runs needed to
-happen at once.
-
-**Why it's still right:** the assignment explicitly says *"prematurely building that
-infrastructure is not"* valuable. Building queues would have been solving a problem the
-brief said not to solve.
-
-### The AI loop is hand-written, not from a library
-
-Three reasons, all real:
-
-- When a human takes over, the loop has to **pause and resume minutes later from a
-  completely different web request**. Library loops can't do that
-- The assignment grades the observe → decide → act loop, so it should be visible as an
-  actual loop you can read
-- The one thing that absolutely must work shouldn't depend on a beta feature
-
-### One definition feeds four things
-
-The same schema validates the saved recipe, checks the inputs on replay, defines
-Claude's tools during discovery, *and* shapes the outside catalog.
-
-So the words the AI speaks while learning are the same words stored in the file are the
-same words replay executes. **Nothing needs translating, so nothing can drift.**
-
----
-
-## Part 4 — When things go wrong
-
-> Every step ends in one of four ways — and **the order they're checked in is the single
-> most important design decision in the project.**
-
-| Result | Means | You do |
-|---|---|---|
-| `SUCCESS` | Worked, here's the data | Use it |
-| `BUSINESS_OUTCOME` | A real answer, like "no such member" | Treat it as an answer, **not** an error |
-| `RECOVERABLE` | Hit a known hiccup, handled it, carried on | Nothing |
-| `HARD_FAILURE` | Didn't match what was expected | Look at the screenshot |
-
-### Why "no such member" is checked first
-
-Say you look up a member who doesn't exist. The page says *"No such member."*
-
-Now — the step's success check was probably "the balance is showing." That check
-**also** fails. So if you check success first, you'd report a crash for what is actually
-a *perfectly good answer*.
-
-> The assignment's own glossary calls this out by name: *"Conflating the two is the most
-> common design mistake here."*
-
-So the recipe writes down ahead of time what a legitimate not-found answer looks like,
-and replay checks for **that first**, before deciding anything failed.
-
-And it's checked a **second** time — if a button can't be found at all, it asks the
-question again. Because "this member has no savings account" looks exactly like a
-missing button on screen.
-
-### Recovery is a fixed list, not the AI improvising
-
-Replay isn't allowed to call the AI — *including* to recover. So known annoyances (a
-cookie banner, a temporary server error) are a short hand-written list: here's how to
-spot it, here's the one thing to do about it.
-
-Each rule fires at most once. There's no loop that could spin forever trying to fix
-something.
-
-### Being refused isn't the same as failing
-
-If a risky recipe gets refused before it starts, **nothing gets written down**. No run,
-no folder, no mark on its record. It never happened, so nothing records it as having
-happened.
-
----
-
-## Part 5 — Gaps to own
-
-> Say these **before someone finds them.** Knowing your own weak spots reads as senior.
-> Being surprised by them doesn't.
-
-### Business-outcome detectors are written by a model, and can be too loose
-
-The biggest one. A recording declares what a legitimate failure looks like on screen. The
-model writes those detectors by picking a phrase off the page — and forms carry permanent
-help text that reads exactly like an error. The mock bank's form always says *"Minimum
-opening deposit is $25.00. Sub-accounts cannot be opened for non-active members."* The
-model detected `DEPOSIT_TOO_LOW` on `"Minimum opening deposit"` — text that is on the page
-every single run.
-
-Two guards now catch two of the three shapes of this:
-
-- **A detector that matches the successful page** is rejected at record time. The emit
-  gate checks every declared outcome against the live page and hands the model the list to
-  fix before the recording is accepted.
-- **A detector that matches while the step's own checkpoint also holds** is ignored at
-  replay time. The checkpoint is the stronger statement — it proves the step reached the
-  state it wanted, where a matched detector only proves some text was present — so a
-  happy-path run stays a happy-path run.
-
-Still open: a detector that only false-positives on a *different* failure page. In
-`open-sub-account`, a locked member is reported as `DEPOSIT_TOO_LOW` rather than a
-permission denial, because both land on the same form and the loose detector matches
-first. **The fix I'd make next** is to capture each step's page text as the run proceeds
-and validate every declared detector against all of them at emit time, not just against
-the final page.
-
-### Safety assumes the form got filled in
-
-If someone forgets to mark a route as risky, a risky action there won't get flagged.
-**The fix:** deny by default, and require routes to be explicitly marked safe.
-
-### The safety gate only looks at the path
-
-Anything after a `?` or `#` in a web address is invisible to it. And matching is a plain
-prefix, so allowing `/account` also allows `/account-admin`.
-
-### Discovery can record a locator it never executed
-
-The system prompt tells the model to exercise every read before recording it. It
-consistently doesn't, and the resulting capability hard-fails on its first replay. Which
-is exactly why a new recording is a **draft** carrying a reliability score rather than
-something the system trusts — the console shows `2/7` on such a capability, in amber.
-
-### Replay cannot ask a human
-
-Escalation exists only in discovery. A stuck replay returns `HARD_FAILURE` with a
-screenshot; nobody is paged. The session-handoff machinery already exists, so wiring
-replay into it is the obvious next step.
-
-### Credentials are process-global
-
-A per-call credential is threaded through the replay context, but the fallback still reads
-`process.env`, which the whole process shares. Two concurrent replays for two different
-users in one server would race. The fix is contained — `resolveStepValue` is the only
-function that reads it.
-
-### One username is baked into a recorded selector
-
-The model recorded a checkpoint as `input[value='teller01'], input` — embedding this
-run's username in the selector. The system prompt explicitly forbids that ("never build a
-recorded locator from the concrete value it extracts"), and the trailing `, input`
-fallback makes the check nearly meaningless anyway. It's a username for a localhost
-fixture, not a password, but it's the same recording-quality weakness that produces
-unverified locators.
-
-### Dead code
-
-`RunLogger.saveResult` is exported but has no production caller — `result.json` is written
-by `evidence/runs.js` instead.
+**Seeds:** 100234 (has a HOLD), 100987, 101555, 102777, 103001
+**Operators:** `teller1` / `password` · `super1` / `password` (supervisor)

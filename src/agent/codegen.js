@@ -118,7 +118,7 @@ function stepLines(step) {
     case 'type': {
       const { line, fallback } = locatorExpr(step.locator);
       if (fallback) lines.push(`  // ${fallback}`);
-      lines.push(`  await ${line}.fill(String(${typeValueExpr(step)} ?? ''));`);
+      lines.push(`  await setValue(${line}, String(${typeValueExpr(step)} ?? ''));`);
       break;
     }
 
@@ -182,12 +182,43 @@ export function generatePlaywrightTest(capability) {
     "import { chromium } from 'playwright';",
     '',
     "const BASE_URL = process.env.BASE_URL ?? '';",
-    `const INPUTS = ${inputsLiteral};`,
+    '// Defaults below; override without editing this file via INPUTS=\'{"name":"value"}\'',
+    `const INPUTS = { ...${inputsLiteral}, ...JSON.parse(process.env.INPUTS ?? '{}') };`,
     '',
     'function extractPattern(raw, pattern) {',
     '  if (!pattern) return raw;',
     '  const match = new RegExp(pattern).exec(raw);',
     '  return match ? (match[1] ?? match[0]) : null;',
+    '}',
+    '',
+    '/**',
+    ' * Put a value into a control, mirroring engine/actions.js. A native <select> is',
+    ' * filled by choosing an option, not by typing characters — fill() throws on one.',
+    ' * Options are matched by underlying value, then exact label, then by label with a',
+    ' * trailing parenthetical dropped, then by a unique prefix. That last pair matters on',
+    ' * a legacy screen whose option labels carry a live figure that moves between runs.',
+    ' */',
+    'async function setValue(locator, text) {',
+    "  const tag = await locator.evaluate((el) => el.tagName?.toLowerCase() ?? '').catch(() => '');",
+    "  if (tag !== 'select') return locator.fill(text);",
+    '',
+    '  const options = await locator.evaluate((el) =>',
+    "    [...el.options].map((o) => ({ value: o.value, label: (o.textContent ?? '').trim() })));",
+    "  const trim = (s) => s.replace(/\\s*\\([^()]*\\)\\s*$/, '').trim();",
+    '  const wanted = trim(text);',
+    '  const onlyOne = (m) => (m.length === 1 ? m[0] : null);',
+    '',
+    '  const chosen =',
+    '    options.find((o) => o.value === text) ??',
+    '    options.find((o) => o.label === text) ??',
+    '    onlyOne(options.filter((o) => trim(o.label) === wanted)) ??',
+    '    onlyOne(options.filter((o) => trim(o.label).startsWith(wanted)));',
+    '',
+    '  if (!chosen) {',
+    '    throw new Error(`No option matching ${JSON.stringify(text)}; offered ` +',
+    "      options.map((o) => JSON.stringify(o.label)).join(', '));",
+    '  }',
+    '  return locator.selectOption(chosen.value);',
     '}',
     '',
     '/** Poll a form control until it holds the expected value, mirroring value_equals. */',

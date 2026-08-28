@@ -14,6 +14,41 @@ up in [ADAPTATION.md](ADAPTATION.md). The demo path is below.
 
 ---
 
+## What this round added
+
+The core already discovered flows, recorded them and replayed them. Pointing it at a live
+legacy target added the following, and the adapter itself is one config file:
+
+**All seven of the target's functions, recorded and replaying** — sign on, member inquiry
+by number and by last name, member record and balances, funds transfer, open new share,
+update member information, and the supervisor-gated account hold.
+
+**Capabilities as a callable API.** `GET /api/catalog` lists only approved capabilities;
+`POST /api/catalog/:id/invoke` runs one by name with typed args and returns a structured
+result. An entry becomes an Anthropic tool definition with three renames.
+
+**A chatbot that drives that API** and a dashboard that shows every run — its inputs, its
+structured result, its status, and the evidence behind it.
+
+**A fifth outcome, `ESCALATED`.** "A supervisor must authorise this" is neither an answer
+nor a fault, so it stopped being reported as either. It carries the step, the url and a
+screenshot for whoever picks it up.
+
+**Runtime faults classified on HTTP status**, not on page text — `http_status` is now a
+checkpoint condition like any other, and the target's six injected faults are declared
+once per app rather than in every recording.
+
+**Error rules that belong to the flow**, not to a single step, because "no such member"
+surfaces one step after the search that caused it and an expired session can land anywhere.
+
+**Six fixes to the core** that a tidier target had never tested: dropdown labels that carry
+live balances, `value_equals` breaking on attribute selectors, checkpoints that could not
+reference a caller's parameter, declared inputs no step consumed, a risk classifier with no
+callers, and a save path that silently erased fields it did not recognise. Each is its own
+commit with the reasoning; the summary is in [ADAPTATION.md](ADAPTATION.md).
+
+---
+
 ## Test Bank
 
 This system was tested against legacy bank app (recorded) & bank app SPA (not recorded)
