@@ -85,6 +85,23 @@ function crossCheck(emission, target) {
     if (!extracted.has(name)) problems.push(`output "${name}" is declared but no step extracts it`);
   }
 
+  // The mirror of the value_from check above, and the one that actually bites. An input
+  // nothing consumes still lands in input_schema.required, so every invocation is
+  // rejected before a browser opens, demanding a value that would go nowhere if given.
+  // It shows up when the model describes a credential as a caller parameter and then
+  // correctly types it from the environment — the two halves disagree and only this
+  // catches it.
+  const consumed = new Set(emission.steps.map((step) => step.value_from).filter(Boolean));
+  for (const name of inputNames) {
+    if (!consumed.has(name)) {
+      problems.push(
+        `input "${name}" is declared but no step uses it. If it is a credential, drop it ` +
+          'from inputs — steps read those from the environment by name, and a caller ' +
+          'neither supplies nor sees them.',
+      );
+    }
+  }
+
   const stepSaysRisky = emission.steps.some((s) => s.risk === 'risky');
   if (stepSaysRisky && emission.risk_level !== 'risky') {
     problems.push('a step is marked risky, so risk_level must be "risky"');

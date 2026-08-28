@@ -1,0 +1,23 @@
+{
+  "id": "meridian/replay/2026-08-28_035209",
+  "kind": "replay",
+  "app_id": "meridian",
+  "goal": null,
+  "status": "SUCCESS",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "meridian-signon",
+    "version": 1,
+    "outcome": "SUCCESS",
+    "outputs": {
+      "operator_id": "TELLER1",
+      "branch_code": "MAIN-001"
+    },
+    "business_outcome": null,
+    "failed_step": null
+  },
+  "started_at": "2026-08-28T03:52:09.916Z",
+  "updated_at": "2026-08-28T03:52:13.359Z"
+}

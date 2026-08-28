@@ -1,0 +1,27 @@
+{
+  "id": "meridian/discovery/2026-08-28_035056",
+  "kind": "discovery",
+  "app_id": "meridian",
+  "goal": "Sign on to MERIDIAN CORE. The branch is a caller-supplied parameter named branch (a branch code such as MAIN-001) chosen in the Branch dropdown; the operator id and password come from the environment. Confirm the main menu is reached, and report the operator id and branch code shown in the status bar.",
+  "status": "recorded",
+  "detail": {
+    "artifact": {
+      "id": "meridian-signon",
+      "version": 1,
+      "path": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/meridian/discovery/2026-08-28_035056/goal.json"
+    },
+    "turns": 13,
+    "usage": {
+      "input_tokens": 26,
+      "output_tokens": 4059,
+      "cache_read_input_tokens": 228628,
+      "cache_creation_input_tokens": 36024
+    },
+    "model": "claude-sonnet-5",
+    "evidence_dir": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/meridian/discovery/2026-08-28_035056",
+    "escalation": null,
+    "finished_at": "2026-08-28T03:51:55.410Z"
+  },
+  "started_at": "2026-08-28T03:50:56.296Z",
+  "updated_at": "2026-08-28T03:51:55.410Z"
+}

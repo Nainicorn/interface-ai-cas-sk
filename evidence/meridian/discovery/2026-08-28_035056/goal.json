@@ -1,0 +1,258 @@
+{
+  "schema_version": 1,
+  "id": "meridian-signon",
+  "name": "Meridian Core Sign On",
+  "version": 1,
+  "status": "draft",
+  "description": "Signs on to Meridian Core with operator credentials and a caller-supplied branch code, confirms the main menu is reached, and reports the operator id and branch code shown in the status bar.",
+  "target": {
+    "app_id": "meridian",
+    "entry_route": "/signon",
+    "tenant_overrides": []
+  },
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "branch": {
+        "type": "string",
+        "description": "Branch dropdown selection label, e.g. 'WEST-014 - Westside'"
+      }
+    },
+    "required": [
+      "branch"
+    ],
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "operator_id": {
+        "type": "string",
+        "description": "Operator ID shown in the status bar after signon (e.g. TELLER1)"
+      },
+      "branch_code": {
+        "type": "string",
+        "description": "Branch code shown in the status bar after signon (e.g. WEST-014)"
+      }
+    },
+    "required": [
+      "operator_id",
+      "branch_code"
+    ],
+    "additionalProperties": false
+  },
+  "risk_level": "safe",
+  "steps": [
+    {
+      "index": 0,
+      "intent": "Go to the sign-on page",
+      "action": "navigate",
+      "url": "/signon",
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "OPERATOR SIGN ON",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 1,
+      "intent": "Enter operator id",
+      "action": "type",
+      "locator": {
+        "description": "Operator ID textbox",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "input[name='operator']",
+            "exact": false,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "value_from_env": "MERIDIAN_USERNAME",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[name='operator']",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 2,
+      "intent": "Enter password",
+      "action": "type",
+      "locator": {
+        "description": "Password textbox",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "input[name='password']",
+            "exact": false,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "value_from_env": "MERIDIAN_PASSWORD",
+      "expected_outcome": {
+        "type": "element_exists",
+        "value": "input[name='password']",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 3,
+      "intent": "Select the branch from the dropdown",
+      "action": "type",
+      "locator": {
+        "description": "Branch select dropdown",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "select[name='branch']",
+            "exact": false,
+            "confidence": 0.7
+          },
+          {
+            "kind": "role",
+            "value": "Branch",
+            "role": "combobox",
+            "exact": false,
+            "confidence": 0.5
+          }
+        ]
+      },
+      "value_from": "branch",
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "Sign On",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "risk": "safe"
+    },
+    {
+      "index": 4,
+      "intent": "Submit the sign-on form",
+      "action": "click",
+      "locator": {
+        "description": "Sign On button",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Sign On",
+            "role": "button",
+            "exact": true,
+            "confidence": 0.9
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "MAIN MENU",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [
+        {
+          "code": "INVALID_CREDENTIALS",
+          "detect": {
+            "type": "text_visible",
+            "value": "Invalid operator ID or password",
+            "timeout_ms": 3000
+          },
+          "message": "The operator id/password combination was rejected by Meridian Core."
+        }
+      ],
+      "risk": "safe"
+    },
+    {
+      "index": 5,
+      "intent": "Extract operator id from status bar",
+      "action": "read",
+      "locator": {
+        "description": "Status bar row containing operator, branch, date and session id",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "tr:has-text('SID') td",
+            "exact": false,
+            "confidence": 0.6
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "MAIN MENU",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "operator_id",
+      "extract_pattern": "OPR (\\S+)",
+      "risk": "safe"
+    },
+    {
+      "index": 6,
+      "intent": "Extract branch code from status bar",
+      "action": "read",
+      "locator": {
+        "description": "Status bar row containing operator, branch, date and session id",
+        "candidates": [
+          {
+            "kind": "css",
+            "value": "tr:has-text('SID') td",
+            "exact": false,
+            "confidence": 0.6
+          }
+        ]
+      },
+      "expected_outcome": {
+        "type": "text_visible",
+        "value": "MAIN MENU",
+        "timeout_ms": 5000
+      },
+      "business_outcomes": [],
+      "extract_as": "branch_code",
+      "extract_pattern": "BR (\\S+)",
+      "risk": "safe"
+    }
+  ],
+  "success_checkpoint": {
+    "type": "text_visible",
+    "value": "MAIN MENU",
+    "timeout_ms": 5000
+  },
+  "created_from": {
+    "run_id": "meridian/discovery/2026-08-28_035056",
+    "model": "claude-sonnet-5",
+    "recorded_at": "2026-08-28T03:51:55.388Z"
+  },
+  "redaction_policy": {
+    "redact_fields": [
+      "member_name",
+      "email",
+      "phone",
+      "address",
+      "dob",
+      "account_number",
+      "share_number",
+      "MERIDIAN_USERNAME",
+      "username",
+      "MERIDIAN_PASSWORD",
+      "password",
+      "MERIDIAN_SUPERVISOR_USERNAME",
+      "supervisor_username",
+      "MERIDIAN_SUPERVISOR_PASSWORD",
+      "supervisor_password"
+    ]
+  },
+  "confidence": {
+    "runs": 1,
+    "successes": 1,
+    "last_outcome": "SUCCESS",
+    "updated_at": "2026-08-28T03:52:13.340Z"
+  }
+}
