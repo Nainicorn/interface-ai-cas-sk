@@ -6,8 +6,9 @@ If the agent is successful the flow gets saved as a typed, versioned "capability
 
 If either the agent or the replay gets stuck, a human can take over during the live session and can either hand back control, manually interact with the session, or give the agent some extra guidance.
 
-Diagrams of the entire flow of the application are in [DESIGN.md](DESIGN.md), and a
-plain-language walkthrough of how it all works is in [WALKTHROUGH.md](WALKTHROUGH.md).
+Diagrams of the entire flow of the application are in [docs/DESIGN.md](docs/DESIGN.md), and a
+walkthrough of how it all works — and the script for the demo — is in
+[docs/WALKTHROUGH.md](docs/WALKTHROUGH.md).
 
 **Pointing this at MERIDIAN CORE** — what changed, what broke, what was cut — is written
 up in [ADAPTATION.md](ADAPTATION.md). The demo path is below.
