@@ -38,6 +38,14 @@ Key decisions:
 
 - A step can list expected business outcomes, a condition to look for, and a code to return if it happens. This gets checked before the step's normal success check, since a wrong path answer would usually fail that check too.
 
+- A capability can also declare those rules at the **top level**, for endings that belong to the flow rather than to one step — "no such member" surfaces one step after the search that caused it, and an expired session can land anywhere. Flow-level rules are only consulted when a step is about to be called a failure, so they can never mask a step that worked, and a step-level rule still wins where both match.
+
+- Any such rule can be marked `escalate: true`, which is what separates an answer from a handover. "No such member" is something the caller acts on; "a supervisor must authorise this" is not. Both are states the recording anticipated, so both are declared the same way.
+
+- A rule can carry a `detail` locator naming where the app states its own reason. Detection wants a stable anchor — a legacy app tends to render one rejection banner for every kind of invalid transaction — but a caller told only `TRANSACTION_REJECTED` cannot explain it to anyone. The anchor classifies; the detail says which line carries the reason, and reading it is best-effort so it can never turn a classified outcome back into a failure.
+
+- A checkpoint can reference a caller's parameter as `{{name}}`. Without that, a control filled from a parameter has no value known at record time and cannot be asserted at all — which pushes the recorder into writing a checkpoint that passes whatever happened, recording an unverified step as verified.
+
 - A `type` step's value comes from exactly one of three places: `value_from` (a value the caller supplies), `value_literal` (something safe to hardcode), or `value_from_env` (an environment variable name for a credential). The model picks where a password goes, but never actually sees the password.
 
 - Artifacts are meant to be read by people, and a flat object is much easier to follow in a diff.
