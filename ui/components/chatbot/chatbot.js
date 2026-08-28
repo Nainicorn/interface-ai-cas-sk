@@ -126,7 +126,8 @@ export async function mount(root) {
       /* the panel still opens; the first message will report the real problem */
     }
 
-    scope.textContent = appId ? appId : '';
+    scope.textContent = appId ?? '';
+    scope.hidden = !appId; // an empty pill beside the title is worse than no pill
     thread.innerHTML = entries.length
       ? `<div class="chat-empty">
            <p>Ask in plain English.</p>

@@ -94,20 +94,35 @@
   border-bottom: 1px solid var(--line);
   background: var(--brand-wash);
 }
-.chat-head h2 { margin: 0; font-size: 14.5px; font-weight: 600; font-family: var(--serif); }
 .chat-title { flex: 1; min-width: 0; }
-/* The standing line says what the guardrail IS, where a reader meets the thing it
-   guards. It is not a disclaimer; it is the reason the panel is trustworthy. */
-.chat-sub { margin: 3px 0 0; font-size: 11.5px; color: var(--ink-3); }
+.chat-title-row { display: flex; align-items: center; gap: 7px; min-width: 0; }
+/* Sans at the card-heading size, like every other heading in a console card. A serif
+   title here read as a different product bolted onto the side of this one. */
+.chat-head h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+/* Which app is being asked about, as a tag on the title rather than a word glued to the
+   end of the sentence below — it qualifies what you are talking to, and at caption size
+   inside a caption it was both louder than the sentence and the first thing to wrap. */
 .chat-scope {
-  display: inline-block;
-  margin-left: 2px;
-  padding: 0 7px;
+  min-width: 0;
+  padding: 1.5px 8px;
   border-radius: 999px;
   background: var(--accent-soft);
   color: var(--accent-strong);
+  font-size: 10.5px;
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+/* The standing line says what the guardrail IS, where a reader meets the thing it
+   guards. It is not a disclaimer; it is the reason the panel is trustworthy. */
+.chat-sub { margin: 4px 0 0; font-size: 11.5px; color: var(--ink-3); }
 .chat-head-actions { display: flex; gap: 4px; }
 .chat-panel .icon {
   display: inline-flex;
