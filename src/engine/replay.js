@@ -39,7 +39,7 @@ import { attemptRecovery, faultsFor } from './recovery-table.js';
 
 /** The host's non-standard code for "your operator session is gone". */
 const SESSION_EXPIRED = 440;
-import { sawDocumentStatus, trackDocumentStatus } from './http-status.js';
+import { lastDocumentStatus, sawDocumentStatus, trackDocumentStatus } from './http-status.js';
 
 /**
  * Merge a tenant's declared differences onto the base recording, if any exist.
@@ -254,9 +254,20 @@ async function matchFlowOutcome(ctx, capability) {
   // specific to say about a status still wins — the target answers 400 both for a
   // transfer it refused and for an injected fault, and the recording knows which of
   // those it was looking at.
+  //
+  // The matched status travels with the outcome. Classifying on it and then not
+  // recording it left a reviewer with a verdict and no way to check it: the run said
+  // RECORD_NOT_FOUND and nothing anywhere said 404.
   for (const rule of faultsFor(ctx.target.app_id, capability.risk_level)) {
     const { ok } = await evaluateCondition(ctx.page, rule.detect);
-    if (ok) return { code: rule.code, message: rule.message, escalate: rule.outcome === 'ESCALATED' };
+    if (ok) {
+      return {
+        code: rule.code,
+        message: rule.message,
+        escalate: rule.outcome === 'ESCALATED',
+        http_status: lastDocumentStatus(ctx.page) || null,
+      };
+    }
   }
 
   return null;

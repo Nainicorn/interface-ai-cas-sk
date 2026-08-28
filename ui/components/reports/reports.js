@@ -119,12 +119,16 @@ function resultRows(run) {
     rows.push(['Outcome', `<span class="badge BUSINESS_OUTCOME">${esc(answer.code)}</span>`]);
     rows.push(['Meaning', esc(answer.message ?? '—')]);
     if (answer.detail) rows.push(['The app said', `<span class="mono">${esc(answer.detail)}</span>`]);
+    // Shown only when the host's status is what classified the run, so a reviewer can
+    // check the verdict rather than take it on trust.
+    if (answer.http_status) rows.push(['Classified on', `<span class="mono">HTTP ${esc(answer.http_status)}</span>`]);
   }
 
   const handover = detail.escalation;
   if (handover) {
     rows.push(['Escalated', `<span class="badge ESCALATED">${esc(handover.code)}</span>`]);
     rows.push(['Needs', esc(handover.message ?? '—')]);
+    if (handover.http_status) rows.push(['Classified on', `<span class="mono">HTTP ${esc(handover.http_status)}</span>`]);
     rows.push(['Stopped at', `step ${esc(handover.step)} — ${esc(handover.intent ?? '')}`]);
     if (handover.url) rows.push(['On page', `<span class="mono">${esc(handover.url)}</span>`]);
   }
