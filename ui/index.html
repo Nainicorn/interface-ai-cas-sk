@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="/components/discoveries/discoveries.css" />
   <link rel="stylesheet" href="/components/capabilities/capabilities.css" />
   <link rel="stylesheet" href="/components/agent-catalog/agent-catalog.css" />
+  <link rel="stylesheet" href="/components/chatbot/chatbot.css" />
 </head>
 <body>
   <button class="theme-toggle" data-theme-toggle type="button"></button>
@@ -35,6 +36,9 @@
     </div>
   </div>
   <div id="app-editor"></div>
+  <!-- The chatbot is a panel over the console, not a page: asking for something and
+       watching the run appear in the table behind it is meant to be one moment. -->
+  <div id="chatbot"></div>
 
   <script type="module">
     import { mountThemeToggle } from '/global/theme.js';
@@ -44,6 +48,7 @@
     import { mount as liveViewer } from '/components/live-viewer/live-viewer.js';
     import { mount as operatorConsole } from '/components/human-in-the-loop/human-in-the-loop.js';
     import { mount as workspace } from '/components/tabs/tabs.js';
+    import { mount as chatbot } from '/components/chatbot/chatbot.js';
 
     mountThemeToggle(document.querySelector('[data-theme-toggle]'));
     appSidebar(document.getElementById('app-sidebar'));
@@ -52,6 +57,7 @@
     liveViewer(document.getElementById('live-viewer'));
     operatorConsole(document.getElementById('operator-console'));
     workspace(document.getElementById('workspace'));
+    chatbot(document.getElementById('chatbot'));
   </script>
 </body>
 </html>

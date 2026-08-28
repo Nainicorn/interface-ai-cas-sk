@@ -12,6 +12,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import capabilitiesRouter from './capabilities.js';
 import catalogRouter from './catalog.js';
+import chatRouter from './chat.js';
 import escalationRouter from './escalation.js';
 import runsRouter from './runs.js';
 import appsRouter from './apps.js';
@@ -26,6 +27,7 @@ app.use('/api/apps', appsRouter);
 app.use('/api/runs', runsRouter);
 app.use('/api/capabilities', capabilitiesRouter); // the operator's surface: drafts included
 app.use('/api/catalog', catalogRouter); // the agent's surface: approved only
+app.use('/api/chat', chatRouter); // the chatbot: a driver over the agent's surface
 app.use('/api/escalations', escalationRouter);
 
 /** Uniform error shape. Errors carry their own status; anything else is a server fault. */

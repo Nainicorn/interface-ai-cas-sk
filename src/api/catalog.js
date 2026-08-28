@@ -12,6 +12,11 @@
  *   - Invocation runs the same deterministic replay the console runs, through the same
  *     gate and the same evidence trail.
  *
+ * The two exported helpers below are the surface itself; the routes are a thin HTTP
+ * skin over them. api/chat.js calls the helpers directly rather than looping back
+ * through localhost, so the chatbot and an outside HTTP caller pass through one gate
+ * and not two implementations of it.
+ *
  * Hands off to: schema/store.js, policy/risk.js, api/run-replay.js.
  */
 
@@ -45,13 +50,45 @@ function toCatalogEntry(summary) {
 }
 
 /**
- * The catalog. Empty until a human approves something — that is the intended first
- * impression, not an empty-state bug.
+ * Every capability an agent may call, newest contract per id.
+ *
+ * `appId` narrows it to one target. That is not cosmetic filtering: a chatbot pointed at
+ * a bank must not be able to reach for a capability recorded against a different app
+ * just because the description sounded close, and the narrowing has to happen before the
+ * model sees the list rather than after it has chosen.
  */
-router.get('/', async (_req, res, next) => {
+export async function listAgentCatalog(appId = null) {
+  const all = await listCapabilities();
+  return all
+    .filter((c) => checkAgentInvocable(c).allowed)
+    .filter((c) => !appId || c.app_id === appId)
+    .map(toCatalogEntry);
+}
+
+/**
+ * Invoke one capability by name. Throws a 403-carrying error if the gate refuses.
+ *
+ * Every agent-side caller goes through here, so "approved" is checked in exactly one
+ * place and a refusal reads identically whether it came from HTTP or the chatbot.
+ */
+export async function invokeByName(id, params = {}, { caller = 'agent' } = {}) {
+  const capability = await loadCapability(id);
+  const gate = checkAgentInvocable(capability);
+  if (!gate.allowed) {
+    const err = new Error(gate.reason);
+    err.status = 403;
+    throw err;
+  }
+  return runReplay(capability, params, { caller });
+}
+
+/**
+ * The catalog. Empty until a human approves something — that is the intended first
+ * impression, not an empty-state bug. `?app_id=` narrows it to one target.
+ */
+router.get('/', async (req, res, next) => {
   try {
-    const all = await listCapabilities();
-    res.json(all.filter((c) => checkAgentInvocable(c).allowed).map(toCatalogEntry));
+    res.json(await listAgentCatalog(req.query.app_id ?? null));
   } catch (err) {
     next(err);
   }
@@ -79,14 +116,10 @@ router.get('/:id', async (req, res, next) => {
  */
 router.post('/:id/invoke', async (req, res, next) => {
   try {
-    const capability = await loadCapability(req.params.id);
-    const gate = checkAgentInvocable(capability);
-    if (!gate.allowed) return res.status(403).json({ error: gate.reason });
-
     const { params = {} } = req.body ?? {};
     // Tagged at the surface, not guessed downstream: reaching this route IS what
     // makes a run agent-invoked.
-    res.json(await runReplay(capability, params, { caller: 'agent' }));
+    res.json(await invokeByName(req.params.id, params, { caller: 'agent' }));
   } catch (err) {
     next(err);
   }

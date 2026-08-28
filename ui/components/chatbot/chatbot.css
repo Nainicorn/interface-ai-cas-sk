@@ -1,0 +1,348 @@
+/* chatbot.css — the conversational front door, docked to the right of the console.
+
+   It is a panel over the console rather than a page of its own, because the point of
+   the demo is that asking for something and watching the run appear in the Runs table
+   are the same moment. A separate page would put a tab switch between them.
+
+   Everything here is drawn from the global tokens, so the panel themes with the rest of
+   the console and no colour is restated per theme. */
+
+/* --- launcher ---------------------------------------------------------------
+   Bottom-right, the place a reader already looks for this control. It sits below the
+   theme toggle's corner rather than beside it: two floating controls in the same
+   corner read as a toolbar, and this one is not part of that. */
+.chat-launcher {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 45;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 11px 18px 11px 15px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 6px 20px var(--shadow);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+.chat-launcher:hover { transform: translateY(-2px); box-shadow: 0 10px 26px var(--shadow); }
+.chat-launcher:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 2px; }
+.chat-launcher-icon { display: inline-flex; }
+.chat-launcher svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.chat-launcher-label { font-size: 13.5px; letter-spacing: 0.01em; }
+/* Open, the launcher would be a second control for a panel already on screen. */
+.chat-launcher[aria-expanded='true'] { opacity: 0; pointer-events: none; }
+
+/* --- panel -------------------------------------------------------------------
+   Inset from the top so the theme toggle stays reachable while the panel is open,
+   and full height otherwise: a conversation that scrolls in a short box is the thing
+   that makes these feel like a widget rather than a tool. */
+.chat-panel {
+  position: fixed;
+  right: 18px;
+  top: 62px;
+  bottom: 18px;
+  z-index: 44;
+  width: min(440px, calc(100vw - 36px));
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 18px 48px var(--shadow);
+  overflow: hidden;
+  animation: chat-in 0.2s ease;
+}
+@keyframes chat-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+.chat-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 14px 12px 18px;
+  border-bottom: 1px solid var(--line);
+  background: var(--brand-wash);
+}
+.chat-head h2 { margin: 0; font-size: 14.5px; font-weight: 600; font-family: var(--serif); }
+.chat-title { flex: 1; min-width: 0; }
+/* The standing line says what the guardrail IS, where a reader meets the thing it
+   guards. It is not a disclaimer; it is the reason the panel is trustworthy. */
+.chat-sub { margin: 3px 0 0; font-size: 11.5px; color: var(--ink-3); }
+.chat-scope {
+  display: inline-block;
+  margin-left: 2px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+.chat-head-actions { display: flex; gap: 4px; }
+.chat-panel .icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.chat-panel .icon svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.chat-panel .icon:hover { color: var(--accent); background: var(--card); border-color: var(--line); }
+.chat-panel .icon:focus-visible { outline: 2px solid var(--accent-soft); }
+
+/* --- thread ------------------------------------------------------------------ */
+.chat-thread {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 16px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scrollbar-width: thin;
+}
+.chat-thread:focus-visible { outline: none; }
+.chat-thread > * { animation: chat-rise 0.18s ease; }
+@keyframes chat-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* A question is a bubble; an answer is not. The asymmetry is deliberate — the agent's
+   reply is a report, and wrapping it in a speech bubble makes a real result look like
+   small talk. */
+.chat-msg.user {
+  align-self: flex-end;
+  max-width: 85%;
+  padding: 8px 13px;
+  border-radius: 14px 14px 4px 14px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 13.5px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.chat-msg.agent {
+  align-self: stretch;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.chat-msg.failed { color: var(--danger); }
+
+/* --- the capability card -----------------------------------------------------
+   The most important object in the panel: it is the moment the chatbot stops being a
+   chatbot and a recorded capability drives a real browser. It gets a card, an accent
+   rule, and the same badges the Runs table uses, so the two views agree on sight. */
+.chat-call {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  background: var(--brand-wash);
+  padding: 10px 12px;
+  font-size: 12.5px;
+}
+.chat-call.done { border-left-color: var(--st-good-fg); }
+.chat-call.answer { border-left-color: var(--st-answer-fg); }
+.chat-call.recovered { border-left-color: var(--st-recovered-fg); }
+.chat-call.broken { border-left-color: var(--st-broken-fg); }
+.chat-call.refused { border-left-color: var(--danger); background: var(--danger-wash); }
+
+.chat-call-head { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.chat-call-name { font-weight: 600; color: var(--ink); }
+.chat-call-head .badge { font-size: 10.5px; }
+
+/* Arguments, exactly as the model filled them in. A demo that hides the arguments is
+   asking to be trusted about the one thing a reviewer most wants to check. */
+.chat-args { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.chat-arg {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 2px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--card);
+}
+.chat-arg b { color: var(--ink-3); font-weight: 600; }
+.chat-arg span { color: var(--ink); }
+
+/* Structured outputs, as a definition list rather than prose: this is the typed result
+   the capability contract promised, and it should look like data. */
+.chat-outputs {
+  margin: 9px 0 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 12px;
+}
+.chat-outputs dt { color: var(--ink-3); }
+/* pre-wrap because a read off a legacy page is often a whole table, and collapsing its
+   newlines turns rows into one unreadable line. Capped so a large dump cannot push the
+   rest of the conversation off screen — the run report holds the full text. */
+.chat-outputs dd {
+  margin: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  max-height: 190px;
+  overflow-y: auto;
+}
+
+.chat-note { margin-top: 8px; color: var(--ink-2); }
+.chat-note.bad { color: var(--danger); }
+
+.chat-call-foot { margin-top: 9px; display: flex; align-items: center; gap: 10px; }
+.chat-report {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 12px;
+}
+.chat-report:hover { text-decoration: underline; }
+.chat-run { color: var(--ink-3); font-size: 11px; }
+
+/* While the replay is driving the browser. The bar is honest about what it knows —
+   it loops rather than filling, because there is no progress figure to report. */
+.chat-running { display: flex; align-items: center; gap: 8px; margin-top: 9px; color: var(--ink-2); }
+.chat-bar {
+  flex: 1;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+.chat-bar i {
+  display: block;
+  width: 35%;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  animation: chat-sweep 1.15s ease-in-out infinite;
+}
+@keyframes chat-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(340%); }
+}
+
+/* Waiting on the model, before it has chosen anything. */
+.chat-dots { display: inline-flex; gap: 4px; align-self: flex-start; padding: 4px 0; }
+.chat-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  animation: chat-blink 1.2s ease-in-out infinite;
+}
+.chat-dots i:nth-child(2) { animation-delay: 0.15s; }
+.chat-dots i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes chat-blink {
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-2px); }
+}
+
+/* --- empty state -------------------------------------------------------------
+   The suggestions are not decoration: a reader who has never seen this cannot guess
+   what a recorded capability is able to do, and the catalog is right there to say. */
+.chat-empty { margin: auto 0; text-align: left; }
+.chat-empty p { margin: 0 0 4px; color: var(--ink-2); font-size: 13px; }
+.chat-empty .chat-empty-sub { color: var(--ink-3); font-size: 12px; margin-bottom: 12px; }
+.chat-suggestions { display: flex; flex-direction: column; gap: 7px; align-items: flex-start; }
+.chat-suggestion {
+  margin: 0;
+  padding: 7px 12px;
+  max-width: 100%;
+  text-align: left;
+  font-weight: 400;
+  font-size: 12.5px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.chat-suggestion:hover { border-color: var(--accent); color: var(--accent); background: var(--brand-wash); }
+
+/* --- composer ---------------------------------------------------------------- */
+.chat-composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--line);
+  background: var(--card);
+}
+.chat-composer textarea {
+  flex: 1;
+  resize: none;
+  max-height: 132px;
+  border-radius: 12px;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+.chat-send {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  border-radius: 12px;
+}
+.chat-send svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* On a narrow screen the panel is the screen: a 440px column beside nothing is worse
+   than a sheet, and the console below it is not usable while you are typing anyway. */
+@media (max-width: 620px) {
+  .chat-panel { right: 8px; left: 8px; bottom: 8px; width: auto; }
+  .chat-launcher-label { display: none; }
+  .chat-launcher { padding: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-panel,
+  .chat-thread > * { animation: none; }
+  .chat-launcher { transition: none; }
+  .chat-bar i,
+  .chat-dots i { animation: none; }
+  .chat-bar i { width: 100%; opacity: 0.5; }
+}

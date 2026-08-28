@@ -1,0 +1,37 @@
+<!-- chatbot.html — the shell. chatbot.js renders the thread from /api/chat's event
+     stream; nothing in here is populated at mount except the app name in the header. -->
+<button class="chat-launcher" data-open type="button" aria-expanded="false" aria-controls="chat-panel">
+  <span class="chat-launcher-icon" aria-hidden="true">
+    <svg viewBox="0 0 20 20"><path d="M3.5 4.5h13a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H8l-4 3v-3H3.5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1Z"/></svg>
+  </span>
+  <span class="chat-launcher-label">Ask</span>
+</button>
+
+<section class="chat-panel" id="chat-panel" hidden aria-label="Capability chat">
+  <header class="chat-head">
+    <div class="chat-title">
+      <h2>Ask the agent</h2>
+      <p class="chat-sub">It can only do what you have approved. <span class="chat-scope" data-scope></span></p>
+    </div>
+    <div class="chat-head-actions">
+      <button class="icon" data-clear type="button" title="Start over">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.6-3.7"/><path d="M13.2 2.2v3h-3"/></svg>
+        <span class="sr">Start over</span>
+      </button>
+      <button class="icon" data-close type="button" title="Close">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4.5 4.5 7 7m0-7-7 7"/></svg>
+        <span class="sr">Close</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="chat-thread" data-thread tabindex="0"></div>
+
+  <form class="chat-composer" data-composer>
+    <textarea data-input rows="1" placeholder="Ask for something…" aria-label="Message"></textarea>
+    <button class="chat-send" data-send type="submit" title="Send">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3.5M4 7l4-3.5L12 7"/></svg>
+      <span class="sr">Send</span>
+    </button>
+  </form>
+</section>
