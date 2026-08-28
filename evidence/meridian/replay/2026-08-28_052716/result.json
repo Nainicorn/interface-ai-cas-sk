@@ -1,0 +1,24 @@
+{
+  "id": "meridian/replay/2026-08-28_052716",
+  "kind": "replay",
+  "app_id": "meridian",
+  "goal": "Signs on to Meridian Core with operator credentials and a caller-supplied branch code, confirms the main menu is reached, and reports the operator id and branch code shown in the status bar.",
+  "status": "SUCCESS",
+  "detail": {
+    "caller": "agent",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "meridian-signon",
+    "version": 1,
+    "outcome": "SUCCESS",
+    "outputs": {
+      "operator_id": "TELLER1",
+      "branch_code": "MAIN-001"
+    },
+    "business_outcome": null,
+    "escalation": null,
+    "failed_step": null
+  },
+  "started_at": "2026-08-28T05:27:16.712Z",
+  "updated_at": "2026-08-28T05:27:20.214Z"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "meridian/replay/2026-08-28_053050",
+  "kind": "replay",
+  "app_id": "meridian",
+  "goal": "Signs on to Meridian Core, searches Member Inquiry by member number, opens the matching member record, and reports the member's name plus their full Shares/Balances block (share id, type, balance, status for every share). Handles the case where the member number does not exist.",
+  "status": "BUSINESS_OUTCOME",
+  "detail": {
+    "caller": "agent",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "member-inquiry-shares-lookup",
+    "version": 1,
+    "outcome": "BUSINESS_OUTCOME",
+    "outputs": null,
+    "business_outcome": {
+      "code": "MEMBER_NOT_FOUND",
+      "message": "No member record matches that member number.",
+      "step": 9,
+      "intent": "Open the matching member's record"
+    },
+    "escalation": null,
+    "failed_step": null
+  },
+  "started_at": "2026-08-28T05:30:50.933Z",
+  "updated_at": "2026-08-28T05:30:59.982Z"
+}

@@ -1,0 +1,24 @@
+{
+  "id": "meridian/replay/2026-08-28_053220",
+  "kind": "replay",
+  "app_id": "meridian",
+  "goal": "Signs on to Meridian Core, searches Member Inquiry by member number, opens the matching member record, and reports the member's name plus their full Shares/Balances block (share id, type, balance, status for every share). Handles the case where the member number does not exist.",
+  "status": "SUCCESS",
+  "detail": {
+    "caller": "agent",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "member-inquiry-shares-lookup",
+    "version": 1,
+    "outcome": "SUCCESS",
+    "outputs": {
+      "member_name": "<string:12>",
+      "shares_balances_block": "Share ID\tType\tBalance\tStatus\n100987-S0001\tRegular Shares\t$14.00\tOPEN\n100987-S0070\tShare Draft (Checking)\t$17.25\tHOLD [HOLD]\n100987-MMKT-3\tMoney Market\t$42.00\tHOLD [HOLD]\n100987-MMKT-4\tMoney Market\t$25.00\tHOLD [HOLD]\n100987-MMKT-5\tMoney Market\t$37.00\tOPEN\n100987-MMKT-6\tMoney Market\t$30.00\tOPEN\n100987-MMKT-7\tMoney Market\t$30.00\tOPEN\n100987-MMKT-8\tMoney Market\t$30.00\tOPEN\n100987-S0001-9\tRegular Shares\t$25.00\tOPEN"
+    },
+    "business_outcome": null,
+    "escalation": null,
+    "failed_step": null
+  },
+  "started_at": "2026-08-28T05:32:20.718Z",
+  "updated_at": "2026-08-28T05:32:31.430Z"
+}
