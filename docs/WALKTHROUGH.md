@@ -1,391 +1,204 @@
 # Walkthrough — demo script
 
+One numbered run, top to bottom. Each step: what to do, and one or two sentences
+to say. ~12 minutes.
+
 ---
 
-## Part 1 — What I built first (4 min)
+## Before they arrive
 
-**The problem.**
-> "Banks have a long tail of internal apps with no API — the only way in is to drive
-> the screen like a person. Put an AI in front of every one and every transaction
-> costs a model call, takes seconds, and can decide differently today than
-> yesterday. Not something you put near someone's money."
+- `npm start`, open `localhost:3000`, click **MERIDIAN CORE**
+- `npm run replay -- --id member-inquiry-shares-lookup --param member_number=100987`
+  → note two shares showing **OPEN**; you'll type those in step 17
+- Have `docs/DESIGN.md` open on GitHub in a tab (diagrams render there)
+- Target signed in already at `web-sample.interface-hiring.com` (`teller1`/`password`)
 
-**The idea.**
-> "Let the AI figure it out **once**, write down what it learned, replay it forever
-> with no AI. The model discovers. The recording becomes a capability.
-> Deterministic replay is how a production agent calls it."
+---
 
-**The one rule.** → `node --test tests/invariants.test.js`
-> "Replay never imports the AI SDK. Not behind a flag, not as a fallback. It's a
-> test — add that import and the build fails. Four invariants: no AI in replay, the
-> gate opens every action, one action layer, five primitives matching the schema."
+# Part 1 — The take-home MVP (4 min)
 
-**The stack, briefly.**
-> "Node because it's all I/O. **Playwright** because it auto-waits — the biggest
-> source of flakiness gone — and it exposes the accessibility tree. **Zod** because
-> the recording gets replayed with no model watching, so it validates in *and* out;
-> a recording that fails to load is a bug that only shows up in a demo. **No
-> database** — a recording should be readable in a code review, and a SQLite row
-> isn't."
+**1. The problem.**
+> "Banks have a long tail of internal apps with no API — the only way in is driving
+> the screen like a person. Put an AI in front of every transaction and it's slow,
+> costly, and can decide differently each time."
 
-**The folders.**
+**2. The idea.** *(show the first diagram in DESIGN.md, then close it)*
+> "The AI learns the flow once. We record it. Then we replay that recording forever
+> with no AI in the loop."
 
-| | |
+**3. The one rule.** → `node --test tests/invariants.test.js`
+> "Replay never imports the AI SDK. That's a test — add the import and the build
+> fails."
+
+**4. The shape.** *(say, don't show code)*
+> "Five actions are all anything can do to a page — navigate, click, type, read,
+> wait. The AI, the replay and a human operator all go through the same five, and
+> the safety gate is the first line of each."
+
+**5. Live replay.** → `npm run replay -- --id member-inquiry-search-by-last-name --param last_name=Hopper`
+> "Fifteen seconds, no model, costs nothing — and that's a different surname than it
+> was recorded with, so it's parameterised, not a fixed script."
+
+**6. How I worked.**
+> "I time-boxed this deliberately, to stop myself shipping ten features I couldn't
+> defend. That rule is why two of them got deleted."
+
+---
+
+# Part 2 — Stretch goals, after the callback (3 min)
+
+**7. Agent catalog.** → **Agent catalog** tab
+> "This is what an outside AI sees — only approved capabilities, with typed inputs
+> and outputs. Turning an entry into a Claude tool definition is three renames."
+
+**8. Approval and confidence.** *(point at the badges)*
+> "Every capability carries how often it actually held, and a risky one can't run
+> unattended until a human approves it."
+
+**9. Code generation.**
+> "A recording can be exported as a standalone Playwright script — useful for
+> handing a flow to a team that doesn't want this system."
+
+**10. Multi-tenant.**
+> "A recording is tied to a product, not a URL, so hundreds of institutions on the
+> same vendor software share one recording. Where two genuinely differ, an override
+> patches only the steps it names."
+
+**11. The two I deleted.**
+> "Assisted fallback — letting the AI repair a broken step — worked, but recovered
+> two runs out of four, so I removed it rather than ship something half-reliable.
+> Same with a drift detector whose fingerprint couldn't count repeated rows."
+
+---
+
+# Part 3 — The challenge (6 min)
+
+**12. Rewrite or config?** → `cat apps/meridian/config.example.json`
+> "Pointing my system at your target was this one file — the URL, the routes it may
+> touch, the routes that change data, and the fields never written down. No new
+> code, no second replay path."
+
+**13. What it broke.**
+> "Six assumptions inside my core didn't survive — dropdown labels that carry live
+> balances, selectors containing an equals sign, a risk classifier that was never
+> actually called. Each is fixed in its own commit, and finding them is what a real
+> target is for."
+
+**14. Three things genuinely new.**
+> "Error rules that belong to the whole flow rather than one step. An escalate flag
+> that turns an anticipated state into a handover. And HTTP status as something a
+> checkpoint can assert on."
+
+**15. Chatbot — the happy path.** → **Ask** → `What are the share balances for member 100987?`
+> "It picked the capability, filled the typed argument, and drove a real browser
+> against the live host. Every figure came back from that call — it can't invent one."
+
+**16. Chatbot — the unhappy path.** → `Transfer $5 from share 100234-S0001 to 100234-S0001-5 for member 100234, memo demo.`
+> "Rejected — and carrying the app's own sentence, 'Source share is HOLD and cannot
+> be debited.' That's a business outcome, not a failure: the app was asked and it
+> answered."
+
+**17. A transfer that works.** → **Capabilities** tab → replay icon on **Post Member Funds Transfer**
+Member `100987`, your two OPEN shares, `1.00`, memo `demo`.
+> "Same thing an agent would invoke. Real money moved, confirmation number back."
+
+**18. Escalation.** → replay icon on **Place Account Hold**
+`102777` · `102777-MMKT-3` · `FRAUD` · notes · **plus `teller1` / `password` in "Run as a different user"**
+> "Holds need a supervisor. It stopped instead of guessing, and left the step, the
+> URL and a screenshot for whoever picks it up."
+
+**19. Same thing, blank credentials.**
+> "Supervisor — posts fine and returns a confirmation. Same recording, different
+> operator, and the report names which credential was swapped."
+
+**20. The dashboard.** → **Runs** tab
+> "Everything you just watched, colour-coded by outcome, each with a full report
+> behind it showing the inputs, the result and the screenshots."
+
+**21. Close.**
+> "Six things in my own code broke when I pointed it here, and each one is fixed and
+> written up. That's the honest answer to whether this was a config change or a
+> rewrite — it was config, and the exercise found real bugs."
+
+---
+
+## Where each criterion is covered
+
+| They're scoring | Step |
 | --- | --- |
-| `src/schema/` | The contract — what a recording *is* |
-| `src/engine/` | The hands — the only five ways to touch a page |
-| `src/policy/` | The rules — allowlist, risk, redaction |
-| `src/agent/` | The AI part — the one place a model decides anything |
-| `src/api/` `src/cli/` | Surfaces: console, terminal, outside agents |
-| `src/evidence/` | What every run did |
-| `ui/` | The console |
-
-> "Three files carry it. `capability.js` — the typed shape of a recording.
-> `actions.js` — the five things anything can do to a page; AI, replay and human all
-> use the same five, and the safety gate is the first line of each, *inside* the
-> primitive so no caller can forget it. `discovery.js` — the only place a model
-> decides anything."
-
-**Live.** → `npm run replay -- --id member-inquiry-search-by-last-name --param last_name=Hopper`
-> "Fifteen seconds, no model, costs nothing. And that's a different surname than it
-> was recorded with — parameterised, not a fixed script."
-
-**How I worked.**
-> "Time-boxed to half a sprint on purpose — to stop myself building ten features I
-> couldn't defend. Depth over breadth. That rule is why two things got deleted."
+| Adaptation quality | 12, 13 |
+| Correctness of the core loop | 5, 15, 17 |
+| Robustness & error handling | 14, 16, 18 |
+| Capability API / contract | 7 |
+| Demoability | 15–20 |
+| Safety & data handling | 3, 4, 18, 19 |
+| Escalation | 18 |
+| Communication | 11, 13, 21 |
 
 ---
 
-## Part 2 — Stretch goals, after the callback (3 min)
+## Decisions they'll ask about
 
-> "Five of six. They mesh more than I expected — the catalog needs the approval
-> gate, the approval gate needs the reliability score, and multi-tenant is really
-> the schema being honest about what a recording is tied to."
+**Why Playwright?** It auto-waits, which removes the biggest source of flakiness,
+and it exposes the accessibility tree directly.
 
-→ `curl -s "localhost:3000/api/catalog?app_id=meridian" | jq '.[].id'`
+**Why the accessibility tree, not HTML or screenshots?** Legacy HTML is layout
+tables and noise, and screenshots need a vision model on every step. The tree is
+roles and names — the same shape a desktop app exposes.
 
-- **Agent catalog** — only *approved* capabilities appear. A draft is invisible, not
-  refused: a catalog an agent can't act on is noise in its context.
-- **Confidence + approval** — each carries how often it held; risky ones need a human.
-- **Code generation** — a recording becomes a standalone Playwright script.
-- **Multi-tenant** — tied to an app id, not a URL. Two institutions on the same
-  vendor product share one recording; overrides patch only the steps they name.
-- **Stability** — replay N times, report what held.
+**Why only five actions?** Every action is a place the safety gate has to be
+applied. Five means the gate lives in five places and the model picks from a
+closed list instead of inventing something.
 
-**The two I deleted** *(say this confidently — it's judgement, not failure)*
-> "**Assisted fallback** — letting the AI repair one broken step. It worked. I
-> measured it: two recoveries out of four. So the choice was a feature that works
-> half the time or no feature. A replay that fails deterministically — step,
-> selector, everything tried, screenshot — beats one that sometimes silently repairs
-> itself. And it keeps 'replay never calls a model' absolutely true.
->
-> **A drift detector** — the fingerprint was a *set*, and a set can't count. Forty
-> identical rows collapse to one line, so deleting thirty-nine scores zero drift. A
-> warning system quiet about what matters most is worse than none."
+**How is replay deterministic if locators have fallbacks?** Every rung is
+exact-or-unique — a candidate matching two elements is rejected, not guessed
+between. Same input picks the same element or none at all.
 
----
+**How does the model know when to escalate?** During discovery it has an escalate
+tool and picks it like any other. During replay no model runs at all — escalation
+is a rule it wrote down at discovery time, matched deterministically.
 
-## Part 3 — The challenge (6 min)
+**Why is a session timeout handled two ways?** Re-authenticating is safe for a read
+and reckless for a transfer, because the run can't tell whether its post landed
+before the session dropped. So reads re-run once; anything moving money stops and
+escalates.
 
-### Rewrite, or config change? → `cat apps/meridian/config.example.json`
+**Where does the safety model stop?** The gate checks the route, not the form — a
+wrong *amount* on an allowed transfer screen would go through. Field-level policy
+on money-moving steps is the next thing I'd build.
 
-> "That's the adapter. URL, routes it may touch, routes that change data, fields
-> never written down, and the two operator identities. No new primitive, no second
-> replay path, no target-specific branch. Seven functions recorded and replaying.
->
-> Two decisions I'd defend: **System Settings is deliberately outside the
-> allowlist** — it sets a global error rate for everyone on that host. And
-> **redaction covers PII but not balances**, because reading balances is what the
-> console is *for*."
+**Your outputs are all strings.** True. The read primitive extracts text and
+locators are static, so I can't target "the row for share X" from a parameter —
+structuring it needs a parsing layer or a sixth primitive, and I chose neither over
+half of one.
 
-### What it broke — six assumptions a tidier target never tested
+**What does this cost?** Discovery is one model-call chain per capability, once.
+Every replay after that is zero model cost and about fifteen seconds — that's the
+whole architectural argument.
 
-| Broke | Why this target found it |
-| --- | --- |
-| Dropdowns matched exact label | Labels carry **live balances** — a recording broke after its own first transfer |
-| `value_equals` split on first `=` | No test IDs → every selector is `input[name='q']`, which contains an `=` |
-| Checkpoints couldn't use a parameter | So the model checkpointed on text that's there either way — unverified step recorded as verified |
-| Declared inputs weren't checked | First recording demanded the *password* from the caller |
-| `classifyRisk()` had no callers | Risk was whatever the recorder claimed about itself |
-| Saving a capability rewrote it | Older code silently erased fields it didn't know |
+**What breaks first at scale?** Credentials are process-global, so two institutions
+replaying at once in one process would collide. Per-call overrides exist and are the
+right shape; the default path isn't.
 
-> "Finding those is the value of the exercise. Each is its own commit with the
-> reasoning."
+**You found six bugs in your own code — was it working?** It worked against the
+target it was built on. These were assumptions that target never tested, and a new
+surface is exactly what surfaces them.
 
-### Three things genuinely new
-
-> "**Flow-level error rules** — 'no such member' shows up one step *after* the
-> search. Only checked when a step is about to be called a failure, so they can't
-> mask a step that worked.
->
-> **An `escalate` flag** — 'a supervisor must authorise this' is neither an answer
-> nor a fault. Same declaration, one flag, and it's a handover.
->
-> **HTTP status as a condition** — the host states every fault twice, in the status
-> and the page. The status is better: a phrase gets matched by accident and moves
-> when someone rewords it."
-
-### Live — the chatbot (all verified)
-
-Point at the panel header first: the **`meridian`** chip and *"It can only do what
-you have approved."* → that's the scoping proof.
-
-**1.** `What are the share balances for member 100987?` → **SUCCESS**
-> "It picked the capability, filled the typed argument, drove a real browser on the
-> real host. Every figure came back from the call — the model can't invent one."
-
-**2.** `What are the balances for member 999999?` → **BUSINESS_OUTCOME**
-> "Not a failure. Nothing broke — the app was asked and answered. That's the
-> distinction the whole system is organised around."
-
-**3.** `Transfer $5 from share 100234-S0001 to 100234-S0001-5 for member 100234, memo demo.`
-→ **BUSINESS_OUTCOME**, *"Source share is HOLD and cannot be debited."*
-> "One rule detects the generic rejection banner, a second locator reads the specific
-> reason — so one rule covers held shares, insufficient funds and bad amounts, and
-> the caller still learns which."
-
-**4.** Switch to the **Runs** tab — all three sitting there tagged `agent`, each
-with a full report behind it.
-
-*(Skip sign-on as a chatbot demo — every capability signs itself on. If it comes
-up: plain "sign in" makes the model stop and ask for the branch rather than guess
-a required parameter, which is the guardrail working.)*
-
-### Live — escalation (all clicks, no terminal)
-
-**Capabilities** tab → the circular-arrow **Replay** icon on **Place Account Hold
-(Supervisor)**.
-
-Fill: `member_number` **102777** · `share` **102777-S0001** · `reason` **FRAUD** ·
-`notes` anything.
-
-Then the **"Run as a different user"** block at the bottom — point at it before
-you type:
-
-> "This is optional. Leave it blank and it uses the app's stored credentials. I'm
-> going to put a teller in instead."
-
-`MERIDIAN_SUPERVISOR_USERNAME` → **teller1** · `MERIDIAN_SUPERVISOR_PASSWORD` →
-**password** → **Replay**. Takes about 40 seconds.
-
-> "Holds need a supervisor. Same recording — only the credentials swapped for this
-> one run, and only the *names* ever get written down.
->
-> **ESCALATED.** Not a failure, nothing broke. Not an answer either — the work is
-> real and unfinished. It carries the step, the URL and a screenshot so a person
-> can finish it."
-
-Then **Runs** tab → open that run's report. Point at **Credentials overridden**.
-
-> "The report names which credential was swapped. Without that row, the same
-> capability gives two different answers for no visible reason."
-
-**Then run it again with those two fields left blank** — it posts the hold and
-returns a confirmation number. Same capability, different operator.
-
-*(CLI equivalent, if you'd rather — same thing:)*
-
-```bash
-npm run replay -- --id place-account-hold --param member_number=102777 \
-  --param share=102777-S0001 --param reason=FRAUD --param notes="teller attempt" \
-  --secret MERIDIAN_SUPERVISOR_USERNAME=teller1 \
-  --secret MERIDIAN_SUPERVISOR_PASSWORD=password
-```
-
-**If there's time:**
-> "There's a run in evidence where **discovery itself escalated** — told to record
-> the hold as a teller, it hit the supervisor gate and refused to emit a recording
-> for something it couldn't finish. That settles a design question rather than being
-> a bug: a teller-operated hold capability *cannot exist*."
-
-### All seven, from the console
-
-If they ask to see every capability run — §2.1 wants one per function — this is the
-order. **Capabilities** tab, the circular-arrow **Replay** icon on each row, type the
-values, hit **Replay**. Each takes 20–40 seconds.
-
-| # | Capability | Type this | You get |
-| --- | --- | --- | --- |
-| 1 | Meridian Core Sign On | `branch` **MAIN-001** | SUCCESS — `TELLER1` / `MAIN-001` |
-| 2 | Search Members by Last Name | `last_name` **Hopper** | SUCCESS — 101555, Hopper, Grace |
-| 3 | Member Inquiry — Shares & Balances | `member_number` **100987** | SUCCESS — the shares table |
-| 4 | Post Member Funds Transfer | **100987** · from **100987-S0001** · to **100987-MMKT-5** · **1.00** · memo **demo** | SUCCESS — a confirmation number |
-| 5 | Post Member Funds Transfer *(again)* | **100234** · from **100234-S0001** · to **100234-S0001-5** · **5.00** · memo **held** | BUSINESS_OUTCOME — *"Source share is HOLD and cannot be debited."* |
-| 6 | Open New Share for Member | **103001** · `share_type` **MMKT** · `deposit` **50.00** | SUCCESS — a new share id |
-| 7 | Update Member Contact Information | **103001** · email **grace@example.com** · phone **555-0142** · address **1 Demo Street** | SUCCESS — CHANGES SAVED |
-| 8 | Place Account Hold *(teller)* | **102777** · share **102777-MMKT-3** · reason **FRAUD** · notes anything · **+ teller1 / password** in "Run as a different user" | ESCALATED |
-| 9 | Place Account Hold *(supervisor)* | same, credential fields **blank** | SUCCESS — a confirmation number |
-
-Rows 4–9 change real data on the host. That's the point — they're the irreversible
-ones — but it means the values drift as you use them.
-
-**Check before you present.** The shared host resets on redeploy and other people
-are using it, so a share that's OPEN today may be on HOLD tomorrow. One command
-tells you everything you need:
-
-```bash
-npm run replay -- --id member-inquiry-shares-lookup --param member_number=100987
-```
-
-Read the status column. Row 4 needs **two OPEN shares** on 100987. Row 5 needs the
-*source* on **HOLD** (check 100234). Row 8 needs an **OPEN** share on 102777 — if
-102777-MMKT-3 is already held, pick another OPEN one from the same table.
-
-### The six injected faults
-
-| Status | Treated as |
-| --- | --- |
-| 400 validation · 404 not found | `BUSINESS_OUTCOME` — the app answered |
-| 403 permission | `ESCALATED` — needs more authority |
-| 503 maintenance | `RECOVERABLE` — take the host's Continue link |
-| 500 server | `RECOVERABLE` once, then a hard failure |
-| 440 session expired | **Split by risk** |
-
-> "Declared once per app, not per recording — a fault belongs to the host, not the
-> flow that was running.
->
-> The 440 split is the call I'd most defend. Re-authenticating is safe for a read
-> and reckless for a transfer: the run **cannot tell** whether its post landed
-> before the session dropped, and guessing wrong duplicates an irreversible
-> transaction. So reads re-run once; anything that moves money stops and escalates."
+**If you don't know:** say so, then say how you'd find out.
 
 ---
 
-## Surfaces (1 min)
+## If they ask to see more
 
-> "**Legacy** — MERIDIAN and a mock core I built. Full page load per click, table
-> layout, no test IDs. The per-transaction hidden token needed **no special
-> handling** — the form carries it, clicking the real submit button submits it.
-> That's the argument for driving the page rather than its endpoints.
->
-> **SPA** — I tested two. Nothing navigates; content appears when a fetch resolves.
-> That's why checkpoints are first-class rather than sleeps — every step proves it
-> worked instead of assuming the click landed.
->
-> **Desktop** — designed, not built, and I'd rather say so. The seam is
-> `perception.js`, which turns a surface into an accessibility tree; Windows and
-> macOS expose the same shape. The format, the five actions and the replay engine
-> wouldn't change — the driver under perception would. I'm confident because I
-> already read the tree rather than raw HTML, so the abstraction is in use."
+- **All seven capabilities** — Capabilities tab shows them at a glance. Say: *"all
+  seven functions are recorded; I ran the ones that come back differently rather
+  than seven that all say SUCCESS."*
+- **The artifact itself** — `localhost:3000/api/capabilities/place-account-hold`,
+  or the **›** chevron on a Capabilities row.
+- **The fault table** — `src/engine/recovery-table.js`, the `FAULT_RULES` list:
+  400 and 404 are answers, 403 escalates, 503 and 500 recover, 440 splits by risk.
+- **Other capabilities' values** — member `103001` for Open New Share (`MMKT`,
+  `50.00`) and Update Contact Info.
 
----
-
-## Safety and failures (2 min)
-
-> "**Allowlist** — first line of all five action functions, inside the primitives.
-> The app's origin is a hard boundary no route prefix widens.
->
-> **Risk** — reads and navigation are safe; clicks and typing depend on the route.
-> Risky can't replay unattended without approval, and nothing is visible to an
-> outside agent until approved. Honest bit: that classifier existed and was **never
-> called**. Replay now re-derives it per step and checks the **live** URL, because a
-> legacy flow reaches a posting screen by submitting a form, not navigating to it.
->
-> **Redaction runs two directions.** By name when a value would be logged — obvious.
-> And by *value* in text nobody logged: a browser publishes a filled input's value
-> in the accessibility tree, so the moment the agent types a password it's in every
-> later snapshot — which is both what's written to the transcript and what the model
-> sees next turn. Without masking that, 'the model never sees a password' is only
-> true until it types one.
->
-> **Where it stops** — the gate reads the route, not the form. Wrong *amount* in a
-> legitimately-allowed transfer screen? Nothing catches it. I'd want field-level
-> policy on money-moving steps before production."
-
-**The five outcomes**
-
-| | |
-| --- | --- |
-| `SUCCESS` | Worked — here are the outputs |
-| `BUSINESS_OUTCOME` | A real answer that isn't the happy path |
-| `RECOVERABLE` | Known problem, cleared it, carried on |
-| `HARD_FAILURE` | Didn't match — step, expectation, observation, screenshot |
-| `ESCALATED` | Needs a person with more authority |
-
-> "The order is the design. A step's declared rules are checked **before** its
-> success check — checking success first treats 'no such member' as a broken step,
-> the single most common mistake in this problem space. Then the check, then a fixed
-> recovery list, then flow rules and host faults. Only then a hard failure. And
-> recovery is a lookup table, never the AI improvising."
-
----
-
-## Cuts and next (1 min)
-
-> "**Cut:** no mid-flow session resume for anything that changes data — resuming
-> safely needs an idempotency key this target doesn't offer. Transient retry is one
-> reload. No stability sweep across the seven. No confirm-before-risky in the
-> chatbot. Desktop designed, not built. Operator console is a screenshot and
-> buttons, not co-browsing — which the brief allowed.
->
-> Same rule behind all of it: a smaller set I can defend beats a longer one I can't.
->
-> **Next, in order:** confirm-before-risky in the chatbot — a real hole in the
-> wrapper, not the core. Then sweep stability so the reliability numbers mean
-> something. Then field-level policy on money-moving steps."
-
----
-
-## Hard questions — have these ready
-
-**"Show me the artifact."** ← most likely; the schema is a stated focal point.
-Open any `evidence/meridian/discovery/*/goal.json`. Walk: the ordered steps, the
-ranked locator candidates per step, `value_from` vs `value_from_env`, the
-checkpoint on each step, the business-outcome rules, `risk_level`, `status`.
-
-**"Your outputs are all strings."** True, and the sharpest criticism available.
-> "The `read` primitive extracts text, and locators are static — I can't target 'the
-> row for share X' from a caller's parameter. So a shares table comes back as one
-> block rather than typed rows. Structuring it means either a parsing layer per
-> capability or a sixth primitive, and I chose neither rather than half of one.
-> It's the first thing I'd change to the schema."
-
-**"You claim deterministic but have fallbacks and prefix matching."**
-> "Every rung is exact-or-unique. A rung matching two options is skipped, not
-> guessed between — so the same input picks the same option or none at all. Nothing
-> is scored or fuzzy."
-
-**"You said accessibility tree, but every locator is CSS."**
-> "Perception reads the tree — that's what the model sees and what checkpoints
-> assert on. *Locators* fall back to scoped CSS when the page has no roles or labels
-> worth using, and this target has no `<label for>` anywhere. The tree is the
-> abstraction; CSS is the last rung of the ladder."
-
-**"The rules deciding answer-vs-failure are written by the model."**
-> "Yes, at discovery time — and there's a gate that rejects a rule which also
-> matches the successful page, because that's the failure mode. But it's
-> model-authored logic in the classification path, and the honest answer is it
-> should be human-reviewed before approval. Approval already exists; today it
-> doesn't force you to read those rules."
-
-**"What stops the chatbot posting the same transfer twice?"**
-> "Nothing today. No rate limit, no idempotency key, no dry-run. That's the
-> confirm-before-risky gap and it's my first next step."
-
-**"What does this cost?"** ← the leadership question
-> "Discovery is one model-call chain, once per capability — a few minutes. Every
-> replay after that is **zero model cost** and about fifteen seconds. That's the
-> whole architectural argument: the expensive reasoning happens once, not per
-> transaction."
-
-**"You found six bugs in your own core — was it working?"**
-> "It worked against the target it was built on. These were assumptions that target
-> never tested — labels that don't move, selectors without an `=`, one operator per
-> app. A new surface is what surfaces them, which is exactly what this exercise was
-> for."
-
-**"What breaks first at scale?"**
-> "Credentials are process-global. Per-call overrides exist and are the right shape,
-> but the default path would collide if two institutions replayed concurrently in
-> one process."
-
-**Why Playwright / accessibility tree / five actions** — auto-waiting and tree
-access; legacy HTML is layout noise and screenshots need a vision model per step;
-five means the gate lives in five places and the model picks from a closed list.
-
-**If I don't know:** say so, then say how I'd find out.
-
----
-
-## Live Demo
-
+**Seeds:** 100234 (has a HOLD share), 100987, 101555, 102777, 103001
+**Operators:** `teller1` / `password` · `super1` / `password`

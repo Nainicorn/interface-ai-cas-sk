@@ -1,0 +1,27 @@
+{
+  "id": "meridian/discovery/2026-08-28_150814",
+  "kind": "discovery",
+  "app_id": "meridian",
+  "goal": "Sign on as a teller and read a member's share balances",
+  "status": "recorded",
+  "detail": {
+    "artifact": {
+      "id": "teller-view-member-share-balances",
+      "version": 1,
+      "path": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/meridian/discovery/2026-08-28_150814/goal.json"
+    },
+    "turns": 15,
+    "usage": {
+      "input_tokens": 30,
+      "output_tokens": 6873,
+      "cache_read_input_tokens": 336305,
+      "cache_creation_input_tokens": 44721
+    },
+    "model": "claude-sonnet-5",
+    "evidence_dir": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/meridian/discovery/2026-08-28_150814",
+    "escalation": null,
+    "finished_at": "2026-08-28T15:09:41.615Z"
+  },
+  "started_at": "2026-08-28T15:08:14.477Z",
+  "updated_at": "2026-08-28T15:09:41.615Z"
+}
