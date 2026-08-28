@@ -27,6 +27,9 @@ const TONE = {
   BUSINESS_OUTCOME: 'answer',
   RECOVERABLE: 'recovered',
   HARD_FAILURE: 'broken',
+  // Not 'broken'. The run behaved correctly; it stopped because finishing needs an
+  // authority it does not have, and colouring that like a fault would misread it.
+  ESCALATED: 'handover',
 };
 
 const scrollToEnd = (thread) => { thread.scrollTop = thread.scrollHeight; };
@@ -61,8 +64,10 @@ function resultHtml(result) {
   }
   if (result.error) return `<div class="chat-note bad">${esc(result.error)}</div>`;
 
-  const note = result.business_outcome
-    ? `<div class="chat-note">${esc(result.business_outcome.detail ?? result.business_outcome.name ?? '')}</div>`
+  const note = result.escalation
+    ? `<div class="chat-note handover">Needs a person — ${esc(result.escalation.message)}</div>`
+    : result.business_outcome
+    ? `<div class="chat-note">${esc(result.business_outcome.detail ?? result.business_outcome.message ?? '')}</div>`
     : result.failure
       ? `<div class="chat-note bad">Stopped at ${esc(result.failure.step)}: ${esc(result.failure.reason)}</div>`
       : '';

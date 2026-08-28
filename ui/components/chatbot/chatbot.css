@@ -214,6 +214,7 @@
 .chat-call.answer { border-left-color: var(--st-answer-fg); }
 .chat-call.recovered { border-left-color: var(--st-recovered-fg); }
 .chat-call.broken { border-left-color: var(--st-broken-fg); }
+.chat-call.handover { border-left-color: var(--st-human-fg); }
 .chat-call.refused { border-left-color: var(--danger); background: var(--danger-wash); }
 
 .chat-call-head { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
@@ -258,6 +259,8 @@
 
 .chat-note { margin-top: 8px; color: var(--ink-2); }
 .chat-note.bad { color: var(--danger); }
+/* Not an error colour: the run did what it should have. Someone just has to finish it. */
+.chat-note.handover { color: var(--st-human-fg); font-weight: 600; }
 
 .chat-call-foot { margin-top: 9px; display: flex; align-items: center; gap: 10px; }
 .chat-report {

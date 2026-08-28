@@ -281,9 +281,11 @@ tbody tr:last-child td { border-bottom: none; }
      green   recorded       — produced a capability
      blue    business       — a legitimate answer that is not the happy path
      amber   recoverable    — wobbled, recovered on a declared rule
-     red     failed         — genuinely broken */
+     red     failed         — genuinely broken
+   A replay that escalated takes the same violet as a paused discovery: both mean the
+   same thing to whoever is reading the table — stopped, and waiting for a person. */
 .badge.running { background: var(--st-live-bg); color: var(--st-live-fg); }
-.badge.paused, .badge.escalated { background: var(--st-human-bg); color: var(--st-human-fg); }
+.badge.paused, .badge.escalated, .badge.ESCALATED { background: var(--st-human-bg); color: var(--st-human-fg); }
 .badge.interrupted { background: var(--st-gone-bg); color: var(--st-gone-fg); }
 .badge.stopped { background: var(--st-ended-bg); color: var(--st-ended-fg); }
 

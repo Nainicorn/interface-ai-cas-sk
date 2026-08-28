@@ -79,6 +79,10 @@ export async function runReplay(
     kind: 'replay',
     appId: capability.target.app_id,
     status: 'running',
+    // What THIS run was for. Without it the report falls back to the app's configured
+    // goal, which describes some other flow entirely and reads as if the wrong
+    // capability ran.
+    goal: capability.description,
     // Written at creation, not at completion: a run that never finishes should
     // still say who started it.
     detail: {
@@ -88,6 +92,21 @@ export async function runReplay(
     },
   });
   const logger = new RunLogger(id);
+
+  // What the caller asked for, redacted on the way in. A reviewer opening the report
+  // needs to see the inputs to judge the run at all — but a capability is free to take
+  // an e-mail or a phone number, and evidence outlives the request that carried it. So
+  // the names are always kept and the values only where the policy allows, exactly as
+  // the outputs are treated on the way out.
+  logger.logEvent('run_start', {
+    kind: 'replay',
+    capability: capability.id,
+    version: capability.version,
+    app_id: capability.target.app_id,
+    caller: CALLERS.includes(caller) ? caller : 'operator',
+    params: redactObject(params ?? {}, capability.redaction_policy),
+    secrets_overridden: secrets ? Object.keys(secrets) : [],
+  });
 
   const result = await replayCapability({
     capability,
