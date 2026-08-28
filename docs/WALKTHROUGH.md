@@ -151,7 +151,39 @@ with a full report behind it.
 up: plain "sign in" makes the model stop and ask for the branch rather than guess
 a required parameter, which is the guardrail working.)*
 
-### Live — escalation
+### Live — escalation (all clicks, no terminal)
+
+**Capabilities** tab → the circular-arrow **Replay** icon on **Place Account Hold
+(Supervisor)**.
+
+Fill: `member_number` **102777** · `share` **102777-S0001** · `reason` **FRAUD** ·
+`notes` anything.
+
+Then the **"Run as a different user"** block at the bottom — point at it before
+you type:
+
+> "This is optional. Leave it blank and it uses the app's stored credentials. I'm
+> going to put a teller in instead."
+
+`MERIDIAN_SUPERVISOR_USERNAME` → **teller1** · `MERIDIAN_SUPERVISOR_PASSWORD` →
+**password** → **Replay**. Takes about 40 seconds.
+
+> "Holds need a supervisor. Same recording — only the credentials swapped for this
+> one run, and only the *names* ever get written down.
+>
+> **ESCALATED.** Not a failure, nothing broke. Not an answer either — the work is
+> real and unfinished. It carries the step, the URL and a screenshot so a person
+> can finish it."
+
+Then **Runs** tab → open that run's report. Point at **Credentials overridden**.
+
+> "The report names which credential was swapped. Without that row, the same
+> capability gives two different answers for no visible reason."
+
+**Then run it again with those two fields left blank** — it posts the hold and
+returns a confirmation number. Same capability, different operator.
+
+*(CLI equivalent, if you'd rather — same thing:)*
 
 ```bash
 npm run replay -- --id place-account-hold --param member_number=102777 \
@@ -159,15 +191,6 @@ npm run replay -- --id place-account-hold --param member_number=102777 \
   --secret MERIDIAN_SUPERVISOR_USERNAME=teller1 \
   --secret MERIDIAN_SUPERVISOR_PASSWORD=password
 ```
-
-> "Holds need a supervisor. Same recording — only the credentials swapped for this
-> run, and only the *names* get written down. Comes back **ESCALATED**: not a
-> failure, nothing broke; not an answer either, the work is real and unfinished. It
-> carries the step, the URL and a screenshot so a person can finish it.
->
-> Drop the two `--secret` flags and it posts the hold and returns a confirmation
-> number. The report says *which* credential was swapped — without that, the same
-> capability gives two answers for no visible reason."
 
 **If there's time:**
 > "There's a run in evidence where **discovery itself escalated** — told to record
@@ -331,28 +354,5 @@ five means the gate lives in five places and the model picks from a closed list.
 
 ---
 
-## Commands, in order
+## Live Demo
 
-```bash
-npm start                                   # before they arrive
-node --test tests/invariants.test.js        # Part 1
-npm run replay -- --id member-inquiry-search-by-last-name --param last_name=Hopper
-curl -s "localhost:3000/api/catalog?app_id=meridian" | jq '.[].id'   # Part 2
-cat apps/meridian/config.example.json       # Part 3
-
-# chatbot, in order:
-#   What are the share balances for member 100987?
-#   What are the balances for member 999999?
-#   Transfer $5 from share 100234-S0001 to 100234-MMKT-3 for member 100234, memo demo.
-
-npm run replay -- --id place-account-hold --param member_number=102777 \
-  --param share=102777-S0001 --param reason=FRAUD --param notes="teller attempt" \
-  --secret MERIDIAN_SUPERVISOR_USERNAME=teller1 \
-  --secret MERIDIAN_SUPERVISOR_PASSWORD=password
-```
-
-**Seeds:** 100234 (has a share on HOLD), 100987, 101555, 102777, 103001
-**Operators:** `teller1` / `password` · `super1` / `password` (supervisor)
-
-**Check right before recording:** `npm run replay -- --id member-inquiry-shares-lookup --param member_number=100234`
-— confirm `100234-S0001` still shows HOLD, or demo 3 returns SUCCESS instead of the rejection.
