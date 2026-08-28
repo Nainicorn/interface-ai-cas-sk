@@ -1,0 +1,31 @@
+{
+  "id": "meridian/replay/2026-08-28_130024",
+  "kind": "replay",
+  "app_id": "meridian",
+  "goal": "Signs on as a supervisor, locates a member by member number, places a hold on a specified share with a reason code and notes, reviews and posts the hold, and reports the confirmation number and the share held.",
+  "status": "ESCALATED",
+  "detail": {
+    "caller": "operator",
+    "tenant_id": null,
+    "secrets_overridden": [
+      "MERIDIAN_SUPERVISOR_USERNAME",
+      "MERIDIAN_SUPERVISOR_PASSWORD"
+    ],
+    "capability": "place-account-hold",
+    "version": 1,
+    "outcome": "ESCALATED",
+    "outputs": null,
+    "business_outcome": null,
+    "escalation": {
+      "code": "SUPERVISOR_OVERRIDE_REQUIRED",
+      "message": "The signed-on operator lacks the authority to place an account hold; a supervisor override is required.",
+      "step": 11,
+      "intent": "Continue to the review/confirmation screen",
+      "url": "https://web-sample.interface-hiring.com/members/102777/hold/review",
+      "screenshot": "000-escalated.png"
+    },
+    "failed_step": null
+  },
+  "started_at": "2026-08-28T13:00:24.060Z",
+  "updated_at": "2026-08-28T13:00:43.972Z"
+}

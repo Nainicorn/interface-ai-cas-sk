@@ -1,0 +1,27 @@
+{
+  "id": "meridian/replay/2026-08-28_130332",
+  "kind": "replay",
+  "app_id": "meridian",
+  "goal": "Signs on to Meridian Core, locates a member by member number, opens Funds Transfer, fills from-share/to-share/amount/memo, reviews on the Confirm Funds Transfer screen, and posts the transaction. Returns the confirmation number and posted amount. Handles member-not-found and rejected-transaction (e.g. share on HOLD, insufficient funds) as declared business outcomes.",
+  "status": "BUSINESS_OUTCOME",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "post-funds-transfer",
+    "version": 1,
+    "outcome": "BUSINESS_OUTCOME",
+    "outputs": null,
+    "business_outcome": {
+      "code": "TRANSACTION_REJECTED",
+      "message": "The transaction failed validation (e.g. source share on hold, insufficient funds).",
+      "detail": "Source share is HOLD and cannot be debited.",
+      "step": 13,
+      "intent": "Continue to the review screen"
+    },
+    "escalation": null,
+    "failed_step": null
+  },
+  "started_at": "2026-08-28T13:03:32.294Z",
+  "updated_at": "2026-08-28T13:03:36.820Z"
+}

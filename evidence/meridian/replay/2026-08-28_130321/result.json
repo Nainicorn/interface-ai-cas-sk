@@ -1,0 +1,24 @@
+{
+  "id": "meridian/replay/2026-08-28_130321",
+  "kind": "replay",
+  "app_id": "meridian",
+  "goal": "Signs on to Meridian Core, locates a member by member number, opens Funds Transfer, fills from-share/to-share/amount/memo, reviews on the Confirm Funds Transfer screen, and posts the transaction. Returns the confirmation number and posted amount. Handles member-not-found and rejected-transaction (e.g. share on HOLD, insufficient funds) as declared business outcomes.",
+  "status": "SUCCESS",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "post-funds-transfer",
+    "version": 1,
+    "outcome": "SUCCESS",
+    "outputs": {
+      "confirmation_number": "CN480122",
+      "posted_amount": "1.00"
+    },
+    "business_outcome": null,
+    "escalation": null,
+    "failed_step": null
+  },
+  "started_at": "2026-08-28T13:03:21.983Z",
+  "updated_at": "2026-08-28T13:03:31.990Z"
+}

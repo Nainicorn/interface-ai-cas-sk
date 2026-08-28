@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "id": "member-inquiry-shares-lookup",
-  "name": "Member Inquiry - Shares & Balances Lookup",
+  "id": "teller-signon-read-member-shares",
+  "name": "Sign on as Teller and Read Member Share Balances",
   "version": 1,
-  "status": "approved",
-  "description": "Signs on to Meridian Core, searches Member Inquiry by member number, opens the matching member record, and reports the member's name plus their full Shares/Balances block (share id, type, balance, status for every share). Handles the case where the member number does not exist.",
+  "status": "draft",
+  "description": "Signs on to Meridian Core as a teller operator, searches for a member by member number, selects the member record, and reads the SHARES / BALANCES table (share id, type, balance, status for each share).",
   "target": {
     "app_id": "meridian",
     "entry_route": "/signon",
@@ -15,7 +15,7 @@
     "properties": {
       "member_number": {
         "type": "string",
-        "description": "The member number to search for in Member Inquiry"
+        "description": "The member number to look up (e.g. 100234)"
       }
     },
     "required": [
@@ -26,18 +26,13 @@
   "output_schema": {
     "type": "object",
     "properties": {
-      "member_name": {
+      "shares_balances": {
         "type": "string",
-        "description": "The full name of the member (Last, First) as shown on the Member Record page"
-      },
-      "shares_balances_block": {
-        "type": "string",
-        "description": "The full Shares/Balances table text listing every share id, type, balance and status for the member"
+        "description": "Tab-delimited text of the SHARES / BALANCES table: Share ID, Type, Balance, Status for every share on the member record"
       }
     },
     "required": [
-      "member_name",
-      "shares_balances_block"
+      "shares_balances"
     ],
     "additionalProperties": false
   },
@@ -58,34 +53,17 @@
     },
     {
       "index": 1,
-      "intent": "Click the Operator ID field to focus it",
-      "action": "click",
-      "locator": {
-        "description": "Operator ID input box",
-        "candidates": [
-          {
-            "kind": "css",
-            "value": "input[type='text']",
-            "exact": false,
-            "confidence": 0.5
-          }
-        ]
-      },
-      "expected_outcome": {
-        "type": "element_exists",
-        "value": "input[type='text']:focus",
-        "timeout_ms": 5000
-      },
-      "business_outcomes": [],
-      "risk": "safe"
-    },
-    {
-      "index": 2,
-      "intent": "Type the operator username",
+      "intent": "Enter teller operator ID",
       "action": "type",
       "locator": {
-        "description": "Operator ID input box",
+        "description": "Operator ID field",
         "candidates": [
+          {
+            "kind": "label",
+            "value": "Operator ID:",
+            "exact": false,
+            "confidence": 0.9
+          },
           {
             "kind": "css",
             "value": "input[type='text']",
@@ -104,17 +82,24 @@
       "risk": "safe"
     },
     {
-      "index": 3,
-      "intent": "Type the operator password",
+      "index": 2,
+      "intent": "Enter teller password",
       "action": "type",
       "locator": {
-        "description": "Password input box",
+        "description": "Password field",
         "candidates": [
           {
             "kind": "css",
             "value": "input[type='password']",
             "exact": false,
-            "confidence": 0.6
+            "confidence": 0.9
+          },
+          {
+            "kind": "role",
+            "value": "Password",
+            "role": "textbox",
+            "exact": false,
+            "confidence": 0.5
           }
         ]
       },
@@ -128,8 +113,8 @@
       "risk": "safe"
     },
     {
-      "index": 4,
-      "intent": "Submit the sign-on form",
+      "index": 3,
+      "intent": "Submit sign-on form",
       "action": "click",
       "locator": {
         "description": "Sign On button",
@@ -139,7 +124,7 @@
             "value": "Sign On",
             "role": "button",
             "exact": true,
-            "confidence": 0.9
+            "confidence": 0.95
           }
         ]
       },
@@ -156,17 +141,35 @@
             "value": "Invalid operator ID or password",
             "timeout_ms": 5000
           },
-          "message": "The supplied operator credentials were rejected.",
-          "escalate": false
+          "message": "The operator ID or password was rejected.",
+          "escalate": true
         }
       ],
       "risk": "safe"
     },
     {
-      "index": 5,
-      "intent": "Go to Member Inquiry / Selection page",
-      "action": "navigate",
-      "url": "/members",
+      "index": 4,
+      "intent": "Go to Member Inquiry / Selection screen",
+      "action": "click",
+      "locator": {
+        "description": "Member Inquiry / Selection link",
+        "candidates": [
+          {
+            "kind": "role",
+            "value": "Member Inquiry / Selection",
+            "role": "link",
+            "exact": true,
+            "confidence": 0.9
+          },
+          {
+            "kind": "role",
+            "value": "Member Inquiry",
+            "role": "link",
+            "exact": true,
+            "confidence": 0.6
+          }
+        ]
+      },
       "expected_outcome": {
         "type": "text_visible",
         "value": "MEMBER INQUIRY / SELECTION",
@@ -176,35 +179,18 @@
       "risk": "safe"
     },
     {
-      "index": 6,
-      "intent": "Click the search value textbox",
-      "action": "click",
-      "locator": {
-        "description": "Value textbox for member search",
-        "candidates": [
-          {
-            "kind": "css",
-            "value": "input[type='text']",
-            "exact": false,
-            "confidence": 0.6
-          }
-        ]
-      },
-      "expected_outcome": {
-        "type": "element_exists",
-        "value": "input[type='text']",
-        "timeout_ms": 5000
-      },
-      "business_outcomes": [],
-      "risk": "safe"
-    },
-    {
-      "index": 7,
-      "intent": "Type the member number to search for",
+      "index": 5,
+      "intent": "Enter the member number to search for",
       "action": "type",
       "locator": {
-        "description": "Value textbox for member search",
+        "description": "Member number value field",
         "candidates": [
+          {
+            "kind": "label",
+            "value": "Value:",
+            "exact": false,
+            "confidence": 0.8
+          },
           {
             "kind": "css",
             "value": "input[type='text']",
@@ -215,16 +201,16 @@
       },
       "value_from": "member_number",
       "expected_outcome": {
-        "type": "value_equals",
-        "value": "input[type='text']={{member_number}}",
+        "type": "element_exists",
+        "value": "input[type='text']",
         "timeout_ms": 5000
       },
       "business_outcomes": [],
       "risk": "safe"
     },
     {
-      "index": 8,
-      "intent": "Submit the member search",
+      "index": 6,
+      "intent": "Run the search",
       "action": "click",
       "locator": {
         "description": "Search button",
@@ -234,13 +220,13 @@
             "value": "Search",
             "role": "button",
             "exact": true,
-            "confidence": 0.9
+            "confidence": 0.95
           }
         ]
       },
       "expected_outcome": {
-        "type": "url_contains",
-        "value": "by=number",
+        "type": "text_visible",
+        "value": "Select",
         "timeout_ms": 5000
       },
       "business_outcomes": [
@@ -251,18 +237,18 @@
             "value": "No member records matched your search.",
             "timeout_ms": 5000
           },
-          "message": "No member record exists for the supplied member number.",
+          "message": "No member record matches the given member number.",
           "escalate": false
         }
       ],
       "risk": "safe"
     },
     {
-      "index": 9,
-      "intent": "Open the matching member's record",
+      "index": 7,
+      "intent": "Open the matched member's record",
       "action": "click",
       "locator": {
-        "description": "Select link for the matched member row",
+        "description": "Select link for the matched member",
         "candidates": [
           {
             "kind": "role",
@@ -275,42 +261,18 @@
       },
       "expected_outcome": {
         "type": "text_visible",
-        "value": "MEMBER RECORD",
+        "value": "SHARES / BALANCES",
         "timeout_ms": 5000
       },
       "business_outcomes": [],
       "risk": "safe"
     },
     {
-      "index": 10,
-      "intent": "Read the member's full name from the record header",
+      "index": 8,
+      "intent": "Read the shares/balances table for the member",
       "action": "read",
       "locator": {
-        "description": "Member name value",
-        "candidates": [
-          {
-            "kind": "css",
-            "value": "table[border='0'] > tbody > tr:nth-child(1) > td:nth-child(4)",
-            "exact": false,
-            "confidence": 0.6
-          }
-        ]
-      },
-      "expected_outcome": {
-        "type": "text_visible",
-        "value": "MEMBER RECORD",
-        "timeout_ms": 5000
-      },
-      "business_outcomes": [],
-      "extract_as": "member_name",
-      "risk": "safe"
-    },
-    {
-      "index": 11,
-      "intent": "Read the full Shares / Balances table showing every share id, type, balance and status",
-      "action": "read",
-      "locator": {
-        "description": "Shares and balances table",
+        "description": "Shares/Balances table full content",
         "candidates": [
           {
             "kind": "css",
@@ -326,7 +288,7 @@
         "timeout_ms": 5000
       },
       "business_outcomes": [],
-      "extract_as": "shares_balances_block",
+      "extract_as": "shares_balances",
       "risk": "safe"
     }
   ],
@@ -337,20 +299,20 @@
   },
   "business_outcomes": [
     {
-      "code": "MEMBER_NOT_FOUND",
+      "code": "SESSION_EXPIRED",
       "detect": {
         "type": "text_visible",
-        "value": "No member records matched your search.",
-        "timeout_ms": 3000
+        "value": "NOT SIGNED ON",
+        "timeout_ms": 5000
       },
-      "message": "No member record matches that member number.",
+      "message": "The session was signed off or expired before the operation completed.",
       "escalate": false
     }
   ],
   "created_from": {
-    "run_id": "meridian/discovery/2026-08-28_035915",
+    "run_id": "meridian/discovery/2026-08-28_131810",
     "model": "claude-sonnet-5",
-    "recorded_at": "2026-08-28T04:00:49.797Z"
+    "recorded_at": "2026-08-28T13:20:26.325Z"
   },
   "redaction_policy": {
     "redact_fields": [
@@ -372,9 +334,9 @@
     ]
   },
   "confidence": {
-    "runs": 15,
-    "successes": 12,
-    "last_outcome": "SUCCESS",
-    "updated_at": "2026-08-28T13:22:42.900Z"
+    "runs": 0,
+    "successes": 0,
+    "last_outcome": null,
+    "updated_at": null
   }
 }
