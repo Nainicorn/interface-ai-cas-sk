@@ -1,0 +1,26 @@
+{
+  "id": "meridian/replay/2026-08-28_042541",
+  "kind": "replay",
+  "app_id": "meridian",
+  "goal": null,
+  "status": "BUSINESS_OUTCOME",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "post-funds-transfer",
+    "version": 1,
+    "outcome": "BUSINESS_OUTCOME",
+    "outputs": null,
+    "business_outcome": {
+      "code": "TRANSACTION_REJECTED",
+      "message": "The transaction failed validation (e.g. source share on hold, insufficient funds).",
+      "detail": "Source share is HOLD and cannot be debited.",
+      "step": 13,
+      "intent": "Continue to the review screen"
+    },
+    "failed_step": null
+  },
+  "started_at": "2026-08-28T04:25:41.579Z",
+  "updated_at": "2026-08-28T04:25:48.574Z"
+}

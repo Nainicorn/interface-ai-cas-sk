@@ -1,0 +1,23 @@
+{
+  "id": "meridian/replay/2026-08-28_041558",
+  "kind": "replay",
+  "app_id": "meridian",
+  "goal": null,
+  "status": "SUCCESS",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "funds-transfer",
+    "version": 1,
+    "outcome": "SUCCESS",
+    "outputs": {
+      "confirmation_number": "CN480085",
+      "posted_amount": "$1.00"
+    },
+    "business_outcome": null,
+    "failed_step": null
+  },
+  "started_at": "2026-08-28T04:15:58.979Z",
+  "updated_at": "2026-08-28T04:16:42.420Z"
+}

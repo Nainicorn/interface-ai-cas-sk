@@ -1,0 +1,27 @@
+{
+  "id": "meridian/discovery/2026-08-28_041949",
+  "kind": "discovery",
+  "app_id": "meridian",
+  "goal": "Sign on, find the member by member number (parameter member_number), open their record and click Funds Transfer. Fill the form from parameters from_share, to_share, amount and memo, continue to the CONFIRM FUNDS TRANSFER review screen, then post it. Report the confirmation number and the posted amount. IMPORTANT: before emitting, deliberately trigger a rejected transaction so you can read the app's real wording — member 100234 has share 100234-S0001 on HOLD, and transferring from it is refused. Declare flow-level business outcomes for (a) no matching member, and (b) a rejected transaction, detecting the generic rejection banner the review screen shows for any invalid transaction with a detail locator pointing at the specific reason line inside it, so insufficient funds and a held share both classify correctly and the caller still learns which happened.",
+  "status": "recorded",
+  "detail": {
+    "artifact": {
+      "id": "post-funds-transfer",
+      "version": 1,
+      "path": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/meridian/discovery/2026-08-28_041949/goal.json"
+    },
+    "turns": 39,
+    "usage": {
+      "input_tokens": 78,
+      "output_tokens": 21371,
+      "cache_read_input_tokens": 2252753,
+      "cache_creation_input_tokens": 118777
+    },
+    "model": "claude-sonnet-5",
+    "evidence_dir": "/Users/nainicorn/Documents/interface-ai-cas-sk/evidence/meridian/discovery/2026-08-28_041949",
+    "escalation": null,
+    "finished_at": "2026-08-28T04:24:45.807Z"
+  },
+  "started_at": "2026-08-28T04:19:49.194Z",
+  "updated_at": "2026-08-28T04:24:45.807Z"
+}

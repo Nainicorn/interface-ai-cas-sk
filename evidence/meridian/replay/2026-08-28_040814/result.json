@@ -1,0 +1,26 @@
+{
+  "id": "meridian/replay/2026-08-28_040814",
+  "kind": "replay",
+  "app_id": "meridian",
+  "goal": null,
+  "status": "HARD_FAILURE",
+  "detail": {
+    "caller": "cli",
+    "tenant_id": null,
+    "secrets_overridden": [],
+    "capability": "post-funds-transfer",
+    "version": 1,
+    "outcome": "HARD_FAILURE",
+    "outputs": null,
+    "business_outcome": null,
+    "failed_step": {
+      "step": 11,
+      "intent": "Continue to the review/confirmation screen",
+      "message": "expected {\"type\":\"text_visible\",\"value\":\"CONFIRM FUNDS TRANSFER\",\"timeout_ms\":5000}, observed \"\\\"CONFIRM FUNDS TRANSFER\\\" not visible within 5000ms\"",
+      "url": "https://web-sample.interface-hiring.com/members/100234/transfer/review",
+      "screenshot": "000-hard-failure.png"
+    }
+  },
+  "started_at": "2026-08-28T04:08:14.128Z",
+  "updated_at": "2026-08-28T04:08:36.171Z"
+}
