@@ -1,5 +1,10 @@
 # REPORT.md
 
+> This report covers the core system. Pointing it at MERIDIAN CORE — what the adaptation
+> took, the assumptions inside the core it broke, and what was cut there — is written up
+> separately in [ADAPTATION.md](ADAPTATION.md). Where the two overlap, this file describes
+> the design and that one describes what meeting a real legacy target did to it.
+
 ## 1. Architecture
 
 **Stack**
@@ -47,14 +52,23 @@ A capability is versioned and starts out as a draft. Turning it into approved is
 
 `src/engine/replay.js` never imports the Anthropic SDK. This is the most important claim in the whole system: the model figures out the steps once, and after that every run is just following a fixed set of instructions. Same inputs, same steps, same result, every time.
 
-Every step in a replay ends in one of four outcomes, and the order they get checked in matters:
+Every step in a replay ends in one of five outcomes, and the order they get checked in matters:
 
-1. If the step's condition matches, it returns as a `BUSINESS_OUTCOME` right away, before even checking whether the step technically succeeded. This matters because checking success first would treat something like "no such member" as a hard failure, which is wrong. It's a real answer, not a broken step.
+1. If a rule the step declared matches, it returns right away, before even checking whether the step technically succeeded. This matters because checking success first would treat something like "no such member" as a hard failure, which is wrong. It's a real answer, not a broken step.
 2. The step's normal success check runs.
-3. If the check fails, the system tries a short list of known fixes (`src/engine/recovery-table.js`), things like closing a popup or waiting out a slow load. These are fixed rules written ahead of time, not something the AI decides in the moment. `engine/replay.js` imports nothing AI-related, with no exception and no opt-in path.
-4. If it's still failing after that, it becomes a `HARD_FAILURE`. This includes exactly which step failed, what was expected, what was actually seen, every option it tried to find the right element, and a screenshot.
+3. If the check fails, the system tries a short list of known fixes (`src/engine/recovery-table.js`), things like taking a maintenance page's Continue link or reloading through a transient error. These are fixed rules written ahead of time, not something the AI decides in the moment. `engine/replay.js` imports nothing AI-related, with no exception and no opt-in path.
+4. If it's still failing, the rules that belong to the whole flow are checked, and then the host's own runtime faults. Either can end the run as a `BUSINESS_OUTCOME` or as `ESCALATED`.
+5. Only then is it a `HARD_FAILURE`. This includes exactly which step failed, what was expected, what was actually seen, every option it tried to find the right element, and a screenshot.
 
 If a step can't find its target element at all, it gets checked against the declared business outcomes one more time before being marked a failure. Sometimes "this member has no savings account" looks exactly like an element that's just missing, not like a bug.
+
+**Rules that belong to the flow, not to a step.** A step-level rule has to name the step where the alternative shows, and that is often not knowable when recording: "no such member" surfaces one step *after* the search that caused it, and an expired session can land on any step at all. Worse, a step-level rule is suppressed whenever that step's own check also passes — which is exactly what a weak check like "the url still says `by=number`" does on a page that found nothing. So a capability can also declare rules at the top level. They are only consulted when a step is about to be called a failure, which is what makes them safe: they cannot mask a step that worked.
+
+**`ESCALATED` is the fifth outcome.** "A supervisor must authorise this" is neither an answer nor a fault: nothing is broken, and no amount of retrying by the same caller will finish the work. Rather than a parallel mechanism, an anticipated state can be marked `escalate: true` — both kinds are declared the same way because both are states the recording foresaw, and the flag is what separates an answer from a handover. An escalation carries the step, the url and a screenshot, because someone has to pick it up.
+
+**Faults are classified on the HTTP status, not the page's prose.** A legacy host states a runtime fault twice, in the status line and in the page, and the status is the better of the two: it cannot be matched by accident the way a phrase can, and it does not move when the copy is reworded. `http_status` is a condition type like any other, so this needed no new classification logic. Statuses are declared once per app (`FAULT_RULES` in `engine/recovery-table.js`) rather than per recording, because a runtime fault belongs to the host and not to whichever flow happened to be running. A capability's own rules are consulted first, since the same status can mean "the app refused this transaction" or "a fault was injected", and the recording knows which it saw.
+
+One judgement call is worth stating plainly. A session that expires mid-flow is recoverable for a read and not for a transfer: the run cannot tell whether its post landed before the session dropped, and guessing wrong duplicates an irreversible transaction. So a read-only flow is re-run once from the top and reports `RECOVERABLE`; a mutating one stops and escalates for a person to check.
 
 Since these are stable apps that don't change their layout often, most real failures aren't from the page looking different. They come from real conditions happening while the app runs. The ranked list of ways to find an element helps absorb small changes, like a button moving or a label being reworded slightly, without needing to redo the whole recording. Anything bigger than that becomes a `HARD_FAILURE` with enough detail to actually go fix it.
 
@@ -70,7 +84,7 @@ This system was only built and tested against one type of app, a regular web app
 
 `target.app_id` refers to the actual product being automated, not a specific customer or URL. The real website address and login details live separately in `apps/<app>/config.json`, and get filled in when the capability actually runs. That means one recording can be reused for any customer set up under that same app id. For cases where two customers use the same product but with small differences, the schema already has a place for that, `TenantOverrideSchema`, which lets one small change be layered on top of a base recording instead of starting over. If a customer's replays start failing more often, that shows up in the confidence numbers already tracked on every capability, which is the signal that something needs an override.
 
-I went back and wired this up. `engine/replay.js` exports `applyTenantOverride(capability, tenantId)` — a pure function that patches only the steps a tenant's override names (locator and/or url), leaves everything else exactly as recorded, and can point replay at a different origin via the override's own `base_url` without that tenant needing a separate app registered under `apps/`. It runs before anything else in `replayCapability`, so the four-way outcome contract, the recovery table, and the checkpoint logic never know a patch happened — cross-tenant reuse is a seam in front of replay, not a second replay path. `npm run replay -- --id <id> --tenant <tenant-id>` exercises it from the CLI, and the API's `POST /:id/replay` takes the same `tenant_id` in its body. I verified it live rather than just unit-testing the patch: two tiny local pages standing in for two tenants' installs (one button relabeled, everything else identical), one recording, one override, both replayed to `SUCCESS`.
+I went back and wired this up. `engine/replay.js` exports `applyTenantOverride(capability, tenantId)` — a pure function that patches only the steps a tenant's override names (locator and/or url), leaves everything else exactly as recorded, and can point replay at a different origin via the override's own `base_url` without that tenant needing a separate app registered under `apps/`. It runs before anything else in `replayCapability`, so the outcome contract, the recovery table, and the checkpoint logic never know a patch happened — cross-tenant reuse is a seam in front of replay, not a second replay path. `npm run replay -- --id <id> --tenant <tenant-id>` exercises it from the CLI, and the API's `POST /:id/replay` takes the same `tenant_id` in its body. I verified it live rather than just unit-testing the patch: two tiny local pages standing in for two tenants' installs (one button relabeled, everything else identical), one recording, one override, both replayed to `SUCCESS`.
 
 The other half of this section — detecting drift automatically, so a human finds out a tenant's install diverged before a replay starts failing — is `suggestRoutePattern()` in `src/schema/canonicalize.js` (`npm run canonicalize -- --id <id>`): it flags a recorded route's id-shaped segments (`/members/12345` → `/members/:id`) as a suggestion for a human comparing two recordings, and rewrites nothing on its own.
 
@@ -88,6 +102,10 @@ Once a human resumes the run, control flips back to the agent and it picks up fr
 
 The actual screen a human uses to take over is intentionally simple, just a screenshot, the reason it paused, and buttons for the five actions. It's not a full live view of the browser, which the assignment says is fine to skip. What matters is that pausing, handing off control, and resuming all actually work on the real session.
 
+**Replay escalates differently, and it should.** There is no live session to hand over: no model is thinking, and the browser is driven by a fixed list of steps. So a replay that reaches a state needing a person does not pause and wait — it stops, writes down what a human needs to pick it up (the step, its intent, the url, a screenshot), records the run as `ESCALATED`, and returns. Waiting would hold a browser open for a caller that may be an unattended agent with nobody watching.
+
+Both paths are real against the live target. Told to record Place Account Hold as an ordinary teller, the discovery loop hit `SUPERVISOR OVERRIDE REQUIRED` and escalated rather than emitting a recording for a flow it cannot complete — which settles the question: a teller-operated hold capability cannot exist, because the flow does not finish as a teller. And the supervisor recording, run with teller credentials, escalates at replay. Same recording, different operator, and the run report names which credential was swapped.
+
 ---
 
 ## 6. Safety
@@ -95,6 +113,8 @@ The actual screen a human uses to take over is intentionally simple, just a scre
 Every single action goes through `checkAllowed()` (`src/policy/allowlist.js`) before anything happens on the page. This applies the same way whether the AI, the replay, or a human is doing it. It checks two things: is this type of action even allowed, and is the current page within the URLs the app is allowed to touch. The app's own website address is a hard limit that nothing can widen, so if a link takes it somewhere else, the next action gets blocked right away.
 
 Some actions are riskier than others. Clicking a search button is harmless, but clicking a submit button that changes real data is not, so risk is checked separately (`src/policy/risk.js`). Reading, waiting, and navigating are always considered safe since they can't change anything. Clicking and typing are only considered risky if the current page matches a route the app owner marked as risky. A risky capability can't run on its own without a human approving it first. Separately, no capability at all, risky or not, is visible to an outside AI agent until a human has approved it. An unapproved one isn't just blocked, it doesn't exist from the outside at all.
+
+That classification used to be written down and never consulted — `classifyRisk()` had no callers, so a capability's risk level was whatever the recorder claimed about itself, and everything downstream trusts it. Replay now re-derives it per step from the app's own config and refuses a step riskier than its capability admits to being. It checks the **live** url rather than the recorded one, because a legacy flow reaches a posting screen by submitting a form rather than by navigating to it, so the recorded url is the wrong thing to ask.
 
 Redaction happens in two directions, because a credential can escape two ways. By NAME, at the moment a value would be written to a log — that is the obvious one. And by VALUE, in text nobody explicitly logged: a browser publishes a filled input's value in the accessibility tree, so the moment the agent types a password it is sitting in every later snapshot of that page, which is both what gets written to the transcript and what the model is shown on its next turn. Without masking that, "the model never sees a password" is only true until it types one. Run outputs are redacted by name on their way into the run record too — the caller still receives the value it asked for, but the persisted copy keeps only the shape, because evidence outlives the request.
 
@@ -110,6 +130,7 @@ This system only catches what it's been told to catch. If an app owner forgets t
 - Desktop support was planned, not built. `perception.js` is set up to be the seam for it (see §4), but there's no desktop version. Multi-tenant reuse *was* cut originally but I went back and built it — see §4 and the stretch-goal paragraph below.
 - The operator screen is intentionally basic, just a screenshot and buttons, not a full live view of the browser, which the assignment allows.
 - Assisted fallback was cut, then built, then cut again on measurement — see the paragraph below.
+- From the adaptation: no mid-flow session resume for flows that change something (deliberate — resuming safely needs an idempotency key the target does not offer), transient-fault retry is a single reload with no backoff, and the stability sweep was not run across the seven MERIDIAN capabilities. Details in [ADAPTATION.md](ADAPTATION.md).
 
 Beyond the core requirements, I also built an agent facing catalog (`src/api/catalog.js` and `tests/agent-demo.js`), a real outside script that lists approved capabilities, hands them to Claude as tools, and lets it call one over HTTP. I also built a confidence and approval system, where a capability starts as a draft and a human has to approve it before it can run unattended if it's risky.
 

@@ -22,12 +22,6 @@
 - i noticed how the stretch goals kind of mesh together in a way if you really think about it
 - i want to walkthrough what i did initially, then how i implemented extra stretch goals after i got the demo callback, and finally the challenge thats how i want to structure my presentation along with all the requirements they are looking for sprinkled in (like for example sections 6, 7 and 8 from the assignment.pdf doc under docs)
 
-* update walkthrough as a presentation style setup based on my notes with easy-to-understand descriptions of every folder and file, & difference between legacy vs spa vs desktop, how guardrails, safety, error handling, failures, etc. were setup, next steps & main cuts
-
-* update readme.md with the addition.pdf features, short write-up
-
-* manual test from walkthrough, screen record the tests, edit documentation
-
 ---
 
 ### The problem this solves
